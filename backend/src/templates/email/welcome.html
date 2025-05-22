@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Welcome to Our System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #28a745;
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .content {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 5px;
+      border: 1px solid #dee2e6;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Welcome to Our System!</h1>
+    <p>We're excited to have you on board</p>
+  </div>
+
+  <div class="content">
+    <p>Hello {{name}},</p>
+    <p>Welcome to our system! We're thrilled to have you join us.</p>
+    <p>Your account has been successfully created and is ready to use.</p>
+
+    <h2>Getting Started</h2>
+    <p>To begin using the system:</p>
+    <ol>
+      <li>Click the button below to access your account</li>
+      <li>Review your profile information</li>
+      <li>Explore the available features</li>
+    </ol>
+
+    <a href="{{loginUrl}}" class="button">Access Your Account</a>
+
+    <p>If you have any questions or need assistance, our support team is here to help.</p>
+  </div>
+
+  <div class="footer">
+    <p>This is an automated message. Please do not reply to this email.</p>
+    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  </div>
+</body>
+</html> 

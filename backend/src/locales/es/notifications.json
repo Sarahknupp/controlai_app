@@ -1,0 +1,98 @@
+{
+  "payment": {
+    "success": {
+      "subject": "Pago Realizado con Éxito",
+      "content": "Su pago de {{amount}} {{currency}} ha sido procesado con éxito."
+    },
+    "refund": {
+      "subject": "Pago Reembolsado",
+      "content": "Su pago de {{amount}} {{currency}} ha sido reembolsado."
+    },
+    "failed": {
+      "subject": "Error en el Pago",
+      "content": "Su pago de {{amount}} {{currency}} ha fallado. Por favor, inténtelo de nuevo o contacte con soporte."
+    },
+    "pending": {
+      "subject": "Pago Pendiente",
+      "content": "Su pago de {{amount}} {{currency}} está pendiente. Le notificaremos cuando sea procesado."
+    }
+  },
+  "order": {
+    "created": {
+      "subject": "Confirmación de Pedido",
+      "content": "Su pedido #{{orderId}} ha sido creado con éxito. Valor total: {{amount}} {{currency}}"
+    },
+    "status": {
+      "subject": "Actualización de Estado del Pedido",
+      "content": "El estado de su pedido #{{orderId}} ha sido actualizado a {{status}}."
+    },
+    "shipped": {
+      "subject": "Pedido Enviado",
+      "content": "Su pedido #{{orderId}} ha sido enviado. Número de seguimiento: {{trackingNumber}}"
+    },
+    "delivered": {
+      "subject": "Pedido Entregado",
+      "content": "Su pedido #{{orderId}} ha sido entregado. ¡Gracias por su compra!"
+    },
+    "cancelled": {
+      "subject": "Pedido Cancelado",
+      "content": "Su pedido #{{orderId}} ha sido cancelado. Si no solicitó esta cancelación, contacte con soporte."
+    }
+  },
+  "inventory": {
+    "low_stock": {
+      "subject": "Alerta de Stock Bajo",
+      "content": "El producto {{productName}} tiene stock bajo. Cantidad actual: {{quantity}}"
+    },
+    "out_of_stock": {
+      "subject": "Alerta de Stock Agotado",
+      "content": "El producto {{productName}} está agotado. Fecha prevista de reposición: {{restockDate}}"
+    },
+    "back_in_stock": {
+      "subject": "Producto de Vuelta en Stock",
+      "content": "¡{{productName}} está de vuelta en stock! Haga clic aquí para ver: {{productUrl}}"
+    }
+  },
+  "user": {
+    "welcome": {
+      "subject": "Bienvenido a Nuestra Plataforma",
+      "content": "¡Bienvenido {{userName}}! Gracias por unirse a nosotros. Comience explorando nuestros productos."
+    },
+    "password_reset": {
+      "subject": "Solicitud de Restablecimiento de Contraseña",
+      "content": "Ha solicitado restablecer su contraseña. Haga clic aquí para restablecer: {{resetUrl}}"
+    },
+    "email_verification": {
+      "subject": "Verifique Su Correo Electrónico",
+      "content": "Por favor, verifique su dirección de correo electrónico haciendo clic aquí: {{verificationUrl}}"
+    },
+    "account_locked": {
+      "subject": "Cuenta Bloqueada",
+      "content": "Su cuenta ha sido bloqueada debido a múltiples intentos fallidos de inicio de sesión. Contacte con soporte."
+    }
+  },
+  "promotional": {
+    "special_offer": {
+      "subject": "Oferta Especial",
+      "content": "¡Oferta especial solo para usted! {{offerDescription}} Use el código: {{promoCode}}"
+    },
+    "price_drop": {
+      "subject": "Alerta de Bajada de Precio",
+      "content": "¡El precio de {{productName}} ha bajado a {{newPrice}} {{currency}}!"
+    },
+    "abandoned_cart": {
+      "subject": "Complete Su Compra",
+      "content": "Tiene artículos en su carrito esperando por usted. ¡Complete su compra ahora!"
+    }
+  },
+  "system": {
+    "maintenance": {
+      "subject": "Mantenimiento del Sistema",
+      "content": "El sistema estará en mantenimiento desde {{startTime}} hasta {{endTime}}. Algunas funciones pueden no estar disponibles."
+    },
+    "security_alert": {
+      "subject": "Alerta de Seguridad",
+      "content": "Hemos detectado un intento de inicio de sesión desde un nuevo dispositivo. Si fue usted, por favor verifique su cuenta."
+    }
+  }
+} 

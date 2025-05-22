@@ -4,11 +4,56 @@
  * @description Tipos para gerenciamento de vendas, pedidos, pagamentos e descontos
  */
 
-/**
- * Métodos de pagamento disponíveis
- * @type {string}
- */
-export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'pix' | 'transfer';
+import { ICustomer } from './customer';
+import { IProduct } from './product';
+import { IUser } from './user';
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum PaymentMethod {
+  CASH = 'CASH',
+  CREDIT_CARD = 'CREDIT_CARD',
+  DEBIT_CARD = 'DEBIT_CARD',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CHECK = 'CHECK'
+}
+
+export interface IPayment {
+  method: PaymentMethod;
+  amount: number;
+  reference?: string;
+  date: Date;
+}
+
+export interface ISaleItem {
+  product: string | IProduct;
+  quantity: number;
+  price: number;
+  discount: number;
+}
+
+export interface ISale {
+  _id: string;
+  customer: string | ICustomer;
+  seller: string | IUser;
+  items: ISaleItem[];
+  payments: IPayment[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  status: PaymentStatus;
+  cancelledAt?: Date;
+  cancelledBy?: string | IUser;
+  cancellationReason?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 /**
  * Status possíveis de uma venda

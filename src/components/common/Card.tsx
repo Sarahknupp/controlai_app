@@ -7,6 +7,7 @@ interface CardProps {
   footer?: React.ReactNode;
   actions?: React.ReactNode;
   className?: string;
+  padding?: 'none' | 'sm' | 'md' | 'lg';
   noPadding?: boolean;
   isHoverable?: boolean;
   isClickable?: boolean;
@@ -26,6 +27,7 @@ const Card: React.FC<CardProps> = ({
   footer,
   actions,
   className = '',
+  padding = 'md',
   noPadding = false,
   isHoverable = false,
   isClickable = false,
@@ -35,12 +37,20 @@ const Card: React.FC<CardProps> = ({
   const hoverStyles = isHoverable ? 'hover:shadow-md transition-shadow duration-200' : '';
   const clickableStyles = isClickable ? 'cursor-pointer' : '';
   
+  const paddingStyles = {
+    none: '',
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-6'
+  };
+
   return (
     <div
       className={`
         ${baseStyles}
         ${hoverStyles}
         ${clickableStyles}
+        ${paddingStyles[padding]}
         ${className}
       `}
       onClick={isClickable ? onClick : undefined}

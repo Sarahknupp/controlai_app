@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>System Error Notification</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #dc3545;
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .content {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 5px;
+      border: 1px solid #dee2e6;
+    }
+    .error-details {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+      font-family: monospace;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>System Error Notification</h1>
+    <p>An error has occurred in the system</p>
+  </div>
+
+  <div class="content">
+    <p>Hello,</p>
+    <p>A system error has been detected and requires your attention.</p>
+
+    <h2>Error Details:</h2>
+    <div class="error-details">
+      <strong>Message:</strong> {{error.message}}
+      <br><br>
+      <strong>Stack Trace:</strong>
+      <br>
+      {{error.stack}}
+      {{#if error.context}}
+      <br><br>
+      <strong>Additional Context:</strong>
+      <br>
+      {{error.context}}
+      {{/if}}
+    </div>
+
+    <p><strong>Timestamp:</strong> {{timestamp}}</p>
+
+    <p>Please investigate this error and take appropriate action.</p>
+  </div>
+
+  <div class="footer">
+    <p>This is an automated message. Please do not reply to this email.</p>
+    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  </div>
+</body>
+</html> 

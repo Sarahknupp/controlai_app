@@ -1,0 +1,98 @@
+{
+  "payment": {
+    "success": {
+      "subject": "Pagamento Realizado com Sucesso",
+      "content": "Seu pagamento de {{amount}} {{currency}} foi processado com sucesso."
+    },
+    "refund": {
+      "subject": "Pagamento Reembolsado",
+      "content": "Seu pagamento de {{amount}} {{currency}} foi reembolsado."
+    },
+    "failed": {
+      "subject": "Falha no Pagamento",
+      "content": "Seu pagamento de {{amount}} {{currency}} falhou. Por favor, tente novamente ou entre em contato com o suporte."
+    },
+    "pending": {
+      "subject": "Pagamento Pendente",
+      "content": "Seu pagamento de {{amount}} {{currency}} está pendente. Notificaremos você assim que for processado."
+    }
+  },
+  "order": {
+    "created": {
+      "subject": "Confirmação de Pedido",
+      "content": "Seu pedido #{{orderId}} foi criado com sucesso. Valor total: {{amount}} {{currency}}"
+    },
+    "status": {
+      "subject": "Atualização de Status do Pedido",
+      "content": "O status do seu pedido #{{orderId}} foi atualizado para {{status}}."
+    },
+    "shipped": {
+      "subject": "Pedido Enviado",
+      "content": "Seu pedido #{{orderId}} foi enviado. Número de rastreamento: {{trackingNumber}}"
+    },
+    "delivered": {
+      "subject": "Pedido Entregue",
+      "content": "Seu pedido #{{orderId}} foi entregue. Obrigado pela sua compra!"
+    },
+    "cancelled": {
+      "subject": "Pedido Cancelado",
+      "content": "Seu pedido #{{orderId}} foi cancelado. Se você não solicitou este cancelamento, entre em contato com o suporte."
+    }
+  },
+  "inventory": {
+    "low_stock": {
+      "subject": "Alerta de Estoque Baixo",
+      "content": "O produto {{productName}} está com estoque baixo. Quantidade atual: {{quantity}}"
+    },
+    "out_of_stock": {
+      "subject": "Alerta de Estoque Esgotado",
+      "content": "O produto {{productName}} está fora de estoque. Data prevista de reposição: {{restockDate}}"
+    },
+    "back_in_stock": {
+      "subject": "Produto de Volta ao Estoque",
+      "content": "{{productName}} está de volta ao estoque! Clique aqui para ver: {{productUrl}}"
+    }
+  },
+  "user": {
+    "welcome": {
+      "subject": "Bem-vindo à Nossa Plataforma",
+      "content": "Bem-vindo {{userName}}! Obrigado por se juntar a nós. Comece explorando nossos produtos."
+    },
+    "password_reset": {
+      "subject": "Solicitação de Redefinição de Senha",
+      "content": "Você solicitou a redefinição de sua senha. Clique aqui para redefinir: {{resetUrl}}"
+    },
+    "email_verification": {
+      "subject": "Verifique Seu Email",
+      "content": "Por favor, verifique seu endereço de email clicando aqui: {{verificationUrl}}"
+    },
+    "account_locked": {
+      "subject": "Conta Bloqueada",
+      "content": "Sua conta foi bloqueada devido a múltiplas tentativas de login malsucedidas. Entre em contato com o suporte."
+    }
+  },
+  "promotional": {
+    "special_offer": {
+      "subject": "Oferta Especial",
+      "content": "Oferta especial só para você! {{offerDescription}} Use o código: {{promoCode}}"
+    },
+    "price_drop": {
+      "subject": "Alerta de Queda de Preço",
+      "content": "O preço de {{productName}} caiu para {{newPrice}} {{currency}}!"
+    },
+    "abandoned_cart": {
+      "subject": "Complete Sua Compra",
+      "content": "Você tem itens no seu carrinho esperando por você. Complete sua compra agora!"
+    }
+  },
+  "system": {
+    "maintenance": {
+      "subject": "Manutenção do Sistema",
+      "content": "O sistema estará em manutenção das {{startTime}} às {{endTime}}. Alguns recursos podem estar indisponíveis."
+    },
+    "security_alert": {
+      "subject": "Alerta de Segurança",
+      "content": "Detectamos uma tentativa de login de um novo dispositivo. Se foi você, por favor, verifique sua conta."
+    }
+  }
+} 

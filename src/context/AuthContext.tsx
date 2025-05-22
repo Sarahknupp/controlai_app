@@ -4,24 +4,32 @@
  * @description Provides authentication state and methods throughout the application
  */
 
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/auth.service';
 import { User } from '../types/user';
-import { mockUsers } from '../data/mockData';
+import { IUser, AuthContextType, UserSettings } from '../types/auth';
 
 /**
  * Authentication context type definition
  * @interface AuthContextType
  * @property {User | null} user - Currently authenticated user or null if not authenticated
  * @property {boolean} loading - Loading state during authentication checks
- * @property {(email: string, password: string) => Promise<boolean>} login - Function to authenticate user
+ * @property {string | null} error - Error message if authentication fails
+ * @property {(email: string, password: string) => Promise<void>} login - Function to authenticate user
  * @property {() => void} logout - Function to log out the current user
  * @property {boolean} isAuthenticated - Indicates whether the user is authenticated
+ * @property {(data: Partial<User>) => Promise<void>} updateProfile - Function to update user profile
+ * @property {(settings: User['settings']) => Promise<void>} updateSettings - Function to update user settings
  */
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateProfile: (data: Partial<User>) => Promise<void>;
+  updateSettings: (settings: User['settings']) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -29,7 +37,16 @@ interface AuthContextType {
  * Authentication context instance
  * @constant {React.Context<AuthContextType>}
  */
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: false,
+  error: null,
+  login: async () => {},
+  logout: () => {},
+  updateProfile: async () => {},
+  updateSettings: async () => {},
+  isAuthenticated: false,
+});
 
 /**
  * Props for the AuthProvider component
@@ -37,7 +54,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
  * @property {React.ReactNode} children - Child components that will have access to auth context
  */
 interface AuthProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 /**
@@ -47,65 +64,85 @@ interface AuthProviderProps {
  * @returns {JSX.Element} Provedor de autenticação
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  /**
-   * Check for existing session on component mount
-   * @function
-   * @inner
-   */
+  const [user, setUser] = useState<IUser | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const storedUser = localStorage.getItem('bakery_user');
+    const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setIsAuthenticated(true);
     }
-    setLoading(false);
   }, []);
-  
-  /**
-   * Authenticates a user with email and password
-   * @async
-   * @function login
-   * @inner
-   * @param {string} email - User's email
-   * @param {string} password - User's password
-   * @returns {Promise<void>} Success status of the login attempt
-   * @throws {Error} If authentication fails
-   */
+
   const login = useCallback(async (email: string, password: string) => {
     try {
-      // Use mock data instead of API call
-      const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-      
-      if (!foundUser) {
-        throw new Error('Credenciais inválidas');
-      }
-
-      setUser(foundUser);
-      localStorage.setItem('bakery_user', JSON.stringify(foundUser));
-    } catch (error) {
-      console.error('Erro no login:', error);
+      setLoading(true);
+      setError(null);
+      const userData = await authService.login(email, password);
+      setUser(userData);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(userData));
+      navigate('/');
+    } catch (error: any) {
+      setError(error.message || 'Failed to login');
       throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  const logout = useCallback(() => {
+    authService.logout();
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('user');
+    navigate('/login');
+  }, [navigate]);
+
+  const updateProfile = useCallback(async (data: Partial<User>) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updatedUser = await authService.updateProfile(data);
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error: any) {
+      setError(error.message || 'Failed to update profile');
+      throw error;
+    } finally {
+      setLoading(false);
     }
   }, []);
-  
-  /**
-   * Logs out the current user
-   * @function logout
-   * @inner
-   */
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem('bakery_user');
+
+  const updateSettings = useCallback(async (settings: User['settings']) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const updatedUser = await authService.updateSettings(settings);
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error: any) {
+      setError(error.message || 'Failed to update settings');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   }, []);
-  
+
   const value = {
     user,
     loading,
+    error,
     login,
     logout,
-    isAuthenticated: !!user,
+    updateProfile,
+    updateSettings,
+    isAuthenticated,
   };
 
   return (
@@ -122,8 +159,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
  */
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

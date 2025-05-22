@@ -6,6 +6,7 @@
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { User } from '../types/user';
+import { UserSettings } from '../types/auth';
 
 /**
  * Return type for the useAuth hook
@@ -20,6 +21,9 @@ interface UseAuthReturn {
   loading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateProfile: (profile: Partial<User>) => void;
+  updateSettings: (settings: Partial<UserSettings>) => void;
+  isAuthenticated: boolean;
 }
 
 /**
@@ -54,9 +58,18 @@ interface UseAuthReturn {
 export const useAuth = (): UseAuthReturn => {
   const context = useContext(AuthContext);
   
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   
-  return context;
+  const { user, login, logout, updateProfile, updateSettings } = context;
+
+  return {
+    user,
+    login,
+    logout,
+    updateProfile,
+    updateSettings,
+    isAuthenticated: !!user,
+  };
 };

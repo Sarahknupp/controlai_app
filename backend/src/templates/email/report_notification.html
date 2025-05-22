@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{reportType}} Report: {{reportName}}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .content {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 5px;
+      border: 1px solid #dee2e6;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #6c757d;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>{{reportType}} Report</h1>
+    <p>{{reportName}}</p>
+  </div>
+
+  <div class="content">
+    <p>Hello,</p>
+    <p>Your requested {{reportType}} report has been generated and is attached to this email.</p>
+    <p>Report Details:</p>
+    <ul>
+      <li>Type: {{reportType}}</li>
+      <li>Name: {{reportName}}</li>
+      <li>Generated: {{generatedAt}}</li>
+    </ul>
+    <p>You can find the report attached to this email.</p>
+    <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+  </div>
+
+  <div class="footer">
+    <p>This is an automated message. Please do not reply to this email.</p>
+    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  </div>
+</body>
+</html> 

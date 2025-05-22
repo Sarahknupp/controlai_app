@@ -8,7 +8,12 @@
  * Funções disponíveis no sistema
  * @type {string}
  */
-export type UserRole = 'admin' | 'manager' | 'staff' | 'cashier';
+export enum UserRole {
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  SELLER = 'seller',
+  INVENTORY = 'inventory'
+}
 
 /**
  * Status do usuário no sistema
@@ -29,14 +34,22 @@ export type UserStatus = 'active' | 'inactive' | 'pending' | 'blocked';
  * @property {Array<string>} [permissions] - Permissões adicionais concedidas ao usuário
  */
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
-  password: string;
-  role: UserRole;
-  status?: UserStatus;
-  lastLogin?: Date;
-  permissions?: Array<string>;
+  phone?: string;
+  avatar?: string;
+  role: 'admin' | 'user';
+  settings: {
+    language: string;
+    theme: 'light' | 'dark' | 'system';
+    notifications: boolean;
+    emailNotifications: boolean;
+    timezone: string;
+    dateFormat: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**

@@ -1,175 +1,143 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, ChevronsUpDown } from 'lucide-react';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
-interface Column<T> {
-  key: string;
-  header: React.ReactNode;
-  cell: (item: T) => React.ReactNode;
-  sortable?: boolean;
-  width?: string;
+interface Column {
+  header: string;
+  accessor: string;
+  cell?: (value: any) => React.ReactNode;
 }
 
-interface TableProps<T> {
-  columns: Column<T>[];
-  data: T[];
-  keyExtractor: (item: T) => string | number;
+interface TableProps {
+  columns: Column[];
+  data: any[];
   isLoading?: boolean;
-  emptyMessage?: string;
-  sortColumn?: string;
-  sortDirection?: 'asc' | 'desc';
-  onSort?: (column: string) => void;
-  selectable?: boolean;
-  selectedItems?: string[];
-  onSelectionChange?: (selectedIds: string[]) => void;
-  className?: string;
+  error?: string;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }
 
-/**
- * Componente de tabela reutilizável
- * @component
- * @template T
- * @param {TableProps<T>} props - Propriedades do componente
- * @returns {JSX.Element} Tabela estilizada
- */
-export function Table<T>({
+const Table: React.FC<TableProps> = ({
   columns,
   data,
-  keyExtractor,
-  isLoading = false,
-  emptyMessage = 'Nenhum dado encontrado',
-  sortColumn,
-  sortDirection,
-  onSort,
-  selectable = false,
-  selectedItems = [],
-  onSelectionChange,
-  className = ''
-}: TableProps<T>) {
-  const handleSort = (columnKey: string) => {
-    if (onSort && columns.find(col => col.key === columnKey)?.sortable) {
-      onSort(columnKey);
-    }
-  };
-
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (onSelectionChange) {
-      if (e.target.checked) {
-        onSelectionChange(data.map(item => String(keyExtractor(item))));
-      } else {
-        onSelectionChange([]);
-      }
-    }
-  };
-
-  const handleSelectItem = (itemId: string) => {
-    if (onSelectionChange) {
-      if (selectedItems.includes(itemId)) {
-        onSelectionChange(selectedItems.filter(id => id !== itemId));
-      } else {
-        onSelectionChange([...selectedItems, itemId]);
-      }
-    }
-  };
-
-  const getSortIcon = (columnKey: string) => {
-    if (columnKey !== sortColumn) return <ChevronsUpDown className="h-4 w-4" />;
-    return sortDirection === 'asc' ? (
-      <ChevronUp className="h-4 w-4" />
-    ) : (
-      <ChevronDown className="h-4 w-4" />
-    );
-  };
-
+  isLoading,
+  error,
+  currentPage,
+  totalPages,
+  onPageChange
+}) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-8 text-red-600">
+        {error}
       </div>
     );
   }
 
   if (!data.length) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        {emptyMessage}
+      <div className="text-center p-8 text-gray-500">
+        Nenhum registro encontrado
       </div>
     );
   }
 
+  const getValue = (item: any, accessor: string) => {
+    return accessor.split('.').reduce((obj, key) => obj?.[key], item);
+  };
+
   return (
-    <div className={`overflow-x-auto ${className}`}>
+    <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            {selectable && (
-              <th scope="col" className="relative px-6 py-3 w-12">
-                <input
-                  type="checkbox"
-                  className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={selectedItems.length === data.length}
-                  onChange={handleSelectAll}
-                />
-              </th>
-            )}
-            {columns.map(column => (
+            {columns.map((column, index) => (
               <th
-                key={column.key}
+                key={index}
                 scope="col"
-                className={`
-                  px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider
-                  ${column.sortable ? 'cursor-pointer select-none' : ''}
-                  ${column.width ? `w-${column.width}` : ''}
-                `}
-                onClick={() => handleSort(column.key)}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                <div className="flex items-center space-x-1">
-                  <span>{column.header}</span>
-                  {column.sortable && (
-                    <span className="text-gray-400">
-                      {getSortIcon(column.key)}
-                    </span>
-                  )}
-                </div>
+                {column.header}
               </th>
             ))}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.map(item => {
-            const itemId = String(keyExtractor(item));
-            return (
-              <tr
-                key={itemId}
-                className={`
-                  ${selectable ? 'hover:bg-gray-50 cursor-pointer' : ''}
-                  ${selectedItems.includes(itemId) ? 'bg-blue-50' : ''}
-                `}
-                onClick={selectable ? () => handleSelectItem(itemId) : undefined}
-              >
-                {selectable && (
-                  <td className="relative px-6 py-4 w-12">
-                    <input
-                      type="checkbox"
-                      className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={selectedItems.includes(itemId)}
-                      onChange={() => handleSelectItem(itemId)}
-                      onClick={e => e.stopPropagation()}
-                    />
-                  </td>
-                )}
-                {columns.map(column => (
-                  <td
-                    key={`${itemId}-${column.key}`}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-                  >
-                    {column.cell(item)}
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
+          {data.map((item, rowIndex) => (
+            <tr key={rowIndex} className="hover:bg-gray-50">
+              {columns.map((column, colIndex) => (
+                <td
+                  key={`${rowIndex}-${colIndex}`}
+                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                >
+                  {column.cell
+                    ? column.cell(getValue(item, column.accessor))
+                    : getValue(item, column.accessor)}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
+          <div className="flex justify-between flex-1 sm:hidden">
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="relative inline-flex items-center px-4 py-2 ml-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Próxima
+            </button>
+          </div>
+          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Página <span className="font-medium">{currentPage}</span> de{' '}
+                <span className="font-medium">{totalPages}</span>
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Anterior</span>
+                  <FiChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Próxima</span>
+                  <FiChevronRight className="h-5 w-5" />
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-} 
+};
+
+export default Table; 

@@ -1,0 +1,98 @@
+{
+  "payment": {
+    "success": {
+      "subject": "Payment Successful",
+      "content": "Your payment of {{amount}} {{currency}} has been processed successfully."
+    },
+    "refund": {
+      "subject": "Payment Refunded",
+      "content": "Your payment of {{amount}} {{currency}} has been refunded."
+    },
+    "failed": {
+      "subject": "Payment Failed",
+      "content": "Your payment of {{amount}} {{currency}} has failed. Please try again or contact support."
+    },
+    "pending": {
+      "subject": "Payment Pending",
+      "content": "Your payment of {{amount}} {{currency}} is pending. We will notify you once it is processed."
+    }
+  },
+  "order": {
+    "created": {
+      "subject": "Order Confirmation",
+      "content": "Your order #{{orderId}} has been created successfully. Total amount: {{amount}} {{currency}}"
+    },
+    "status": {
+      "subject": "Order Status Update",
+      "content": "Your order #{{orderId}} status has been updated to {{status}}."
+    },
+    "shipped": {
+      "subject": "Order Shipped",
+      "content": "Your order #{{orderId}} has been shipped. Tracking number: {{trackingNumber}}"
+    },
+    "delivered": {
+      "subject": "Order Delivered",
+      "content": "Your order #{{orderId}} has been delivered. Thank you for your purchase!"
+    },
+    "cancelled": {
+      "subject": "Order Cancelled",
+      "content": "Your order #{{orderId}} has been cancelled. If you did not request this cancellation, please contact support."
+    }
+  },
+  "inventory": {
+    "low_stock": {
+      "subject": "Low Stock Alert",
+      "content": "Product {{productName}} is running low on stock. Current quantity: {{quantity}}"
+    },
+    "out_of_stock": {
+      "subject": "Out of Stock Alert",
+      "content": "Product {{productName}} is out of stock. Expected restock date: {{restockDate}}"
+    },
+    "back_in_stock": {
+      "subject": "Product Back in Stock",
+      "content": "{{productName}} is back in stock! Click here to view: {{productUrl}}"
+    }
+  },
+  "user": {
+    "welcome": {
+      "subject": "Welcome to Our Platform",
+      "content": "Welcome {{userName}}! Thank you for joining us. Get started by exploring our products."
+    },
+    "password_reset": {
+      "subject": "Password Reset Request",
+      "content": "You have requested to reset your password. Click here to reset: {{resetUrl}}"
+    },
+    "email_verification": {
+      "subject": "Verify Your Email",
+      "content": "Please verify your email address by clicking here: {{verificationUrl}}"
+    },
+    "account_locked": {
+      "subject": "Account Locked",
+      "content": "Your account has been locked due to multiple failed login attempts. Please contact support."
+    }
+  },
+  "promotional": {
+    "special_offer": {
+      "subject": "Special Offer",
+      "content": "Special offer just for you! {{offerDescription}} Use code: {{promoCode}}"
+    },
+    "price_drop": {
+      "subject": "Price Drop Alert",
+      "content": "The price of {{productName}} has dropped to {{newPrice}} {{currency}}!"
+    },
+    "abandoned_cart": {
+      "subject": "Complete Your Purchase",
+      "content": "You have items in your cart waiting for you. Complete your purchase now!"
+    }
+  },
+  "system": {
+    "maintenance": {
+      "subject": "System Maintenance",
+      "content": "The system will be under maintenance from {{startTime}} to {{endTime}}. Some features may be unavailable."
+    },
+    "security_alert": {
+      "subject": "Security Alert",
+      "content": "We detected a login attempt from a new device. If this was you, please verify your account."
+    }
+  }
+} 
