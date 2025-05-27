@@ -162,6 +162,73 @@ src/
 - `npm run build`: Compila TypeScript
 - `npm run test`: Executa testes
 
+## Deploy no Replit
+
+### Passos para rodar no Replit
+
+1. **Importe o projeto para o Replit**  
+   - Clique em "Create Repl" e selecione "Import from GitHub".
+   - Cole a URL do repositório:  
+     `https://github.com/seu-usuario/app_controlaivendas.git`
+
+2. **Configuração das variáveis de ambiente**  
+   - No painel esquerdo, clique em "Secrets" (ícone de cadeado).
+   - Adicione as variáveis necessárias, por exemplo:
+     - `PORT=5000`
+     - `MONGODB_URI=sua_uri_do_mongodb`
+     - `JWT_SECRET=seu_jwt_secret`
+     - `VITE_API_URL=http://localhost:5000/api` (para o frontend)
+
+3. **Instale as dependências**  
+   - No shell do Replit, execute:
+     ```bash
+     cd backend
+     npm install
+     cd ../frontend
+     npm install
+     ```
+
+4. **Build do Frontend**  
+   - Ainda na pasta `frontend`, execute:
+     ```bash
+     npm run build
+     ```
+   - Isso irá gerar a pasta `dist` com os arquivos de produção.
+
+5. **Rodando o Backend**  
+   - Volte para a pasta `backend`:
+     ```bash
+     cd ../backend
+     npm run start
+     ```
+   - Certifique-se de que o backend está configurado para servir os arquivos estáticos do frontend (pasta `dist`).
+
+6. **Acesse a aplicação**  
+   - O Replit irá fornecer uma URL pública para acessar sua aplicação.
+
+### Dicas Importantes para Deploy no Replit
+
+- **Porta:**  
+  Use a variável de ambiente `PORT` fornecida pelo Replit (geralmente já está disponível como `process.env.PORT`).
+- **Banco de Dados:**  
+  Use um MongoDB Atlas ou outro serviço externo, pois o Replit não suporta MongoDB local.
+- **Servir o Frontend pelo Backend:**  
+  Configure o backend para servir os arquivos estáticos do frontend (pasta `dist`).  
+  Exemplo em Express:
+  ```js
+  const express = require('express');
+  const path = require('path');
+  const app = express();
+
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+  ```
+- **Scripts no Replit:**  
+  Você pode criar um script no arquivo `.replit` para rodar ambos (build e start) automaticamente.
+
 ## Contribuindo
 1. Faça um Fork do projeto
 2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
