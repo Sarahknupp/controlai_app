@@ -9,6 +9,8 @@ import { EventEmitter } from 'events';
 import logger from '../utils/logger';
 import os from 'os';
 import mongoose from 'mongoose';
+import { createLogger, format, transports } from 'winston';
+import { join } from 'path';
 
 interface MetricsOptions {
   type: 'system' | 'business' | 'all';
@@ -99,16 +101,49 @@ interface MetricsResult {
   };
 }
 
+const { combine, timestamp, printf } = format;
+
+// Configuração do logger de métricas
+const metricsLogger = createLogger({
+  format: combine(
+    timestamp(),
+    printf(({ timestamp, level, message, ...meta }) => {
+      return JSON.stringify({
+        timestamp,
+        level,
+        message,
+        ...meta
+      });
+    })
+  ),
+  transports: [
+    new transports.File({
+      filename: join('logs', 'metrics.log'),
+      level: 'info'
+    })
+  ]
+});
+
 export class MetricsService extends EventEmitter {
   private auditService: AuditService;
   private notificationService: NotificationService;
   private metricsInProgress: boolean;
+  private static instance: MetricsService;
+  private metrics: Map<string, number> = new Map();
+  private readonly ALERT_THRESHOLD = 1000; // 1 segundo
 
   constructor() {
     super();
     this.auditService = new AuditService();
     this.notificationService = new NotificationService();
     this.metricsInProgress = false;
+  }
+
+  public static getInstance(): MetricsService {
+    if (!MetricsService.instance) {
+      MetricsService.instance = new MetricsService();
+    }
+    return MetricsService.instance;
   }
 
   async collectMetrics(options: MetricsOptions): Promise<MetricsResult> {
@@ -358,5 +393,80 @@ export class MetricsService extends EventEmitter {
 
   isMetricsInProgress(): boolean {
     return this.metricsInProgress;
+  }
+
+  public logRequestTime(path: string, method: string, duration: number): void {
+    const key = `${method}:${path}`;
+    this.metrics.set(key, duration);
+
+    metricsLogger.info('Request time', {
+      path,
+      method,
+      duration,
+      timestamp: new Date().toISOString()
+    });
+
+    if (duration > this.ALERT_THRESHOLD) {
+      this.logSlowRequest(path, method, duration);
+    }
+  }
+
+  public logErrorRate(path: string, method: string, errorCount: number): void {
+    const key = `error:${method}:${path}`;
+    this.metrics.set(key, errorCount);
+
+    metricsLogger.info('Error rate', {
+      path,
+      method,
+      errorCount,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  public logMemoryUsage(): void {
+    const memoryUsage = process.memoryUsage();
+    metricsLogger.info('Memory usage', {
+      ...memoryUsage,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  public logDatabaseQueryTime(operation: string, duration: number): void {
+    metricsLogger.info('Database query time', {
+      operation,
+      duration,
+      timestamp: new Date().toISOString()
+    });
+
+    if (duration > this.ALERT_THRESHOLD) {
+      this.logSlowQuery(operation, duration);
+    }
+  }
+
+  private logSlowRequest(path: string, method: string, duration: number): void {
+    metricsLogger.warn('Slow request detected', {
+      path,
+      method,
+      duration,
+      threshold: this.ALERT_THRESHOLD,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  private logSlowQuery(operation: string, duration: number): void {
+    metricsLogger.warn('Slow query detected', {
+      operation,
+      duration,
+      threshold: this.ALERT_THRESHOLD,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  public getMetrics(): Map<string, number> {
+    return new Map(this.metrics);
+  }
+
+  public resetMetrics(): void {
+    this.metrics.clear();
   }
 } 

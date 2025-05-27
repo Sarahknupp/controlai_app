@@ -12,18 +12,23 @@ import { ReportType } from '../types/report';
 import { AuditService } from './audit.service';
 import { AuditAction, EntityType } from '../types/audit';
 
-interface EmailOptions {
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+}
+
+export interface EmailOptions {
   to: string | string[];
   subject: string;
+  text?: string;
+  html?: string;
+  attachments?: EmailAttachment[];
+  cc?: string | string[];
+  bcc?: string | string[];
+  replyTo?: string;
   template?: string;
   context?: Record<string, any>;
-  html?: string;
-  attachments?: Array<{
-    filename: string;
-    path?: string;
-    content?: Buffer;
-    contentType?: string;
-  }>;
 }
 
 interface EmailTemplate {
@@ -52,25 +57,6 @@ export interface EmailConfig {
   from: string;
 }
 
-export interface EmailAttachment {
-  filename: string;
-  content: Buffer | string;
-  contentType?: string;
-}
-
-export interface EmailOptions {
-  to: string | string[];
-  subject: string;
-  text?: string;
-  html?: string;
-  attachments?: EmailAttachment[];
-  cc?: string | string[];
-  bcc?: string | string[];
-  replyTo?: string;
-  template?: string;
-  context?: Record<string, any>;
-}
-
 export class EmailService {
   private transporter: nodemailer.Transporter;
   private pdfService: PDFService;
@@ -97,6 +83,117 @@ export class EmailService {
     if (!fs.existsSync(this.templatesDir)) {
       fs.mkdirSync(this.templatesDir, { recursive: true });
     }
+
+    // Create default templates if they don't exist
+    this.createDefaultTemplates();
+  }
+
+  private createDefaultTemplates(): void {
+    const templates = {
+      'email-verification': {
+        subject: 'Verifique seu email',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Verificação de Email</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .button {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                margin: 20px 0;
+              }
+              .footer {
+                margin-top: 30px;
+                font-size: 12px;
+                color: #666;
+              }
+            </style>
+          </head>
+          <body>
+            <h2>Verificação de Email</h2>
+            <p>Olá,</p>
+            <p>Obrigado por se cadastrar! Por favor, clique no botão abaixo para verificar seu email:</p>
+            <a href="{{verificationUrl}}" class="button">Verificar Email</a>
+            <p>Se o botão não funcionar, você pode copiar e colar o seguinte link no seu navegador:</p>
+            <p>{{verificationUrl}}</p>
+            <p>Este link expirará em 24 horas.</p>
+            <div class="footer">
+              <p>Se você não solicitou esta verificação, por favor ignore este email.</p>
+            </div>
+          </body>
+          </html>
+        `
+      },
+      'password-reset': {
+        subject: 'Recuperação de Senha',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Recuperação de Senha</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+              }
+              .button {
+                display: inline-block;
+                padding: 10px 20px;
+                background-color: #007bff;
+                color: white;
+                text-decoration: none;
+                border-radius: 5px;
+                margin: 20px 0;
+              }
+              .footer {
+                margin-top: 30px;
+                font-size: 12px;
+                color: #666;
+              }
+            </style>
+          </head>
+          <body>
+            <h2>Recuperação de Senha</h2>
+            <p>Olá,</p>
+            <p>Você solicitou a recuperação de senha. Clique no botão abaixo para redefinir sua senha:</p>
+            <a href="{{resetUrl}}" class="button">Redefinir Senha</a>
+            <p>Se o botão não funcionar, você pode copiar e colar o seguinte link no seu navegador:</p>
+            <p>{{resetUrl}}</p>
+            <p>Este link expirará em 10 minutos.</p>
+            <div class="footer">
+              <p>Se você não solicitou a recuperação de senha, por favor ignore este email.</p>
+            </div>
+          </body>
+          </html>
+        `
+      }
+    };
+
+    Object.entries(templates).forEach(([name, template]) => {
+      const templatePath = path.join(this.templatesDir, `${name}.html`);
+      if (!fs.existsSync(templatePath)) {
+        fs.writeFileSync(templatePath, template.html);
+      }
+    });
   }
 
   async sendEmail(options: EmailOptions): Promise<void> {
@@ -174,16 +271,14 @@ export class EmailService {
     variables: Record<string, string>
   ): Promise<string> {
     try {
-      // TODO: Implement template processing logic
-      // This could use a template engine like Handlebars or EJS
-      let html = template;
+      const templatePath = path.join(this.templatesDir, `${template}.html`);
+      if (!fs.existsSync(templatePath)) {
+        throw new Error(`Template ${template} not found`);
+      }
 
-      // Simple variable replacement for now
-      Object.entries(variables).forEach(([key, value]) => {
-        html = html.replace(new RegExp(`{{${key}}}`, 'g'), value);
-      });
-
-      return html;
+      const templateContent = fs.readFileSync(templatePath, 'utf-8');
+      const compiledTemplate = compile(templateContent);
+      return compiledTemplate(variables);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error('Error processing email template:', error);
@@ -200,6 +295,28 @@ export class EmailService {
       logger.error('Error verifying email connection:', error);
       return false;
     }
+  }
+
+  async sendEmailVerification(to: string, verificationToken: string): Promise<void> {
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    await this.sendTemplatedEmail('email-verification', {
+      to,
+      subject: 'Verifique seu email',
+      variables: {
+        verificationUrl
+      }
+    });
+  }
+
+  async sendPasswordReset(to: string, resetToken: string): Promise<void> {
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await this.sendTemplatedEmail('password-reset', {
+      to,
+      subject: 'Recuperação de Senha',
+      variables: {
+        resetUrl
+      }
+    });
   }
 
   async sendReportNotification(options: ReportNotificationOptions): Promise<void> {
@@ -251,19 +368,6 @@ export class EmailService {
       context: {
         name,
         loginUrl: process.env.APP_URL
-      }
-    };
-
-    await this.sendEmail(options);
-  }
-
-  async sendPasswordResetEmail(to: string, resetToken: string): Promise<void> {
-    const options: EmailOptions = {
-      to,
-      subject: 'Password Reset Request',
-      template: 'password_reset',
-      context: {
-        resetUrl: `${process.env.APP_URL}/reset-password?token=${resetToken}`
       }
     };
 

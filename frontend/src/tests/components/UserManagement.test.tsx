@@ -1,56 +1,55 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userService from '../../services/user.service';
-import UserManagement from '../../components/UserManagement';
+import { userService } from '../../services/user.service';
+import GerenciamentoUsuarios from '../../components/UserManagement';
 import '@testing-library/jest-dom';
 
 // Mock userService
 jest.mock('../../services/user.service', () => ({
-  __esModule: true,
-  default: {
-    getUsers: jest.fn(),
-    createUser: jest.fn(),
-    updateUser: jest.fn(),
-    deleteUser: jest.fn(),
-    resetPassword: jest.fn()
+  userService: {
+    obterUsuarios: jest.fn(),
+    criarUsuario: jest.fn(),
+    atualizarUsuario: jest.fn(),
+    excluirUsuario: jest.fn(),
+    redefinirSenha: jest.fn()
   }
 }));
 
-describe('UserManagement', () => {
+describe('GerenciamentoUsuarios', () => {
   const mockUsers = [
     {
       id: '1',
       email: 'admin@example.com',
-      name: 'Admin User',
-      role: 'ADMIN',
-      active: true,
-      createdAt: '2024-03-20T10:00:00Z',
-      updatedAt: '2024-03-20T10:00:00Z',
-      lastLogin: '2024-03-20T15:00:00Z'
+      nome: 'Admin User',
+      papel: 'ADMIN',
+      ativo: true,
+      criadoEm: '2024-03-20T10:00:00Z',
+      atualizadoEm: '2024-03-20T10:00:00Z',
+      ultimoLogin: '2024-03-20T15:00:00Z'
     },
     {
       id: '2',
       email: 'user@example.com',
-      name: 'Regular User',
-      role: 'USER',
-      active: true,
-      createdAt: '2024-03-20T10:00:00Z',
-      updatedAt: '2024-03-20T10:00:00Z'
+      nome: 'Regular User',
+      papel: 'USUARIO',
+      ativo: true,
+      criadoEm: '2024-03-20T10:00:00Z',
+      atualizadoEm: '2024-03-20T10:00:00Z'
     }
   ];
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (userService.getUsers as jest.Mock).mockResolvedValue(mockUsers);
+    (userService.obterUsuarios as jest.Mock).mockResolvedValue(mockUsers);
   });
 
   it('renders loading state initially', () => {
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
   it('renders users table after loading', async () => {
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
@@ -60,14 +59,14 @@ describe('UserManagement', () => {
     expect(screen.getByText('admin@example.com')).toBeInTheDocument();
     expect(screen.getByText('user@example.com')).toBeInTheDocument();
     expect(screen.getByText('ADMIN')).toBeInTheDocument();
-    expect(screen.getByText('USER')).toBeInTheDocument();
+    expect(screen.getByText('USUARIO')).toBeInTheDocument();
   });
 
   it('shows error message when fetch fails', async () => {
-    const errorMessage = 'Failed to fetch users';
-    (userService.getUsers as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
+    const errorMessage = 'Falha ao buscar usuários';
+    (userService.obterUsuarios as jest.Mock).mockRejectedValueOnce(new Error(errorMessage));
 
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText(errorMessage)).toBeInTheDocument();
@@ -75,159 +74,159 @@ describe('UserManagement', () => {
   });
 
   it('opens create user dialog when clicking Add User', async () => {
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
-      expect(screen.getByText('Add User')).toBeInTheDocument();
+      expect(screen.getByText('Adicionar Usuário')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Add User'));
+    fireEvent.click(screen.getByText('Adicionar Usuário'));
 
-    expect(screen.getByText('Add New User')).toBeInTheDocument();
-    expect(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Adicionar Novo Usuário')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nome')).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
-    expect(screen.getByLabelText('Password')).toBeInTheDocument();
-    expect(screen.getByLabelText('Role')).toBeInTheDocument();
+    expect(screen.getByLabelText('Senha')).toBeInTheDocument();
+    expect(screen.getByLabelText('Papel')).toBeInTheDocument();
   });
 
   it('creates new user successfully', async () => {
     const newUser = {
       email: 'new@example.com',
-      password: 'password123',
-      name: 'New User',
-      role: 'USER' as const
+      senha: 'password123',
+      nome: 'New User',
+      papel: 'USUARIO' as const
     };
 
-    (userService.createUser as jest.Mock).mockResolvedValueOnce({
+    (userService.criarUsuario as jest.Mock).mockResolvedValueOnce({
       id: '3',
       ...newUser,
-      active: true,
-      createdAt: '2024-03-20T16:00:00Z',
-      updatedAt: '2024-03-20T16:00:00Z'
+      ativo: true,
+      criadoEm: '2024-03-20T16:00:00Z',
+      atualizadoEm: '2024-03-20T16:00:00Z'
     });
 
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
-      expect(screen.getByText('Add User')).toBeInTheDocument();
+      expect(screen.getByText('Adicionar Usuário')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Add User'));
+    fireEvent.click(screen.getByText('Adicionar Usuário'));
 
-    fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: newUser.name }
+    fireEvent.change(screen.getByLabelText('Nome'), {
+      target: { value: newUser.nome }
     });
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: newUser.email }
     });
-    fireEvent.change(screen.getByLabelText('Password'), {
-      target: { value: newUser.password }
+    fireEvent.change(screen.getByLabelText('Senha'), {
+      target: { value: newUser.senha }
     });
-    fireEvent.mouseDown(screen.getByLabelText('Role'));
-    fireEvent.click(screen.getByText('User'));
+    fireEvent.mouseDown(screen.getByLabelText('Papel'));
+    fireEvent.click(screen.getByText('Usuário'));
 
-    fireEvent.click(screen.getByText('Create User'));
+    fireEvent.click(screen.getByText('Criar Usuário'));
 
     await waitFor(() => {
-      expect(userService.createUser).toHaveBeenCalledWith(newUser);
-      expect(userService.getUsers).toHaveBeenCalledTimes(2);
+      expect(userService.criarUsuario).toHaveBeenCalledWith(newUser);
+      expect(userService.obterUsuarios).toHaveBeenCalledTimes(2);
     });
   });
 
   it('opens edit user dialog when clicking Edit in menu', async () => {
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByTestId('MoreVertIcon')[0]);
-    fireEvent.click(screen.getByText('Edit'));
+    fireEvent.click(screen.getByText('Editar'));
 
-    expect(screen.getByText('Edit User')).toBeInTheDocument();
-    expect(screen.getByLabelText('Name')).toHaveValue('Admin User');
+    expect(screen.getByText('Editar Usuário')).toBeInTheDocument();
+    expect(screen.getByLabelText('Nome')).toHaveValue('Admin User');
     expect(screen.getByLabelText('Email')).toHaveValue('admin@example.com');
-    expect(screen.getByLabelText('Role')).toHaveValue('ADMIN');
+    expect(screen.getByLabelText('Papel')).toHaveValue('ADMIN');
   });
 
   it('updates user successfully', async () => {
     const updatedData = {
-      name: 'Updated Admin',
+      nome: 'Updated Admin',
       email: 'admin@example.com',
-      role: 'ADMIN' as const
+      papel: 'ADMIN' as const
     };
 
-    (userService.updateUser as jest.Mock).mockResolvedValueOnce({
+    (userService.atualizarUsuario as jest.Mock).mockResolvedValueOnce({
       id: '1',
       ...updatedData,
-      active: true,
-      createdAt: '2024-03-20T10:00:00Z',
-      updatedAt: '2024-03-20T16:00:00Z'
+      ativo: true,
+      criadoEm: '2024-03-20T10:00:00Z',
+      atualizadoEm: '2024-03-20T16:00:00Z'
     });
 
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByTestId('MoreVertIcon')[0]);
-    fireEvent.click(screen.getByText('Edit'));
+    fireEvent.click(screen.getByText('Editar'));
 
-    fireEvent.change(screen.getByLabelText('Name'), {
-      target: { value: updatedData.name }
+    fireEvent.change(screen.getByLabelText('Nome'), {
+      target: { value: updatedData.nome }
     });
 
-    fireEvent.click(screen.getByText('Save Changes'));
+    fireEvent.click(screen.getByText('Salvar Alterações'));
 
     await waitFor(() => {
-      expect(userService.updateUser).toHaveBeenCalledWith('1', updatedData);
-      expect(userService.getUsers).toHaveBeenCalledTimes(2);
+      expect(userService.atualizarUsuario).toHaveBeenCalledWith('1', updatedData);
+      expect(userService.obterUsuarios).toHaveBeenCalledTimes(2);
     });
   });
 
   it('deletes user successfully', async () => {
-    (userService.deleteUser as jest.Mock).mockResolvedValueOnce(undefined);
+    (userService.excluirUsuario as jest.Mock).mockResolvedValueOnce(undefined);
 
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByTestId('MoreVertIcon')[0]);
-    fireEvent.click(screen.getByText('Delete'));
+    fireEvent.click(screen.getByText('Excluir'));
 
     await waitFor(() => {
-      expect(userService.deleteUser).toHaveBeenCalledWith('1');
-      expect(userService.getUsers).toHaveBeenCalledTimes(2);
+      expect(userService.excluirUsuario).toHaveBeenCalledWith('1');
+      expect(userService.obterUsuarios).toHaveBeenCalledTimes(2);
     });
   });
 
   it('resets user password successfully', async () => {
-    (userService.resetPassword as jest.Mock).mockResolvedValueOnce(undefined);
+    (userService.redefinirSenha as jest.Mock).mockResolvedValueOnce(undefined);
 
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
     });
 
     fireEvent.click(screen.getAllByTestId('MoreVertIcon')[0]);
-    fireEvent.click(screen.getByText('Reset Password'));
+    fireEvent.click(screen.getByText('Redefinir Senha'));
 
     await waitFor(() => {
-      expect(userService.resetPassword).toHaveBeenCalledWith('1');
+      expect(userService.redefinirSenha).toHaveBeenCalledWith('1');
     });
   });
 
   it('toggles user active status', async () => {
-    (userService.updateUser as jest.Mock).mockResolvedValueOnce({
+    (userService.atualizarUsuario as jest.Mock).mockResolvedValueOnce({
       ...mockUsers[0],
-      active: false
+      ativo: false
     });
 
-    render(<UserManagement />);
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
@@ -237,22 +236,22 @@ describe('UserManagement', () => {
     fireEvent.click(switchElement);
 
     await waitFor(() => {
-      expect(userService.updateUser).toHaveBeenCalledWith('1', { active: false });
-      expect(userService.getUsers).toHaveBeenCalledTimes(2);
+      expect(userService.atualizarUsuario).toHaveBeenCalledWith('1', { ativo: false });
+      expect(userService.obterUsuarios).toHaveBeenCalledTimes(2);
     });
   });
 
-  it('refreshes user list when clicking Refresh button', async () => {
-    render(<UserManagement />);
+  it('refreshes user list', async () => {
+    render(<GerenciamentoUsuarios />);
 
     await waitFor(() => {
       expect(screen.getByText('Admin User')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Refresh'));
+    fireEvent.click(screen.getByText('Atualizar'));
 
     await waitFor(() => {
-      expect(userService.getUsers).toHaveBeenCalledTimes(2);
+      expect(userService.obterUsuarios).toHaveBeenCalledTimes(2);
     });
   });
 }); 

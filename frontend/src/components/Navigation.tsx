@@ -21,30 +21,30 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../hooks/useAuth';
 
-const Navigation: React.FC = () => {
+const Navegacao: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuth();
-  const [mobileMenuAnchor, setMobileMenuAnchor] = React.useState<null | HTMLElement>(null);
+  const [ancoraMenuMobile, setAncoraMenuMobile] = React.useState<null | HTMLElement>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleMobileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setMobileMenuAnchor(event.currentTarget);
+  const handleAbrirMenuMobile = (event: React.MouseEvent<HTMLElement>) => {
+    setAncoraMenuMobile(event.currentTarget);
   };
 
-  const handleMobileMenuClose = () => {
-    setMobileMenuAnchor(null);
+  const handleFecharMenuMobile = () => {
+    setAncoraMenuMobile(null);
   };
 
   const handleLogout = () => {
     logout();
-    handleMobileMenuClose();
+    handleFecharMenuMobile();
   };
 
   return (
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Notification System
+          Sistema de Notificações
         </Typography>
 
         {isMobile ? (
@@ -53,37 +53,37 @@ const Navigation: React.FC = () => {
               edge="end"
               color="inherit"
               aria-label="menu"
-              onClick={handleMobileMenuOpen}
+              onClick={handleAbrirMenuMobile}
             >
               <MenuIcon />
             </IconButton>
             <Menu
-              anchorEl={mobileMenuAnchor}
-              open={Boolean(mobileMenuAnchor)}
-              onClose={handleMobileMenuClose}
+              anchorEl={ancoraMenuMobile}
+              open={Boolean(ancoraMenuMobile)}
+              onClose={handleFecharMenuMobile}
             >
               {isAuthenticated && user?.role === 'ADMIN' && (
                 <>
                   <MenuItem
                     component={RouterLink}
                     to="/admin/notifications"
-                    onClick={handleMobileMenuClose}
+                    onClick={handleFecharMenuMobile}
                   >
                     <DashboardIcon sx={{ mr: 1 }} />
-                    Dashboard
+                    Painel
                   </MenuItem>
                   <MenuItem
                     component={RouterLink}
                     to="/admin/users"
-                    onClick={handleMobileMenuClose}
+                    onClick={handleFecharMenuMobile}
                   >
                     <PeopleIcon sx={{ mr: 1 }} />
-                    Users
+                    Usuários
                   </MenuItem>
                   <MenuItem
                     component={RouterLink}
                     to="/admin/templates"
-                    onClick={handleMobileMenuClose}
+                    onClick={handleFecharMenuMobile}
                   >
                     <DescriptionIcon sx={{ mr: 1 }} />
                     Templates
@@ -93,23 +93,23 @@ const Navigation: React.FC = () => {
               {isAuthenticated ? (
                 <MenuItem onClick={handleLogout}>
                   <AccountCircleIcon sx={{ mr: 1 }} />
-                  Logout
+                  Sair
                 </MenuItem>
               ) : (
                 <>
                   <MenuItem
                     component={RouterLink}
                     to="/login"
-                    onClick={handleMobileMenuClose}
+                    onClick={handleFecharMenuMobile}
                   >
-                    Login
+                    Entrar
                   </MenuItem>
                   <MenuItem
                     component={RouterLink}
                     to="/register"
-                    onClick={handleMobileMenuClose}
+                    onClick={handleFecharMenuMobile}
                   >
-                    Register
+                    Cadastrar
                   </MenuItem>
                 </>
               )}
@@ -126,7 +126,7 @@ const Navigation: React.FC = () => {
                   startIcon={<DashboardIcon />}
                   sx={{ mr: 2 }}
                 >
-                  Dashboard
+                  Painel
                 </Button>
                 <Button
                   color="inherit"
@@ -135,7 +135,7 @@ const Navigation: React.FC = () => {
                   startIcon={<PeopleIcon />}
                   sx={{ mr: 2 }}
                 >
-                  Users
+                  Usuários
                 </Button>
                 <Button
                   color="inherit"
@@ -154,7 +154,7 @@ const Navigation: React.FC = () => {
                 onClick={logout}
                 startIcon={<AccountCircleIcon />}
               >
-                Logout
+                Sair
               </Button>
             ) : (
               <>
@@ -164,14 +164,14 @@ const Navigation: React.FC = () => {
                   to="/login"
                   sx={{ mr: 2 }}
                 >
-                  Login
+                  Entrar
                 </Button>
                 <Button
                   color="inherit"
                   component={RouterLink}
                   to="/register"
                 >
-                  Register
+                  Cadastrar
                 </Button>
               </>
             )}
@@ -182,4 +182,4 @@ const Navigation: React.FC = () => {
   );
 };
 
-export default Navigation; 
+export default Navegacao; 

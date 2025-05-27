@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>{{reportType}} Report: {{reportName}}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório {{reportType}}: {{reportName}}</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,12 +12,15 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .header {
       background-color: #f8f9fa;
       padding: 20px;
       border-radius: 5px;
       margin-bottom: 20px;
+      border: 1px solid #dee2e6;
     }
     .content {
       background-color: #ffffff;
@@ -37,31 +42,45 @@
       text-decoration: none;
       border-radius: 5px;
       margin-top: 20px;
+      text-align: center;
+    }
+    @media only screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .header, .content {
+        padding: 15px;
+      }
+      .button {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>{{reportType}} Report</h1>
+  <div class="header" role="banner">
+    <h1>Relatório {{reportType}}</h1>
     <p>{{reportName}}</p>
   </div>
 
-  <div class="content">
-    <p>Hello,</p>
-    <p>Your requested {{reportType}} report has been generated and is attached to this email.</p>
-    <p>Report Details:</p>
+  <div class="content" role="main">
+    <p>Olá,</p>
+    <p>O relatório {{reportType}} solicitado foi gerado e está anexado a este e-mail.</p>
+    <p>Detalhes do Relatório:</p>
     <ul>
-      <li>Type: {{reportType}}</li>
-      <li>Name: {{reportName}}</li>
-      <li>Generated: {{generatedAt}}</li>
+      <li>Tipo: {{reportType}}</li>
+      <li>Nome: {{reportName}}</li>
+      <li>Gerado em: {{generatedAt}}</li>
     </ul>
-    <p>You can find the report attached to this email.</p>
-    <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+    <p>Você pode encontrar o relatório anexado a este e-mail.</p>
+    <p>Se você tiver alguma dúvida ou precisar de ajuda, não hesite em nos contatar.</p>
   </div>
 
-  <div class="footer">
-    <p>This is an automated message. Please do not reply to this email.</p>
-    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  <div class="footer" role="contentinfo">
+    <p>Esta é uma mensagem automática. Por favor, não responda a este e-mail.</p>
+    <p>&copy; {{currentYear}} Controle AI Vendas. Todos os direitos reservados.</p>
   </div>
 </body>
 </html> 

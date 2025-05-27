@@ -1,25 +1,14 @@
 import Bull from 'bull';
+import { QueueConfig } from '../config/queue.config';
+import { Notification, NotificationOptions } from '../types/notification';
 import { logger } from '../utils/logger';
-import { NotificationService, Notification, NotificationType } from './notification.service';
+import { NotificationService } from './notification.service';
 import { AuditService } from './audit.service';
 import { AuditAction, EntityType } from '../types/audit';
 
-export interface QueueConfig {
-  redis: {
-    host: string;
-    port: number;
-    password?: string;
-  };
-  prefix?: string;
-}
-
-export interface QueueJob {
+interface QueueJob {
   notification: Notification;
-  attempts?: number;
-  backoff?: {
-    type: 'fixed' | 'exponential';
-    delay: number;
-  };
+  options: NotificationOptions;
 }
 
 export class NotificationQueueService {
@@ -28,318 +17,138 @@ export class NotificationQueueService {
   private auditService: AuditService;
 
   constructor(config: QueueConfig, notificationService: NotificationService) {
-    this.queue = new Bull('notifications', {
-      redis: config.redis,
-      prefix: config.prefix || 'notification-queue',
+    this.notificationService = notificationService;
+    this.auditService = new AuditService();
+    this.queue = new Bull(config.queueName, {
+      redis: {
+        host: config.redis.host,
+        port: config.redis.port,
+        password: config.redis.password,
+        db: config.redis.db
+      },
       defaultJobOptions: {
-        attempts: 3,
+        attempts: config.maxRetries,
         backoff: {
           type: 'exponential',
-          delay: 1000
+          delay: config.retryDelay
         },
         removeOnComplete: true,
         removeOnFail: false
       }
     });
 
-    this.notificationService = notificationService;
-    this.auditService = new AuditService();
-
-    this.setupQueueHandlers();
+    this.initializeQueue();
   }
 
-  private setupQueueHandlers(): void {
+  private initializeQueue(): void {
     // Process jobs
-    this.queue.process(async (job) => {
-      const { notification } = job.data;
-      logger.info('Processing notification job:', {
-        jobId: job.id,
-        notificationId: notification.id,
-        type: notification.type
-      });
-
+    this.queue.process(this.config.concurrency, async (job) => {
       try {
-        await this.notificationService.sendUserNotification(
-          notification.userId,
-          notification.subject,
-          notification.content,
-          {
-            type: notification.type,
-            priority: notification.priority,
-            metadata: notification.metadata
-          }
-        );
-
-        // Log successful processing
-        await this.auditService.logAction({
-          action: AuditAction.UPDATE,
-          entityType: EntityType.NOTIFICATION,
-          entityId: notification.id,
-          userId: 'system',
-          details: `Successfully processed notification job ${job.id}`,
-          status: 'success'
-        });
-
-        return { success: true };
-      } catch (error: unknown) {
+        const { notification, options } = job.data;
+        await this.notificationService.createNotification(options);
+        logger.info(`Processed notification ${notification.id} from queue`);
+      } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        logger.error('Error processing notification job:', {
-          jobId: job.id,
-          error: errorMessage
-        });
-
-        // Log failed processing
-        await this.auditService.logAction({
-          action: AuditAction.UPDATE,
-          entityType: EntityType.NOTIFICATION,
-          entityId: notification.id,
-          userId: 'system',
-          details: `Failed to process notification job ${job.id}: ${errorMessage}`,
-          status: 'error'
-        });
-
+        logger.error(`Failed to process notification from queue: ${errorMessage}`);
         throw error;
       }
     });
 
-    // Handle completed jobs
+    // Handle events
     this.queue.on('completed', (job) => {
-      logger.info('Notification job completed:', {
-        jobId: job.id,
-        notificationId: job.data.notification.id
-      });
+      logger.info(`Job ${job.id} completed successfully`);
     });
 
-    // Handle failed jobs
     this.queue.on('failed', (job, error) => {
-      logger.error('Notification job failed:', {
-        jobId: job?.id,
-        notificationId: job?.data.notification.id,
-        error: error.message
-      });
+      logger.error(`Job ${job?.id} failed:`, error);
     });
 
-    // Handle stalled jobs
     this.queue.on('stalled', (job) => {
-      logger.warn('Notification job stalled:', {
-        jobId: job.id,
-        notificationId: job.data.notification.id
-      });
+      logger.warn(`Job ${job.id} stalled`);
+    });
+
+    this.queue.on('error', (error) => {
+      logger.error('Queue error:', error);
     });
   }
 
-  async addToQueue(notification: Notification, options?: {
-    attempts?: number;
-    backoff?: {
-      type: 'fixed' | 'exponential';
-      delay: number;
-    };
-  }): Promise<Bull.Job<QueueJob>> {
+  public async addToQueue(notification: Notification, options: NotificationOptions): Promise<void> {
     try {
-      const job = await this.queue.add(
-        { notification },
-        {
-          attempts: options?.attempts,
-          backoff: options?.backoff
-        }
-      );
-
-      // Log job creation
-      await this.auditService.logAction({
-        action: AuditAction.CREATE,
-        entityType: EntityType.NOTIFICATION,
-        entityId: notification.id,
-        userId: 'system',
-        details: `Added notification to queue with job ID ${job.id}`,
-        status: 'success'
-      });
-
-      logger.info('Added notification to queue:', {
-        jobId: job.id,
-        notificationId: notification.id,
-        type: notification.type
-      });
-
-      return job;
-    } catch (error: unknown) {
+      await this.queue.add({ notification, options });
+      logger.info(`Added notification ${notification.id} to queue`);
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error adding notification to queue:', error);
-
-      // Log failed job creation
-      await this.auditService.logAction({
-        action: AuditAction.CREATE,
-        entityType: EntityType.NOTIFICATION,
-        entityId: notification.id,
-        userId: 'system',
-        details: `Failed to add notification to queue: ${errorMessage}`,
-        status: 'error'
-      });
-
-      throw new Error(`Failed to add notification to queue: ${errorMessage}`);
+      logger.error(`Failed to add notification to queue: ${errorMessage}`);
+      throw error;
     }
   }
 
-  async getJobStatus(jobId: string): Promise<{
-    status: Bull.JobStatus;
-    attempts: number;
-    error?: string;
-  }> {
-    try {
-      const job = await this.queue.getJob(jobId);
-      if (!job) {
-        throw new Error(`Job not found: ${jobId}`);
-      }
-
-      const state = await job.getState();
-      const attempts = job.attemptsMade;
-      const error = job.failedReason;
-
-      return {
-        status: state,
-        attempts,
-        error
-      };
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error getting job status:', error);
-      throw new Error(`Failed to get job status: ${errorMessage}`);
-    }
-  }
-
-  async retryJob(jobId: string): Promise<void> {
-    try {
-      const job = await this.queue.getJob(jobId);
-      if (!job) {
-        throw new Error(`Job not found: ${jobId}`);
-      }
-
-      await job.retry();
-
-      // Log job retry
-      await this.auditService.logAction({
-        action: AuditAction.UPDATE,
-        entityType: EntityType.NOTIFICATION,
-        entityId: job.data.notification.id,
-        userId: 'system',
-        details: `Retrying notification job ${jobId}`,
-        status: 'success'
-      });
-
-      logger.info('Retrying notification job:', {
-        jobId,
-        notificationId: job.data.notification.id
-      });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error retrying job:', error);
-
-      // Log failed retry
-      await this.auditService.logAction({
-        action: AuditAction.UPDATE,
-        entityType: EntityType.NOTIFICATION,
-        entityId: 'unknown',
-        userId: 'system',
-        details: `Failed to retry notification job ${jobId}: ${errorMessage}`,
-        status: 'error'
-      });
-
-      throw new Error(`Failed to retry job: ${errorMessage}`);
-    }
-  }
-
-  async removeJob(jobId: string): Promise<void> {
-    try {
-      const job = await this.queue.getJob(jobId);
-      if (!job) {
-        throw new Error(`Job not found: ${jobId}`);
-      }
-
-      await job.remove();
-
-      // Log job removal
-      await this.auditService.logAction({
-        action: AuditAction.DELETE,
-        entityType: EntityType.NOTIFICATION,
-        entityId: job.data.notification.id,
-        userId: 'system',
-        details: `Removed notification job ${jobId}`,
-        status: 'success'
-      });
-
-      logger.info('Removed notification job:', {
-        jobId,
-        notificationId: job.data.notification.id
-      });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error removing job:', error);
-
-      // Log failed removal
-      await this.auditService.logAction({
-        action: AuditAction.DELETE,
-        entityType: EntityType.NOTIFICATION,
-        entityId: 'unknown',
-        userId: 'system',
-        details: `Failed to remove notification job ${jobId}: ${errorMessage}`,
-        status: 'error'
-      });
-
-      throw new Error(`Failed to remove job: ${errorMessage}`);
-    }
-  }
-
-  async getQueueStats(): Promise<{
+  public async getQueueStatus(): Promise<{
     waiting: number;
     active: number;
     completed: number;
     failed: number;
     delayed: number;
-    paused: number;
   }> {
-    try {
-      const [waiting, active, completed, failed, delayed, paused] = await Promise.all([
-        this.queue.getWaitingCount(),
-        this.queue.getActiveCount(),
-        this.queue.getCompletedCount(),
-        this.queue.getFailedCount(),
-        this.queue.getDelayedCount(),
-        this.queue.getPausedCount()
-      ]);
+    const [waiting, active, completed, failed, delayed] = await Promise.all([
+      this.queue.getWaitingCount(),
+      this.queue.getActiveCount(),
+      this.queue.getCompletedCount(),
+      this.queue.getFailedCount(),
+      this.queue.getDelayedCount()
+    ]);
 
-      return {
-        waiting,
-        active,
-        completed,
-        failed,
-        delayed,
-        paused
-      };
-    } catch (error: unknown) {
+    return {
+      waiting,
+      active,
+      completed,
+      failed,
+      delayed
+    };
+  }
+
+  public async cleanQueue(): Promise<void> {
+    try {
+      await this.queue.clean(0, 'completed');
+      await this.queue.clean(0, 'failed');
+      logger.info('Queue cleaned successfully');
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error getting queue stats:', error);
-      throw new Error(`Failed to get queue stats: ${errorMessage}`);
+      logger.error(`Failed to clean queue: ${errorMessage}`);
+      throw error;
     }
   }
 
-  async pauseQueue(): Promise<void> {
+  public async pauseQueue(): Promise<void> {
     try {
       await this.queue.pause();
-      logger.info('Notification queue paused');
-    } catch (error: unknown) {
+      logger.info('Queue paused');
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error pausing queue:', error);
-      throw new Error(`Failed to pause queue: ${errorMessage}`);
+      logger.error(`Failed to pause queue: ${errorMessage}`);
+      throw error;
     }
   }
 
-  async resumeQueue(): Promise<void> {
+  public async resumeQueue(): Promise<void> {
     try {
       await this.queue.resume();
-      logger.info('Notification queue resumed');
-    } catch (error: unknown) {
+      logger.info('Queue resumed');
+    } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('Error resuming queue:', error);
-      throw new Error(`Failed to resume queue: ${errorMessage}`);
+      logger.error(`Failed to resume queue: ${errorMessage}`);
+      throw error;
+    }
+  }
+
+  public async closeQueue(): Promise<void> {
+    try {
+      await this.queue.close();
+      logger.info('Queue closed');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to close queue: ${errorMessage}`);
+      throw error;
     }
   }
 } 

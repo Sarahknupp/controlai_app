@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createRateLimiter, defaultRateLimiter, authRateLimiter } from '../rateLimit';
+import { createRateLimiter, authRateLimiter, apiRateLimiter, publicRateLimiter } from '../rateLimit';
 
 describe('Rate Limiter Middleware', () => {
   let mockRequest: Partial<Request>;
@@ -31,16 +31,16 @@ describe('Rate Limiter Middleware', () => {
       // First request
       limiter(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(nextFunction).toHaveBeenCalledWith();
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Limit', '2');
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Remaining', '1');
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Limit', 2);
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Remaining', 1);
       nextFunction.mockClear();
       setHeaderMock.mockClear();
 
       // Second request
       limiter(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(nextFunction).toHaveBeenCalledWith();
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Limit', '2');
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Remaining', '0');
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Limit', 2);
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Remaining', 0);
     });
 
     it('should block requests exceeding limit', () => {
@@ -58,7 +58,7 @@ describe('Rate Limiter Middleware', () => {
       expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
       const error = nextFunction.mock.calls[0][0];
       expect(error.status).toBe(429);
-      expect(error.message).toBe('Too many requests, please try again later.');
+      expect(error.message).toBe('Too many requests from this IP, please try again later');
       expect(setHeaderMock).toHaveBeenCalledWith('Retry-After', expect.any(String));
     });
 
@@ -78,7 +78,7 @@ describe('Rate Limiter Middleware', () => {
       // Should allow new requests after window expires
       limiter(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(nextFunction).toHaveBeenCalledWith();
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Remaining', '1');
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Remaining', 1);
     });
 
     it('should handle missing IP address', () => {
@@ -93,29 +93,30 @@ describe('Rate Limiter Middleware', () => {
 
       limiter(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(nextFunction).toHaveBeenCalledWith();
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Limit', '2');
-      expect(setHeaderMock).toHaveBeenCalledWith('X-RateLimit-Remaining', '1');
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Limit', 2);
+      expect(setHeaderMock).toHaveBeenCalledWith('RateLimit-Remaining', 1);
     });
   });
 
-  describe('defaultRateLimiter', () => {
+  describe('apiRateLimiter', () => {
     it('should allow 100 requests per 15 minutes', () => {
       for (let i = 0; i < 100; i++) {
-        defaultRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
+        apiRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
         expect(nextFunction).toHaveBeenCalledWith();
         nextFunction.mockClear();
       }
 
       // 101st request should be blocked
-      defaultRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
+      apiRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
       expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
       const error = nextFunction.mock.calls[0][0];
       expect(error.status).toBe(429);
+      expect(error.message).toBe('Too many requests, please try again later');
     });
   });
 
   describe('authRateLimiter', () => {
-    it('should allow 5 requests per 15 minutes', () => {
+    it('should allow 5 requests per hour', () => {
       for (let i = 0; i < 5; i++) {
         authRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
         expect(nextFunction).toHaveBeenCalledWith();
@@ -127,7 +128,24 @@ describe('Rate Limiter Middleware', () => {
       expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
       const error = nextFunction.mock.calls[0][0];
       expect(error.status).toBe(429);
-      expect(error.message).toBe('Too many login attempts, please try again later.');
+      expect(error.message).toBe('Too many login attempts, please try again later');
+    });
+  });
+
+  describe('publicRateLimiter', () => {
+    it('should allow 1000 requests per hour', () => {
+      for (let i = 0; i < 1000; i++) {
+        publicRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
+        expect(nextFunction).toHaveBeenCalledWith();
+        nextFunction.mockClear();
+      }
+
+      // 1001st request should be blocked
+      publicRateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);
+      expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+      const error = nextFunction.mock.calls[0][0];
+      expect(error.status).toBe(429);
+      expect(error.message).toBe('Too many requests, please try again later');
     });
   });
 }); 

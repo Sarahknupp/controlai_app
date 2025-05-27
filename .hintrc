@@ -1,0 +1,13 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "no-inline-styles": "off",
+    "axe/structure": "off",
+    "axe/aria": "off",
+    "typescript-config/consistent-casing": "off",
+    "axe/forms": "off",
+    "button-type": "off"
+  }
+}

@@ -1,134 +1,107 @@
 import { body, query, param } from 'express-validator';
-import { PaymentMethod } from '../../models/Sale';
+import { validateRequest } from './validate';
 
+// Validações para criação de venda
 export const createSaleValidation = [
   body('customer')
     .isMongoId()
-    .withMessage('Customer ID is required and must be valid'),
-
+    .withMessage('ID do cliente inválido'),
+  
+  body('seller')
+    .isMongoId()
+    .withMessage('ID do vendedor inválido'),
+  
   body('items')
     .isArray({ min: 1 })
-    .withMessage('At least one item is required'),
-
+    .withMessage('A venda deve ter pelo menos um item'),
+  
   body('items.*.product')
     .isMongoId()
-    .withMessage('Product ID must be valid'),
-
+    .withMessage('ID do produto inválido'),
+  
   body('items.*.quantity')
     .isInt({ min: 1 })
-    .withMessage('Quantity must be at least 1'),
-
+    .withMessage('Quantidade deve ser maior que zero'),
+  
   body('items.*.price')
     .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
-
+    .withMessage('Preço deve ser maior ou igual a zero'),
+  
   body('payments')
     .isArray({ min: 1 })
-    .withMessage('At least one payment is required'),
-
+    .withMessage('A venda deve ter pelo menos uma forma de pagamento'),
+  
   body('payments.*.method')
-    .isIn(Object.values(PaymentMethod))
-    .withMessage('Invalid payment method'),
-
+    .isIn(['cash', 'credit_card', 'debit_card', 'pix'])
+    .withMessage('Método de pagamento inválido'),
+  
   body('payments.*.amount')
-    .isFloat({ min: 0.01 })
-    .withMessage('Payment amount must be greater than 0'),
-
-  body('subtotal')
     .isFloat({ min: 0 })
-    .withMessage('Subtotal must be a positive number'),
-
-  body('total')
-    .isFloat({ min: 0 })
-    .withMessage('Total must be a positive number'),
-
-  body('tax')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Tax must be a positive number'),
-
-  body('discount')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Discount must be a positive number')
+    .withMessage('Valor do pagamento deve ser maior ou igual a zero'),
+  
+  validateRequest
 ];
 
+// Validações para listagem de vendas
 export const getSalesValidation = [
   query('startDate')
     .optional()
     .isISO8601()
-    .withMessage('Start date must be a valid ISO date'),
-
+    .withMessage('Data inicial inválida'),
+  
   query('endDate')
     .optional()
     .isISO8601()
-    .withMessage('End date must be a valid ISO date'),
-
-  query('status')
-    .optional()
-    .isString()
-    .withMessage('Status must be a string'),
-
+    .withMessage('Data final inválida'),
+  
   query('customer')
     .optional()
     .isMongoId()
-    .withMessage('Customer ID must be valid'),
-
+    .withMessage('ID do cliente inválido'),
+  
   query('seller')
     .optional()
     .isMongoId()
-    .withMessage('Seller ID must be valid'),
-
-  query('minAmount')
+    .withMessage('ID do vendedor inválido'),
+  
+  query('status')
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Minimum amount must be a positive number'),
-
-  query('maxAmount')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Maximum amount must be a positive number'),
-
+    .isIn(['pending', 'completed', 'cancelled'])
+    .withMessage('Status inválido'),
+  
   query('page')
     .optional()
     .isInt({ min: 1 })
-    .withMessage('Page must be a positive integer'),
-
+    .withMessage('Página deve ser maior que zero'),
+  
   query('limit')
     .optional()
     .isInt({ min: 1, max: 100 })
-    .withMessage('Limit must be between 1 and 100')
+    .withMessage('Limite deve estar entre 1 e 100'),
+  
+  validateRequest
 ];
 
+// Validações para obtenção de uma venda específica
+export const getSaleValidation = [
+  param('id')
+    .isMongoId()
+    .withMessage('ID da venda inválido'),
+  
+  validateRequest
+];
+
+// Validações para cancelamento de venda
 export const cancelSaleValidation = [
   param('id')
     .isMongoId()
-    .withMessage('Sale ID must be valid'),
-
+    .withMessage('ID da venda inválido'),
+  
   body('reason')
     .isString()
     .trim()
-    .notEmpty()
-    .withMessage('Cancellation reason is required')
-];
-
-export const addPaymentValidation = [
-  param('id')
-    .isMongoId()
-    .withMessage('Sale ID must be valid'),
-
-  body('method')
-    .isIn(Object.values(PaymentMethod))
-    .withMessage('Invalid payment method'),
-
-  body('amount')
-    .isFloat({ min: 0.01 })
-    .withMessage('Payment amount must be greater than 0'),
-
-  body('reference')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Payment reference must be a non-empty string')
+    .isLength({ min: 3, max: 500 })
+    .withMessage('Motivo do cancelamento deve ter entre 3 e 500 caracteres'),
+  
+  validateRequest
 ]; 

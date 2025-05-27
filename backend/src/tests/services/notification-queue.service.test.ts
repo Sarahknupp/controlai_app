@@ -1,7 +1,8 @@
 import Bull from 'bull';
 import { NotificationQueueService } from '../../services/notification-queue.service';
-import { NotificationService, Notification, NotificationType, NotificationPriority } from '../../services/notification.service';
-import { AuditService } from '../../services/audit.service';
+import { NotificationService } from '../../services/notification.service';
+import { NotificationType, NotificationPriority, Notification } from '../../types/notification';
+import { QueueConfig } from '../../config/queue.config';
 
 // Mock dependencies
 jest.mock('bull');
@@ -11,292 +12,255 @@ jest.mock('../../services/audit.service');
 describe('NotificationQueueService', () => {
   let queueService: NotificationQueueService;
   let notificationService: jest.Mocked<NotificationService>;
-  let auditService: jest.Mocked<AuditService>;
   let mockQueue: jest.Mocked<Bull.Queue>;
-
-  const mockConfig = {
-    redis: {
-      host: 'localhost',
-      port: 6379
-    },
-    prefix: 'test-queue'
-  };
-
-  const mockNotification: Notification = {
-    id: 'notification123',
-    userId: 'user123',
-    type: NotificationType.EMAIL,
-    priority: NotificationPriority.MEDIUM,
-    subject: 'Test Subject',
-    content: 'Test Content',
-    read: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+  let mockConfig: QueueConfig;
 
   beforeEach(() => {
     // Clear all mocks
     jest.clearAllMocks();
 
-    // Initialize mocked services
-    notificationService = new NotificationService(
-      {} as any,
-      {} as any,
-      {} as any,
-      {} as any
-    ) as jest.Mocked<NotificationService>;
-    auditService = new AuditService() as jest.Mocked<AuditService>;
+    // Mock config
+    mockConfig = {
+      redis: {
+        host: 'localhost',
+        port: 6379,
+        password: 'password',
+        db: 0
+      },
+      queueName: 'notifications',
+      maxRetries: 3,
+      retryDelay: 1000,
+      concurrency: 5
+    };
 
-    // Mock Bull Queue
+    // Mock Bull queue
     mockQueue = {
       process: jest.fn(),
       add: jest.fn(),
-      getJob: jest.fn(),
       getWaitingCount: jest.fn(),
       getActiveCount: jest.fn(),
       getCompletedCount: jest.fn(),
       getFailedCount: jest.fn(),
       getDelayedCount: jest.fn(),
-      getPausedCount: jest.fn(),
+      clean: jest.fn(),
       pause: jest.fn(),
       resume: jest.fn(),
+      close: jest.fn(),
       on: jest.fn()
-    } as any;
+    } as unknown as jest.Mocked<Bull.Queue>;
 
     (Bull as jest.Mock).mockImplementation(() => mockQueue);
 
+    // Initialize service
+    notificationService = {
+      sendNotification: jest.fn(),
+      createNotification: jest.fn()
+    } as unknown as jest.Mocked<NotificationService>;
+    
     queueService = new NotificationQueueService(mockConfig, notificationService);
   });
 
   describe('addToQueue', () => {
-    it('should add notification to queue successfully', async () => {
-      const mockJob = {
-        id: 'job123',
-        data: { notification: mockNotification }
+    it('should add notification to queue', async () => {
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
-      mockQueue.add.mockResolvedValueOnce(mockJob);
+      const options = {
+        type: notification.type,
+        subject: notification.subject,
+        content: notification.content,
+        recipient: notification.recipient,
+        priority: notification.priority
+      };
 
-      const job = await queueService.addToQueue(mockNotification);
+      mockQueue.add.mockResolvedValueOnce({} as Bull.Job);
 
-      expect(job).toBeDefined();
-      expect(mockQueue.add).toHaveBeenCalledWith(
-        { notification: mockNotification },
-        undefined
-      );
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'CREATE',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'success'
+      await queueService.addToQueue(notification, options);
+
+      expect(mockQueue.add).toHaveBeenCalledWith({
+        notification,
+        options
       });
     });
 
-    it('should handle queue errors', async () => {
+    it('should handle queue error', async () => {
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      const options = {
+        type: notification.type,
+        subject: notification.subject,
+        content: notification.content,
+        recipient: notification.recipient,
+        priority: notification.priority
+      };
+
       mockQueue.add.mockRejectedValueOnce(new Error('Queue error'));
 
-      await expect(
-        queueService.addToQueue(mockNotification)
-      ).rejects.toThrow('Failed to add notification to queue: Queue error');
-
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'CREATE',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'error'
-      });
+      await expect(queueService.addToQueue(notification, options)).rejects.toThrow('Queue error');
     });
   });
 
-  describe('getJobStatus', () => {
-    it('should return job status successfully', async () => {
-      const jobId = 'job123';
-      const mockJob = {
-        id: jobId,
-        getState: jest.fn().mockResolvedValueOnce('completed'),
-        attemptsMade: 1,
-        failedReason: null
-      };
+  describe('getQueueStatus', () => {
+    it('should return queue status', async () => {
+      mockQueue.getWaitingCount.mockResolvedValueOnce(5);
+      mockQueue.getActiveCount.mockResolvedValueOnce(2);
+      mockQueue.getCompletedCount.mockResolvedValueOnce(10);
+      mockQueue.getFailedCount.mockResolvedValueOnce(1);
+      mockQueue.getDelayedCount.mockResolvedValueOnce(0);
 
-      mockQueue.getJob.mockResolvedValueOnce(mockJob);
-
-      const status = await queueService.getJobStatus(jobId);
+      const status = await queueService.getQueueStatus();
 
       expect(status).toEqual({
-        status: 'completed',
-        attempts: 1
-      });
-    });
-
-    it('should handle non-existent job', async () => {
-      const jobId = 'non_existent_job';
-      mockQueue.getJob.mockResolvedValueOnce(null);
-
-      await expect(
-        queueService.getJobStatus(jobId)
-      ).rejects.toThrow(`Job not found: ${jobId}`);
-    });
-  });
-
-  describe('retryJob', () => {
-    it('should retry job successfully', async () => {
-      const jobId = 'job123';
-      const mockJob = {
-        id: jobId,
-        data: { notification: mockNotification },
-        retry: jest.fn().mockResolvedValueOnce(undefined)
-      };
-
-      mockQueue.getJob.mockResolvedValueOnce(mockJob);
-
-      await queueService.retryJob(jobId);
-
-      expect(mockJob.retry).toHaveBeenCalled();
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'UPDATE',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'success'
-      });
-    });
-
-    it('should handle retry errors', async () => {
-      const jobId = 'job123';
-      const mockJob = {
-        id: jobId,
-        retry: jest.fn().mockRejectedValueOnce(new Error('Retry failed'))
-      };
-
-      mockQueue.getJob.mockResolvedValueOnce(mockJob);
-
-      await expect(
-        queueService.retryJob(jobId)
-      ).rejects.toThrow('Failed to retry job: Retry failed');
-
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'UPDATE',
-        entityType: 'NOTIFICATION',
-        entityId: 'unknown',
-        userId: 'system',
-        details: expect.any(String),
-        status: 'error'
-      });
-    });
-  });
-
-  describe('removeJob', () => {
-    it('should remove job successfully', async () => {
-      const jobId = 'job123';
-      const mockJob = {
-        id: jobId,
-        data: { notification: mockNotification },
-        remove: jest.fn().mockResolvedValueOnce(undefined)
-      };
-
-      mockQueue.getJob.mockResolvedValueOnce(mockJob);
-
-      await queueService.removeJob(jobId);
-
-      expect(mockJob.remove).toHaveBeenCalled();
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'DELETE',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'success'
-      });
-    });
-
-    it('should handle removal errors', async () => {
-      const jobId = 'job123';
-      const mockJob = {
-        id: jobId,
-        remove: jest.fn().mockRejectedValueOnce(new Error('Remove failed'))
-      };
-
-      mockQueue.getJob.mockResolvedValueOnce(mockJob);
-
-      await expect(
-        queueService.removeJob(jobId)
-      ).rejects.toThrow('Failed to remove job: Remove failed');
-
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'DELETE',
-        entityType: 'NOTIFICATION',
-        entityId: 'unknown',
-        userId: 'system',
-        details: expect.any(String),
-        status: 'error'
-      });
-    });
-  });
-
-  describe('getQueueStats', () => {
-    it('should return queue statistics', async () => {
-      const mockStats = {
         waiting: 5,
         active: 2,
         completed: 10,
         failed: 1,
-        delayed: 0,
-        paused: 0
-      };
-
-      mockQueue.getWaitingCount.mockResolvedValueOnce(mockStats.waiting);
-      mockQueue.getActiveCount.mockResolvedValueOnce(mockStats.active);
-      mockQueue.getCompletedCount.mockResolvedValueOnce(mockStats.completed);
-      mockQueue.getFailedCount.mockResolvedValueOnce(mockStats.failed);
-      mockQueue.getDelayedCount.mockResolvedValueOnce(mockStats.delayed);
-      mockQueue.getPausedCount.mockResolvedValueOnce(mockStats.paused);
-
-      const stats = await queueService.getQueueStats();
-
-      expect(stats).toEqual(mockStats);
-    });
-
-    it('should handle stats retrieval errors', async () => {
-      mockQueue.getWaitingCount.mockRejectedValueOnce(new Error('Stats error'));
-
-      await expect(
-        queueService.getQueueStats()
-      ).rejects.toThrow('Failed to get queue stats: Stats error');
+        delayed: 0
+      });
     });
   });
 
-  describe('queue management', () => {
-    it('should pause queue successfully', async () => {
+  describe('cleanQueue', () => {
+    it('should clean completed and failed jobs', async () => {
+      mockQueue.clean.mockResolvedValueOnce([]);
+      mockQueue.clean.mockResolvedValueOnce([]);
+
+      await queueService.cleanQueue();
+
+      expect(mockQueue.clean).toHaveBeenCalledWith(0, 'completed');
+      expect(mockQueue.clean).toHaveBeenCalledWith(0, 'failed');
+    });
+
+    it('should handle clean error', async () => {
+      mockQueue.clean.mockRejectedValueOnce(new Error('Clean error'));
+
+      await expect(queueService.cleanQueue()).rejects.toThrow('Clean error');
+    });
+  });
+
+  describe('pauseQueue', () => {
+    it('should pause queue', async () => {
+      mockQueue.pause.mockResolvedValueOnce();
+
       await queueService.pauseQueue();
 
       expect(mockQueue.pause).toHaveBeenCalled();
     });
 
-    it('should resume queue successfully', async () => {
+    it('should handle pause error', async () => {
+      mockQueue.pause.mockRejectedValueOnce(new Error('Pause error'));
+
+      await expect(queueService.pauseQueue()).rejects.toThrow('Pause error');
+    });
+  });
+
+  describe('resumeQueue', () => {
+    it('should resume queue', async () => {
+      mockQueue.resume.mockResolvedValueOnce();
+
       await queueService.resumeQueue();
 
       expect(mockQueue.resume).toHaveBeenCalled();
     });
 
-    it('should handle pause errors', async () => {
-      mockQueue.pause.mockRejectedValueOnce(new Error('Pause failed'));
+    it('should handle resume error', async () => {
+      mockQueue.resume.mockRejectedValueOnce(new Error('Resume error'));
 
-      await expect(
-        queueService.pauseQueue()
-      ).rejects.toThrow('Failed to pause queue: Pause failed');
+      await expect(queueService.resumeQueue()).rejects.toThrow('Resume error');
+    });
+  });
+
+  describe('closeQueue', () => {
+    it('should close queue', async () => {
+      mockQueue.close.mockResolvedValueOnce();
+
+      await queueService.closeQueue();
+
+      expect(mockQueue.close).toHaveBeenCalled();
     });
 
-    it('should handle resume errors', async () => {
-      mockQueue.resume.mockRejectedValueOnce(new Error('Resume failed'));
+    it('should handle close error', async () => {
+      mockQueue.close.mockRejectedValueOnce(new Error('Close error'));
 
-      await expect(
-        queueService.resumeQueue()
-      ).rejects.toThrow('Failed to resume queue: Resume failed');
+      await expect(queueService.closeQueue()).rejects.toThrow('Close error');
+    });
+  });
+
+  describe('queue events', () => {
+    it('should handle completed event', () => {
+      const job = { id: 'job-1' };
+      const eventHandler = mockQueue.on.mock.calls.find(
+        call => call[0] === Bull.JobStatus.COMPLETED
+      )?.[1] as (job: Bull.Job) => void;
+
+      if (eventHandler) {
+        eventHandler(job as Bull.Job);
+      }
+
+      // Verify event handler was registered
+      expect(mockQueue.on).toHaveBeenCalledWith(Bull.JobStatus.COMPLETED, expect.any(Function));
+    });
+
+    it('should handle failed event', () => {
+      const job = { id: 'job-1' };
+      const error = new Error('Job failed');
+      const eventHandler = mockQueue.on.mock.calls.find(
+        call => call[0] === Bull.JobStatus.FAILED
+      )?.[1] as (job: Bull.Job, error: Error) => void;
+
+      if (eventHandler) {
+        eventHandler(job as Bull.Job, error);
+      }
+
+      // Verify event handler was registered
+      expect(mockQueue.on).toHaveBeenCalledWith(Bull.JobStatus.FAILED, expect.any(Function));
+    });
+
+    it('should handle stalled event', () => {
+      const job = { id: 'job-1' };
+      const eventHandler = mockQueue.on.mock.calls.find(
+        call => call[0] === Bull.JobStatus.STALLED
+      )?.[1] as (job: Bull.Job) => void;
+
+      if (eventHandler) {
+        eventHandler(job as Bull.Job);
+      }
+
+      // Verify event handler was registered
+      expect(mockQueue.on).toHaveBeenCalledWith(Bull.JobStatus.STALLED, expect.any(Function));
+    });
+
+    it('should handle error event', () => {
+      const error = new Error('Queue error');
+      const eventHandler = mockQueue.on.mock.calls.find(
+        call => call[0] === 'error'
+      )?.[1] as (error: Error) => void;
+
+      if (eventHandler) {
+        eventHandler(error);
+      }
+
+      // Verify event handler was registered
+      expect(mockQueue.on).toHaveBeenCalledWith('error', expect.any(Function));
     });
   });
 }); 

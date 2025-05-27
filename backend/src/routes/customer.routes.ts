@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect, authorize } from '../middleware/auth.middleware';
-import { UserRole } from '../models/User';
+import { UserRole } from '../types/user';
 import {
   createCustomer,
   getCustomers,
@@ -9,28 +9,55 @@ import {
   deleteCustomer,
   getCustomerPurchases
 } from '../controllers/customer.controller';
-import { validate } from '../middleware/validation/validate';
-import {
-  createCustomerValidation,
-  getCustomersValidation,
-  updateCustomerValidation,
-  getCustomerPurchasesValidation
-} from '../middleware/validation/customer.validation';
+import { validateRequest } from '../middleware/validation.middleware';
+import { customerValidations } from '../validations/customer.validation';
+import { auditMiddleware } from '../middleware/audit.middleware';
 
 const router = express.Router();
 
-// Protect all routes
+// Todas as rotas requerem autenticação
 router.use(protect);
 
-// Routes accessible by all authenticated users
-router.get('/', validate(getCustomersValidation), getCustomers);
-router.get('/:id', getCustomer);
-router.get('/:id/purchases', validate(getCustomerPurchasesValidation), getCustomerPurchases);
+// Rotas públicas (requerem apenas autenticação)
+router.get('/', validateRequest(customerValidations.filter), getCustomers);
+router.get('/:id', validateRequest(customerValidations.id), getCustomer);
+router.get('/:id/purchases', validateRequest(customerValidations.purchases), getCustomerPurchases);
 
-// Routes accessible only by admin
+// Rotas que requerem permissão de admin
 router.use(authorize(UserRole.ADMIN));
-router.post('/', validate(createCustomerValidation), createCustomer);
-router.put('/:id', validate(updateCustomerValidation), updateCustomer);
-router.delete('/:id', deleteCustomer);
+
+router.post(
+  '/',
+  validateRequest(customerValidations.create),
+  auditMiddleware({
+    action: 'CREATE_CUSTOMER',
+    resource: 'customer',
+    includeBody: true
+  }),
+  createCustomer
+);
+
+router.put(
+  '/:id',
+  validateRequest(customerValidations.update),
+  auditMiddleware({
+    action: 'UPDATE_CUSTOMER',
+    resource: 'customer',
+    includeParams: true,
+    includeBody: true
+  }),
+  updateCustomer
+);
+
+router.delete(
+  '/:id',
+  validateRequest(customerValidations.id),
+  auditMiddleware({
+    action: 'DELETE_CUSTOMER',
+    resource: 'customer',
+    includeParams: true
+  }),
+  deleteCustomer
+);
 
 export default router; 

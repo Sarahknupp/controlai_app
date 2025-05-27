@@ -2,8 +2,8 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { AuditLogComparison } from '../AuditLogComparison';
-import { AuditLog } from '../../../types/audit';
-import { getActionConfig } from '../../../utils/audit';
+import type { AuditLog, AuditAction, EntityType, AuditStatus } from '../../../types/audit';
+import { getActionConfig, getEntityTypeLabel } from '../../../utils/audit';
 import { formatDate } from '../../../utils/date';
 
 // Mock dependencies
@@ -17,44 +17,55 @@ describe('AuditLogComparison', () => {
       action: 'create',
       entityType: 'user',
       entityId: 'user-1',
-      userName: 'User 1',
+      userName: 'John Doe',
       userId: 'user-1',
       ipAddress: '127.0.0.1',
       userAgent: 'Mozilla/5.0',
       createdAt: '2024-01-01T10:00:00Z',
       details: JSON.stringify({
-        name: 'Test Item',
-        status: 'active',
-        value: 100
-      })
+        name: 'John Doe',
+        email: 'john@example.com',
+        role: 'user'
+      }, null, 2)
     },
     {
       id: '2',
       action: 'update',
       entityType: 'user',
       entityId: 'user-1',
-      userName: 'User 2',
-      userId: 'user-2',
+      userName: 'John Doe',
+      userId: 'user-1',
       ipAddress: '127.0.0.1',
       userAgent: 'Mozilla/5.0',
       createdAt: '2024-01-01T11:00:00Z',
       details: JSON.stringify({
-        name: 'Test Item',
-        status: 'inactive',
-        value: 200
-      })
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        role: 'admin'
+      }, null, 2)
     }
   ];
 
   const mockActionConfig = {
-    label: 'Create',
-    color: 'green'
-  };
+    create: { label: 'Create', color: 'green' },
+    update: { label: 'Update', color: 'blue' },
+    delete: { label: 'Delete', color: 'red' },
+    view: { label: 'View', color: 'blue' },
+    login: { label: 'Login', color: 'green' },
+    logout: { label: 'Logout', color: 'orange' },
+    export: { label: 'Export', color: 'purple' },
+    import: { label: 'Import', color: 'cyan' }
+  } as const;
+
+  const mockEntityTypeLabel = 'Usuário';
+
+  const mockOnClose = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     (formatDate as jest.Mock).mockImplementation((date) => date);
-    (getActionConfig as jest.Mock).mockReturnValue(mockActionConfig);
+    (getActionConfig as jest.Mock).mockImplementation((action: AuditAction) => mockActionConfig[action]);
+    (getEntityTypeLabel as jest.Mock).mockReturnValue(mockEntityTypeLabel);
   });
 
   it('should render empty state when no logs are provided', () => {
@@ -62,11 +73,11 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={[]}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    expect(screen.getByText('Nenhum log para comparar')).toBeInTheDocument();
+    expect(screen.getByText('Nenhum log selecionado para comparação')).toBeInTheDocument();
   });
 
   it('should render modal with correct title and info tooltip', () => {
@@ -74,12 +85,12 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    expect(screen.getByText('Comparação de Logs de Auditoria')).toBeInTheDocument();
-    expect(screen.getByTitle('Mostra as alterações entre os logs em ordem cronológica')).toBeInTheDocument();
+    expect(screen.getByText('Comparação de Logs')).toBeInTheDocument();
+    expect(screen.getByText('Visualize as alterações entre os logs selecionados')).toBeInTheDocument();
   });
 
   it('should render timeline with all logs', () => {
@@ -87,14 +98,12 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    mockLogs.forEach(log => {
-      expect(screen.getByText(log.userName)).toBeInTheDocument();
-      expect(screen.getByText(log.createdAt)).toBeInTheDocument();
-    });
+    expect(screen.getByText('2024-01-01T10:00:00Z')).toBeInTheDocument();
+    expect(screen.getByText('2024-01-01T11:00:00Z')).toBeInTheDocument();
   });
 
   it('should render action tags with correct colors', () => {
@@ -102,14 +111,15 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    const tags = screen.getAllByText(mockActionConfig.label);
-    tags.forEach(tag => {
-      expect(tag).toHaveClass(`ant-tag-${mockActionConfig.color}`);
-    });
+    const createTag = screen.getByText('Create');
+    const updateTag = screen.getByText('Update');
+
+    expect(createTag).toHaveClass('ant-tag-green');
+    expect(updateTag).toHaveClass('ant-tag-blue');
   });
 
   it('should render log details correctly', () => {
@@ -117,21 +127,18 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    // Check first log details
     expect(screen.getByText('name')).toBeInTheDocument();
-    expect(screen.getByText('Test Item')).toBeInTheDocument();
-    expect(screen.getByText('status')).toBeInTheDocument();
-    expect(screen.getByText('active')).toBeInTheDocument();
-    expect(screen.getByText('value')).toBeInTheDocument();
-    expect(screen.getByText('100')).toBeInTheDocument();
-
-    // Check second log details
-    expect(screen.getByText('inactive')).toBeInTheDocument();
-    expect(screen.getByText('200')).toBeInTheDocument();
+    expect(screen.getByText('John Doe')).toBeInTheDocument();
+    expect(screen.getByText('email')).toBeInTheDocument();
+    expect(screen.getByText('john@example.com')).toBeInTheDocument();
+    expect(screen.getByText('john.doe@example.com')).toBeInTheDocument();
+    expect(screen.getByText('role')).toBeInTheDocument();
+    expect(screen.getByText('user')).toBeInTheDocument();
+    expect(screen.getByText('admin')).toBeInTheDocument();
   });
 
   it('should highlight changed values between logs', () => {
@@ -139,12 +146,14 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    const changedValues = screen.getAllByTitle('Valor alterado');
-    expect(changedValues).toHaveLength(2); // status and value changed
+    const changedValues = screen.getAllByText(/john\.doe@example\.com|admin/);
+    changedValues.forEach(value => {
+      expect(value).toHaveClass('highlight-change');
+    });
   });
 
   it('should show comparison tooltip for logs after the first one', () => {
@@ -152,19 +161,43 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    const comparisonTooltips = screen.getAllByTitle(/Comparando com log de/);
-    expect(comparisonTooltips).toHaveLength(1); // Only for the second log
+    const tooltips = screen.getAllByText('Comparar com log anterior');
+    expect(tooltips).toHaveLength(mockLogs.length - 1);
   });
 
   it('should handle invalid JSON in details', () => {
     const logsWithInvalidJson: AuditLog[] = [
       {
-        ...mockLogs[0],
+        id: '1',
+        action: 'create',
+        entityType: 'user',
+        entityId: 'user-1',
+        userName: 'John Doe',
+        userId: 'user-1',
+        ipAddress: '127.0.0.1',
+        userAgent: 'Mozilla/5.0',
+        createdAt: '2024-01-01T10:00:00Z',
         details: 'invalid json'
+      },
+      {
+        id: '2',
+        action: 'update',
+        entityType: 'user',
+        entityId: 'user-1',
+        userName: 'John Doe',
+        userId: 'user-1',
+        ipAddress: '127.0.0.1',
+        userAgent: 'Mozilla/5.0',
+        createdAt: '2024-01-01T11:00:00Z',
+        details: JSON.stringify({
+          name: 'John Doe',
+          email: 'john.doe@example.com',
+          role: 'admin'
+        }, null, 2)
       }
     ];
 
@@ -172,7 +205,7 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={logsWithInvalidJson}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
@@ -180,28 +213,49 @@ describe('AuditLogComparison', () => {
   });
 
   it('should call onClose when modal is closed', () => {
-    const onClose = jest.fn();
     render(
       <AuditLogComparison
         logs={mockLogs}
         visible={true}
-        onClose={onClose}
+        onClose={mockOnClose}
       />
     );
 
-    const closeButton = screen.getByRole('button', { name: /close/i });
+    const closeButton = screen.getByRole('button', { name: 'Close' });
     fireEvent.click(closeButton);
 
-    expect(onClose).toHaveBeenCalled();
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
   it('should render object values as JSON strings', () => {
     const logsWithObjectValues: AuditLog[] = [
       {
-        ...mockLogs[0],
+        id: '1',
+        action: 'create',
+        entityType: 'user',
+        entityId: 'user-1',
+        userName: 'John Doe',
+        userId: 'user-1',
+        ipAddress: '127.0.0.1',
+        userAgent: 'Mozilla/5.0',
+        createdAt: '2024-01-01T10:00:00Z',
         details: JSON.stringify({
-          config: { enabled: true, options: ['a', 'b'] }
-        })
+          config: { theme: 'dark', notifications: true }
+        }, null, 2)
+      },
+      {
+        id: '2',
+        action: 'update',
+        entityType: 'user',
+        entityId: 'user-1',
+        userName: 'John Doe',
+        userId: 'user-1',
+        ipAddress: '127.0.0.1',
+        userAgent: 'Mozilla/5.0',
+        createdAt: '2024-01-01T11:00:00Z',
+        details: JSON.stringify({
+          config: { theme: 'light', notifications: false }
+        }, null, 2)
       }
     ];
 
@@ -209,42 +263,44 @@ describe('AuditLogComparison', () => {
       <AuditLogComparison
         logs={logsWithObjectValues}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    expect(screen.getByText('{"enabled":true,"options":["a","b"]}')).toBeInTheDocument();
+    expect(screen.getByText('config')).toBeInTheDocument();
+    expect(screen.getByText(JSON.stringify({ theme: 'dark', notifications: true }, null, 2))).toBeInTheDocument();
+    expect(screen.getByText(JSON.stringify({ theme: 'light', notifications: false }, null, 2))).toBeInTheDocument();
   });
 
   it('should handle multiple logs with different actions', () => {
-    const multipleLogs: AuditLog[] = [
+    const logsWithDifferentActions: AuditLog[] = [
       ...mockLogs,
       {
         id: '3',
         action: 'delete',
         entityType: 'user',
         entityId: 'user-1',
-        userName: 'User 3',
-        userId: 'user-3',
+        userName: 'John Doe',
+        userId: 'user-1',
         ipAddress: '127.0.0.1',
         userAgent: 'Mozilla/5.0',
         createdAt: '2024-01-01T12:00:00Z',
         details: JSON.stringify({
-          name: 'Test Item',
-          status: 'deleted'
-        })
+          reason: 'User requested deletion'
+        }, null, 2)
       }
     ];
 
     render(
       <AuditLogComparison
-        logs={multipleLogs}
+        logs={logsWithDifferentActions}
         visible={true}
-        onClose={() => {}}
+        onClose={mockOnClose}
       />
     );
 
-    expect(screen.getByText('User 3')).toBeInTheDocument();
-    expect(screen.getByText('deleted')).toBeInTheDocument();
+    expect(screen.getByText('Create')).toBeInTheDocument();
+    expect(screen.getByText('Update')).toBeInTheDocument();
+    expect(screen.getByText('Delete')).toBeInTheDocument();
   });
 }); 

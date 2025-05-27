@@ -35,140 +35,140 @@ import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import userService, { CreateUserData, UpdateUserData } from '../services/user.service';
-import { User } from '../types/user.types';
+import { userService } from '../services/user.service';
+import type { DadosAtualizacaoUsuario, DadosCriacaoUsuario, Usuario } from '../types/user.types';
 
-const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
-  const [menuUserId, setMenuUserId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<CreateUserData>>({
+const GerenciamentoUsuarios: React.FC = () => {
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [dialogoAberto, setDialogoAberto] = useState(false);
+  const [usuarioSelecionado, setUsuarioSelecionado] = useState<Usuario | null>(null);
+  const [ancoraMenu, setAncoraMenu] = useState<null | HTMLElement>(null);
+  const [idUsuarioMenu, setIdUsuarioMenu] = useState<string | null>(null);
+  const [dadosFormulario, setDadosFormulario] = useState<Partial<DadosCriacaoUsuario>>({
     email: '',
-    password: '',
-    name: '',
-    role: 'USER'
+    nome: '',
+    papel: 'USUARIO',
+    senha: ''
   });
 
-  const fetchUsers = async () => {
+  const buscarUsuarios = async () => {
     try {
-      setLoading(true);
-      const data = await userService.getUsers();
-      setUsers(data);
-      setError(null);
+      setCarregando(true);
+      const dados = await userService.obterUsuarios();
+      setUsuarios(dados);
+      setErro(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch users');
+      setErro(err instanceof Error ? err.message : 'Falha ao buscar usuários');
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    buscarUsuarios();
   }, []);
 
-  const handleOpenDialog = (user?: User) => {
-    if (user) {
-      setSelectedUser(user);
-      setFormData({
-        email: user.email,
-        name: user.name,
-        role: user.role
+  const handleAbrirDialogo = (usuario?: Usuario) => {
+    if (usuario) {
+      setUsuarioSelecionado(usuario);
+      setDadosFormulario({
+        email: usuario.email,
+        nome: usuario.nome,
+        papel: usuario.papel
       });
     } else {
-      setSelectedUser(null);
-      setFormData({
+      setUsuarioSelecionado(null);
+      setDadosFormulario({
         email: '',
-        password: '',
-        name: '',
-        role: 'USER'
+        nome: '',
+        papel: 'USUARIO',
+        senha: ''
       });
     }
-    setOpenDialog(true);
+    setDialogoAberto(true);
   };
 
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedUser(null);
-    setFormData({
+  const handleFecharDialogo = () => {
+    setDialogoAberto(false);
+    setUsuarioSelecionado(null);
+    setDadosFormulario({
       email: '',
-      password: '',
-      name: '',
-      role: 'USER'
+      nome: '',
+      papel: 'USUARIO',
+      senha: ''
     });
   };
 
-  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, userId: string) => {
-    setMenuAnchor(event.currentTarget);
-    setMenuUserId(userId);
+  const handleAbrirMenu = (event: React.MouseEvent<HTMLElement>, idUsuario: string) => {
+    setAncoraMenu(event.currentTarget);
+    setIdUsuarioMenu(idUsuario);
   };
 
-  const handleCloseMenu = () => {
-    setMenuAnchor(null);
-    setMenuUserId(null);
+  const handleFecharMenu = () => {
+    setAncoraMenu(null);
+    setIdUsuarioMenu(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEnviar = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (selectedUser) {
-        const updateData: UpdateUserData = {
-          email: formData.email,
-          name: formData.name,
-          role: formData.role
+      if (usuarioSelecionado) {
+        const dadosAtualizacao: DadosAtualizacaoUsuario = {
+          email: dadosFormulario.email,
+          nome: dadosFormulario.nome,
+          papel: dadosFormulario.papel
         };
-        await userService.updateUser(selectedUser.id, updateData);
+        await userService.atualizarUsuario(usuarioSelecionado.id, dadosAtualizacao);
       } else {
-        const createData: CreateUserData = {
-          email: formData.email!,
-          password: formData.password!,
-          name: formData.name!,
-          role: formData.role!
+        const dadosCriacao: DadosCriacaoUsuario = {
+          email: dadosFormulario.email || '',
+          nome: dadosFormulario.nome || '',
+          papel: dadosFormulario.papel || 'USUARIO',
+          senha: dadosFormulario.senha || ''
         };
-        await userService.createUser(createData);
+        await userService.criarUsuario(dadosCriacao);
       }
-      handleCloseDialog();
-      fetchUsers();
+      handleFecharDialogo();
+      buscarUsuarios();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save user');
+      setErro(err instanceof Error ? err.message : 'Falha ao salvar usuário');
     }
   };
 
-  const handleDelete = async () => {
-    if (!menuUserId) return;
+  const handleExcluir = async () => {
+    if (!idUsuarioMenu) return;
     try {
-      await userService.deleteUser(menuUserId);
-      handleCloseMenu();
-      fetchUsers();
+      await userService.excluirUsuario(idUsuarioMenu);
+      handleFecharMenu();
+      buscarUsuarios();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete user');
+      setErro(err instanceof Error ? err.message : 'Falha ao excluir usuário');
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!menuUserId) return;
+  const handleRedefinirSenha = async () => {
+    if (!idUsuarioMenu) return;
     try {
-      await userService.resetPassword(menuUserId);
-      handleCloseMenu();
-      setError(null);
+      await userService.redefinirSenha(idUsuarioMenu);
+      handleFecharMenu();
+      setErro(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reset password');
+      setErro(err instanceof Error ? err.message : 'Falha ao redefinir senha');
     }
   };
 
-  const handleToggleActive = async (user: User) => {
+  const handleAlternarAtivo = async (usuario: Usuario) => {
     try {
-      await userService.updateUser(user.id, { active: !user.active });
-      fetchUsers();
+      await userService.atualizarUsuario(usuario.id, { ativo: !usuario.ativo });
+      buscarUsuarios();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update user status');
+      setErro(err instanceof Error ? err.message : 'Falha ao atualizar status do usuário');
     }
   };
 
-  if (loading) {
+  if (carregando) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -179,158 +179,162 @@ const UserManagement: React.FC = () => {
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">User Management</Typography>
+        <Typography variant="h4">Gerenciamento de Usuários</Typography>
         <Box>
           <Button
             variant="contained"
             startIcon={<RefreshIcon />}
-            onClick={fetchUsers}
+            onClick={buscarUsuarios}
             sx={{ mr: 2 }}
           >
-            Refresh
+            Atualizar
           </Button>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => handleOpenDialog()}
+            onClick={() => handleAbrirDialogo()}
           >
-            Add User
+            Adicionar Usuário
           </Button>
         </Box>
       </Box>
 
-      {error && (
+      {erro && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          {erro}
         </Alert>
       )}
 
-      <Card>
-        <CardContent>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Last Login</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.role}</TableCell>
-                    <TableCell>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={user.active}
-                            onChange={() => handleToggleActive(user)}
-                            color="primary"
-                          />
-                        }
-                        label={user.active ? 'Active' : 'Inactive'}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nome</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Papel</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Último Login</TableCell>
+              <TableCell align="right">Ações</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {usuarios.map((usuario) => (
+              <TableRow key={usuario.id}>
+                <TableCell>{usuario.nome}</TableCell>
+                <TableCell>{usuario.email}</TableCell>
+                <TableCell>{usuario.papel}</TableCell>
+                <TableCell>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={usuario.ativo}
+                        onChange={() => handleAlternarAtivo(usuario)}
+                        color="primary"
                       />
-                    </TableCell>
-                    <TableCell>
-                      {user.lastLogin
-                        ? new Date(user.lastLogin).toLocaleString()
-                        : 'Never'}
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        onClick={(e) => handleOpenMenu(e, user.id)}
-                        size="small"
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+                    }
+                    label={usuario.ativo ? 'Ativo' : 'Inativo'}
+                  />
+                </TableCell>
+                <TableCell>
+                  {usuario.ultimoLogin
+                    ? new Date(usuario.ultimoLogin).toLocaleString()
+                    : 'Nunca'}
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton
+                    onClick={(e) => handleAbrirMenu(e, usuario.id)}
+                    size="small"
+                  >
+                    <MoreVertIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleCloseMenu}
+        anchorEl={ancoraMenu}
+        open={Boolean(ancoraMenu)}
+        onClose={handleFecharMenu}
       >
         <MenuItem onClick={() => {
-          const user = users.find(u => u.id === menuUserId);
-          if (user) handleOpenDialog(user);
-          handleCloseMenu();
+          handleFecharMenu();
+          handleAbrirDialogo(usuarios.find(u => u.id === idUsuarioMenu));
         }}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          Edit
+          Editar
         </MenuItem>
-        <MenuItem onClick={handleResetPassword}>
+        <MenuItem onClick={() => {
+          handleFecharMenu();
+          handleRedefinirSenha();
+        }}>
           <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
-          Reset Password
+          Redefinir Senha
         </MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+        <MenuItem onClick={() => {
+          handleFecharMenu();
+          handleExcluir();
+        }}>
           <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          Delete
+          Excluir
         </MenuItem>
       </Menu>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <form onSubmit={handleSubmit}>
-          <DialogTitle>
-            {selectedUser ? 'Edit User' : 'Add New User'}
-          </DialogTitle>
+      <Dialog open={dialogoAberto} onClose={handleFecharDialogo} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {usuarioSelecionado ? 'Editar Usuário' : 'Adicionar Novo Usuário'}
+        </DialogTitle>
+        <form onSubmit={handleEnviar}>
           <DialogContent>
-            <Box display="flex" flexDirection="column" gap={2} mt={1}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Nome"
+              type="text"
+              fullWidth
+              value={dadosFormulario.nome}
+              onChange={(e) => setDadosFormulario({ ...dadosFormulario, nome: e.target.value })}
+              required
+            />
+            <TextField
+              margin="dense"
+              label="Email"
+              type="email"
+              fullWidth
+              value={dadosFormulario.email}
+              onChange={(e) => setDadosFormulario({ ...dadosFormulario, email: e.target.value })}
+              required
+            />
+            {!usuarioSelecionado && (
               <TextField
-                label="Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+                margin="dense"
+                label="Senha"
+                type="password"
                 fullWidth
-              />
-              <TextField
-                label="Email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                value={dadosFormulario.senha}
+                onChange={(e) => setDadosFormulario({ ...dadosFormulario, senha: e.target.value })}
                 required
-                fullWidth
               />
-              {!selectedUser && (
-                <TextField
-                  label="Password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  fullWidth
-                />
-              )}
-              <FormControl fullWidth>
-                <InputLabel>Role</InputLabel>
-                <Select
-                  value={formData.role}
-                  label="Role"
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'ADMIN' | 'USER' })}
-                  required
-                >
-                  <MenuItem value="ADMIN">Admin</MenuItem>
-                  <MenuItem value="USER">User</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
+            )}
+            <FormControl fullWidth margin="dense">
+              <InputLabel>Papel</InputLabel>
+              <Select
+                value={dadosFormulario.papel}
+                onChange={(e) => setDadosFormulario({ ...dadosFormulario, papel: e.target.value as 'USUARIO' | 'ADMIN' })}
+                label="Papel"
+                required
+              >
+                <MenuItem value="USUARIO">Usuário</MenuItem>
+                <MenuItem value="ADMIN">Administrador</MenuItem>
+              </Select>
+            </FormControl>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancel</Button>
-            <Button type="submit" variant="contained">
-              {selectedUser ? 'Save Changes' : 'Create User'}
+            <Button onClick={handleFecharDialogo}>Cancelar</Button>
+            <Button type="submit" variant="contained" color="primary">
+              {usuarioSelecionado ? 'Salvar Alterações' : 'Criar Usuário'}
             </Button>
           </DialogActions>
         </form>
@@ -339,4 +343,4 @@ const UserManagement: React.FC = () => {
   );
 };
 
-export default UserManagement; 
+export default GerenciamentoUsuarios; 

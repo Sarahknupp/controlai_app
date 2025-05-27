@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
-import { User, UserRole, IUser } from '../models/User';
+import { User } from '../models/User';
 import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { IUser, UserRole } from '../types/user';
 
 // Extend Request type to include user
 interface AuthRequest extends Request {
@@ -77,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Check for user
-    const user = await User.findOne({ email, active: true });
+    const user = await User.findOne({ email, isActive: true });
     if (!user) {
       return res.status(401).json({
         success: false,

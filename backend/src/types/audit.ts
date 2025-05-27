@@ -30,22 +30,37 @@ export enum AuditAction {
   DELETE = 'DELETE',
   LOGIN = 'LOGIN',
   LOGOUT = 'LOGOUT',
-  EXPORT = 'EXPORT',
-  IMPORT = 'IMPORT'
+  PASSWORD_CHANGE = 'PASSWORD_CHANGE',
+  PASSWORD_RESET = 'PASSWORD_RESET',
+  EMAIL_VERIFICATION = 'EMAIL_VERIFICATION',
+  ROLE_CHANGE = 'ROLE_CHANGE',
+  PERMISSION_CHANGE = 'PERMISSION_CHANGE',
+  API_ACCESS = 'API_ACCESS',
+  DATA_ACCESS = 'DATA_ACCESS',
+  SECURITY = 'SECURITY'
+}
+
+export enum AuditEntityType {
+  USER = 'USER',
+  ROLE = 'ROLE',
+  PERMISSION = 'PERMISSION',
+  API = 'API',
+  DATA = 'DATA',
+  SYSTEM = 'SYSTEM'
 }
 
 export type AuditStatus = 'success' | 'error' | 'warning' | 'info';
 
 export interface AuditLog {
   id: string;
-  action: AuditAction;
-  entityType: EntityType;
-  entityId: string;
   userId: string;
-  details: string;
-  status: 'success' | 'failure';
-  createdAt: Date;
-  metadata?: Record<string, unknown>;
+  action: AuditAction;
+  entityType: AuditEntityType;
+  entityId: string;
+  metadata: Record<string, any>;
+  timestamp: Date;
+  ip?: string;
+  userAgent?: string;
 }
 
 export interface CreateAuditLogDto {
@@ -60,27 +75,21 @@ export interface CreateAuditLogDto {
   status: AuditStatus;
 }
 
-export interface AuditFilter {
-  action?: AuditAction;
-  entityType?: EntityType;
-  entityId?: string;
+export interface AuditFilters {
   userId?: string;
-  status?: AuditStatus;
-  startDate?: string;
-  endDate?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-  sortBy?: 'createdAt' | 'updatedAt';
-  sortOrder?: 'asc' | 'desc';
+  action?: AuditAction;
+  entityType?: AuditEntityType;
+  entityId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  ip?: string;
 }
 
-export interface AuditResponse {
+export interface AuditResult {
   logs: AuditLog[];
   total: number;
   page: number;
   limit: number;
-  totalPages: number;
 }
 
 export interface AuditStats {

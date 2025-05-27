@@ -18,7 +18,7 @@ import {
   updateDetailsValidation,
   updatePasswordValidation
 } from '../validations/auth.validation';
-import { UserRole } from '../models/User';
+import { UserRole } from '../types/user';
 
 const router = express.Router();
 

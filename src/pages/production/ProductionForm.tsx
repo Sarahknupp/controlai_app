@@ -30,8 +30,8 @@ export const ProductionForm: React.FC = () => {
   };
   
   const addProduct = (product: typeof mockProducts[0]) => {
-    // Check if product already exists in form
-    if (formData.products.some(p => p.productId === product.id)) {
+    // Check if product already exists in form and has valid id
+    if (!product.id || formData.products.some(p => p.productId === product.id)) {
       return;
     }
     

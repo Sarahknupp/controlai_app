@@ -1,91 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .header {
-      background-color: #dc3545;
-      color: #ffffff;
-      padding: 20px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-    }
-    .content {
-      background-color: #ffffff;
-      padding: 20px;
-      border-radius: 5px;
-      border: 1px solid #dee2e6;
-    }
-    .priority {
-      display: inline-block;
-      padding: 5px 10px;
-      border-radius: 3px;
-      font-size: 12px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .priority-urgent {
-      background-color: #dc3545;
-      color: #ffffff;
-    }
-    .priority-high {
-      background-color: #fd7e14;
-      color: #ffffff;
-    }
-    .priority-medium {
-      background-color: #ffc107;
-      color: #000000;
-    }
-    .priority-low {
-      background-color: #28a745;
-      color: #ffffff;
-    }
-    .alert-box {
-      background-color: #fff3cd;
-      border: 1px solid #ffeeba;
-      color: #856404;
-      padding: 15px;
-      border-radius: 5px;
-      margin: 15px 0;
-    }
-    .action-button {
-      display: inline-block;
-      padding: 10px 20px;
-      background-color: #dc3545;
-      color: #ffffff;
-      text-decoration: none;
-      border-radius: 5px;
-      margin-top: 20px;
-    }
-    .footer {
-      margin-top: 20px;
-      font-size: 12px;
-      color: #6c757d;
-      text-align: center;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div class="header">
+  <div class="header" role="banner">
     <h1>{{title}}</h1>
-    <div class="priority priority-{{priority.toLowerCase}}">{{priority}}</div>
+    <div class="priority priority-{{priority.toLowerCase}}" role="status" aria-label="Prioridade: {{priority}}">{{priority}}</div>
   </div>
 
-  <div class="content">
-    <div class="alert-box">
-      <p><strong>Alert:</strong> {{message}}</p>
+  <div class="content" role="main">
+    <div class="alert-box" role="alert">
+      <p><strong>Alerta:</strong> {{message}}</p>
     </div>
 
     {{#if data}}
-    <h2>Alert Details:</h2>
+    <h2>Detalhes do Alerta:</h2>
     <ul>
       {{#each data}}
       <li><strong>{{@key}}:</strong> {{this}}</li>
@@ -94,19 +27,19 @@
     {{/if}}
 
     {{#if data.actionUrl}}
-    <a href="{{data.actionUrl}}" class="action-button">Take Action</a>
+    <a href="{{data.actionUrl}}" class="action-button" role="button" aria-label="Tomar ação">Tomar Ação</a>
     {{/if}}
 
     {{#if requireAcknowledgment}}
-    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
-      <p><strong>Note:</strong> This alert requires immediate acknowledgment. Please take appropriate action as soon as possible.</p>
+    <div class="acknowledgment-note" role="alert">
+      <p><strong>Nota:</strong> Este alerta requer confirmação imediata. Por favor, tome as medidas apropriadas o mais breve possível.</p>
     </div>
     {{/if}}
   </div>
 
-  <div class="footer">
-    <p>This is an automated alert message. Please do not reply to this email.</p>
-    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  <div class="footer" role="contentinfo">
+    <p>Esta é uma mensagem de alerta automática. Por favor, não responda a este e-mail.</p>
+    <p>&copy; {{currentYear}} Controle AI Vendas. Todos os direitos reservados.</p>
   </div>
 </body>
 </html> 

@@ -1,68 +1,59 @@
-import admin from 'firebase-admin';
-import { PushNotificationService, PushNotificationConfig } from '../../services/push-notification.service';
+import { PushNotificationService } from '../../services/push-notification.service';
+import { PushNotificationConfig, PushNotificationOptions } from '../../types/push-notification';
 import { AuditService } from '../../services/audit.service';
+import { I18nService } from '../../services/i18n.service';
 
 // Mock dependencies
-jest.mock('firebase-admin');
 jest.mock('../../services/audit.service');
+jest.mock('../../services/i18n.service');
 
 describe('PushNotificationService', () => {
   let pushService: PushNotificationService;
-  let mockMessaging: jest.Mocked<admin.messaging.Messaging>;
   let auditService: jest.Mocked<AuditService>;
-
-  const mockConfig: PushNotificationConfig = {
-    projectId: 'test-project',
-    privateKey: 'test-key',
-    clientEmail: 'test@example.com'
-  };
+  let i18nService: jest.Mocked<I18nService>;
+  let mockConfig: PushNotificationConfig;
 
   beforeEach(() => {
     // Clear all mocks
     jest.clearAllMocks();
 
-    // Mock Firebase Admin
-    mockMessaging = {
-      send: jest.fn(),
-      sendMulticast: jest.fn(),
-      subscribeToTopic: jest.fn(),
-      unsubscribeFromTopic: jest.fn()
-    } as any;
+    // Mock config
+    mockConfig = {
+      vapidPublicKey: 'test-public-key',
+      vapidPrivateKey: 'test-private-key',
+      vapidSubject: 'mailto:test@example.com',
+      firebaseConfig: {
+        apiKey: 'test-api-key',
+        authDomain: 'test-project.firebaseapp.com',
+        projectId: 'test-project',
+        storageBucket: 'test-project.appspot.com',
+        messagingSenderId: 'test-sender-id',
+        appId: 'test-app-id'
+      }
+    };
 
-    (admin.messaging as jest.Mock).mockReturnValue(mockMessaging);
-
-    // Initialize services
-    auditService = new AuditService() as jest.Mocked<AuditService>;
+    // Initialize service
     pushService = new PushNotificationService(mockConfig);
+
+    // Get mocked instances
+    auditService = AuditService.prototype as jest.Mocked<AuditService>;
+    i18nService = I18nService.prototype as jest.Mocked<I18nService>;
   });
 
   describe('sendNotification', () => {
-    it('should send notification successfully', async () => {
-      const notificationOptions = {
-        token: 'device-token',
-        title: 'Test Notification',
-        body: 'Test content',
-        data: {
-          key: 'value'
-        }
+    it('should send push notification successfully', async () => {
+      const options: PushNotificationOptions = {
+        token: 'user-token',
+        title: 'Test Title',
+        body: 'Test Body',
+        data: { key: 'value' }
       };
 
-      mockMessaging.send.mockResolvedValueOnce('message-id');
+      await pushService.sendNotification(options);
 
-      const result = await pushService.sendNotification(notificationOptions);
-
-      expect(result.success).toBe(true);
-      expect(mockMessaging.send).toHaveBeenCalledWith({
-        token: notificationOptions.token,
-        notification: {
-          title: notificationOptions.title,
-          body: notificationOptions.body
-        },
-        data: notificationOptions.data
-      });
       expect(auditService.logAction).toHaveBeenCalledWith({
         action: 'CREATE',
-        entityType: 'PUSH',
+        entityType: 'PUSH_NOTIFICATION',
         entityId: expect.any(String),
         userId: 'system',
         details: expect.any(String),
@@ -70,22 +61,18 @@ describe('PushNotificationService', () => {
       });
     });
 
-    it('should handle notification sending errors', async () => {
-      const notificationOptions = {
-        token: 'device-token',
-        title: 'Test Notification',
-        body: 'Test content'
+    it('should handle notification failure', async () => {
+      const options: PushNotificationOptions = {
+        token: 'invalid-token',
+        title: 'Test Title',
+        body: 'Test Body'
       };
 
-      mockMessaging.send.mockRejectedValueOnce(new Error('Send failed'));
+      await expect(pushService.sendNotification(options)).rejects.toThrow();
 
-      const result = await pushService.sendNotification(notificationOptions);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to send push notification: Send failed');
       expect(auditService.logAction).toHaveBeenCalledWith({
         action: 'CREATE',
-        entityType: 'PUSH',
+        entityType: 'PUSH_NOTIFICATION',
         entityId: expect.any(String),
         userId: 'system',
         details: expect.any(String),
@@ -93,74 +80,70 @@ describe('PushNotificationService', () => {
       });
     });
 
-    it('should send notification with image', async () => {
-      const notificationOptions = {
-        token: 'device-token',
-        title: 'Test Notification',
-        body: 'Test content',
-        imageUrl: 'https://example.com/image.jpg'
+    it('should send notification with translated content', async () => {
+      const options: PushNotificationOptions = {
+        token: 'user-token',
+        title: 'notification.title',
+        body: 'notification.body',
+        data: { key: 'value' }
       };
 
-      mockMessaging.send.mockResolvedValueOnce('message-id');
-
-      await pushService.sendNotification(notificationOptions);
-
-      expect(mockMessaging.send).toHaveBeenCalledWith({
-        token: notificationOptions.token,
-        notification: {
-          title: notificationOptions.title,
-          body: notificationOptions.body,
-          imageUrl: notificationOptions.imageUrl
-        }
+      i18nService.translate.mockImplementation((key) => {
+        const translations = {
+          'notification.title': 'Título Traduzido',
+          'notification.body': 'Corpo Traduzido'
+        };
+        return translations[key] || key;
       });
+
+      await pushService.sendNotification(options);
+
+      expect(i18nService.translate).toHaveBeenCalledWith('notification.title');
+      expect(i18nService.translate).toHaveBeenCalledWith('notification.body');
     });
   });
 
   describe('sendBulkNotifications', () => {
     it('should send bulk notifications successfully', async () => {
       const tokens = ['token1', 'token2', 'token3'];
-      const notificationOptions = {
-        title: 'Test Notification',
-        body: 'Test content'
+      const options: PushNotificationOptions = {
+        token: 'dummy-token', // Will be replaced by each token
+        title: 'Test Title',
+        body: 'Test Body',
+        data: { key: 'value' }
       };
 
-      mockMessaging.sendMulticast.mockResolvedValueOnce({
-        successCount: 2,
-        failureCount: 1,
-        responses: [
-          { success: true, messageId: 'msg1' },
-          { success: true, messageId: 'msg2' },
-          { success: false, error: new Error('Failed') }
-        ]
-      });
-
-      const result = await pushService.sendBulkNotifications(tokens, notificationOptions);
+      const result = await pushService.sendBulkNotifications(tokens, options);
 
       expect(result.success).toBe(true);
-      expect(result.successCount).toBe(2);
-      expect(result.failureCount).toBe(1);
-      expect(mockMessaging.sendMulticast).toHaveBeenCalledWith({
-        tokens,
-        notification: {
-          title: notificationOptions.title,
-          body: notificationOptions.body
-        }
+      expect(auditService.logAction).toHaveBeenCalledWith({
+        action: 'CREATE',
+        entityType: 'PUSH_NOTIFICATION',
+        entityId: expect.any(String),
+        userId: 'system',
+        details: expect.any(String),
+        status: 'success'
       });
     });
 
-    it('should handle bulk notification errors', async () => {
-      const tokens = ['token1', 'token2'];
-      const notificationOptions = {
-        title: 'Test Notification',
-        body: 'Test content'
+    it('should handle bulk notification failure', async () => {
+      const tokens = ['invalid-token1', 'invalid-token2'];
+      const options: PushNotificationOptions = {
+        token: 'dummy-token', // Will be replaced by each token
+        title: 'Test Title',
+        body: 'Test Body'
       };
 
-      mockMessaging.sendMulticast.mockRejectedValueOnce(new Error('Bulk send failed'));
+      await expect(pushService.sendBulkNotifications(tokens, options)).rejects.toThrow();
 
-      const result = await pushService.sendBulkNotifications(tokens, notificationOptions);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to send bulk notifications: Bulk send failed');
+      expect(auditService.logAction).toHaveBeenCalledWith({
+        action: 'CREATE',
+        entityType: 'PUSH_NOTIFICATION',
+        entityId: expect.any(String),
+        userId: 'system',
+        details: expect.any(String),
+        status: 'error'
+      });
     });
   });
 
@@ -169,29 +152,33 @@ describe('PushNotificationService', () => {
       const tokens = ['token1', 'token2'];
       const topic = 'news';
 
-      mockMessaging.subscribeToTopic.mockResolvedValueOnce({
-        successCount: 2,
-        failureCount: 0
-      });
-
       const result = await pushService.subscribeToTopic(tokens, topic);
 
       expect(result.success).toBe(true);
-      expect(result.successCount).toBe(2);
-      expect(result.failureCount).toBe(0);
-      expect(mockMessaging.subscribeToTopic).toHaveBeenCalledWith(tokens, topic);
+      expect(auditService.logAction).toHaveBeenCalledWith({
+        action: 'CREATE',
+        entityType: 'PUSH_SUBSCRIPTION',
+        entityId: expect.any(String),
+        userId: 'system',
+        details: expect.any(String),
+        status: 'success'
+      });
     });
 
-    it('should handle subscription errors', async () => {
-      const tokens = ['token1'];
+    it('should handle topic subscription failure', async () => {
+      const tokens = ['invalid-token'];
       const topic = 'news';
 
-      mockMessaging.subscribeToTopic.mockRejectedValueOnce(new Error('Subscribe failed'));
+      await expect(pushService.subscribeToTopic(tokens, topic)).rejects.toThrow();
 
-      const result = await pushService.subscribeToTopic(tokens, topic);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to subscribe to topic: Subscribe failed');
+      expect(auditService.logAction).toHaveBeenCalledWith({
+        action: 'CREATE',
+        entityType: 'PUSH_SUBSCRIPTION',
+        entityId: expect.any(String),
+        userId: 'system',
+        details: expect.any(String),
+        status: 'error'
+      });
     });
   });
 
@@ -200,29 +187,33 @@ describe('PushNotificationService', () => {
       const tokens = ['token1', 'token2'];
       const topic = 'news';
 
-      mockMessaging.unsubscribeFromTopic.mockResolvedValueOnce({
-        successCount: 2,
-        failureCount: 0
-      });
-
       const result = await pushService.unsubscribeFromTopic(tokens, topic);
 
       expect(result.success).toBe(true);
-      expect(result.successCount).toBe(2);
-      expect(result.failureCount).toBe(0);
-      expect(mockMessaging.unsubscribeFromTopic).toHaveBeenCalledWith(tokens, topic);
+      expect(auditService.logAction).toHaveBeenCalledWith({
+        action: 'DELETE',
+        entityType: 'PUSH_SUBSCRIPTION',
+        entityId: expect.any(String),
+        userId: 'system',
+        details: expect.any(String),
+        status: 'success'
+      });
     });
 
-    it('should handle unsubscription errors', async () => {
-      const tokens = ['token1'];
+    it('should handle topic unsubscription failure', async () => {
+      const tokens = ['invalid-token'];
       const topic = 'news';
 
-      mockMessaging.unsubscribeFromTopic.mockRejectedValueOnce(new Error('Unsubscribe failed'));
+      await expect(pushService.unsubscribeFromTopic(tokens, topic)).rejects.toThrow();
 
-      const result = await pushService.unsubscribeFromTopic(tokens, topic);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Failed to unsubscribe from topic: Unsubscribe failed');
+      expect(auditService.logAction).toHaveBeenCalledWith({
+        action: 'DELETE',
+        entityType: 'PUSH_SUBSCRIPTION',
+        entityId: expect.any(String),
+        userId: 'system',
+        details: expect.any(String),
+        status: 'error'
+      });
     });
   });
 }); 

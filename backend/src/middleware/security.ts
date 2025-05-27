@@ -1,12 +1,20 @@
 import helmet from 'helmet';
 import cors from 'cors';
 import { Express } from 'express';
+import rateLimit from 'express-rate-limit';
+
+// Rate limiting configuration
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // limite de 100 requisições por IP
+  message: 'Too many requests from this IP, please try again later'
+});
 
 // CORS configuration
 const corsOptions = {
   origin: process.env.CORS_ORIGIN || '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['X-Total-Count'],
   credentials: true,
   maxAge: 86400, // 24 hours
@@ -25,6 +33,12 @@ const helmetOptions = {
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
       frameSrc: ["'none'"],
+      workerSrc: ["'self'"],
+      childSrc: ["'self'"],
+      formAction: ["'self'"],
+      baseUri: ["'self'"],
+      manifestSrc: ["'self'"],
+      prefetchSrc: ["'self'"],
     },
   },
   crossOriginEmbedderPolicy: true,
@@ -48,6 +62,9 @@ const helmetOptions = {
 
 // Apply security middleware to Express app
 export const applySecurityMiddleware = (app: Express) => {
+  // Apply rate limiting
+  app.use(limiter);
+
   // Apply Helmet security headers
   app.use(helmet(helmetOptions));
 
@@ -76,6 +93,17 @@ export const applySecurityMiddleware = (app: Express) => {
       'Permissions-Policy',
       'accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()'
     );
+
+    // Set cache control
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Set security headers for API
+    res.setHeader('X-API-Version', process.env.API_VERSION || '1.0.0');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Download-Options', 'noopen');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
 
     next();
   });

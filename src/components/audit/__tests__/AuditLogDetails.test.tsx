@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AuditLogDetails from '../AuditLogDetails';
-import { AuditLog } from '../../../types/audit';
+import type { AuditLog } from '../../../types/audit';
 import { getActionConfig, getEntityTypeLabel, parseAuditDetails } from '../../../utils/audit';
 import { formatDate } from '../../../utils/date';
 
@@ -291,7 +291,7 @@ describe('AuditLogDetails', () => {
     expect(screen.queryByText('Metadados')).not.toBeInTheDocument();
   });
 
-  it('should render raw details section', () => {
+  it('should display raw details as JSON string', () => {
     render(
       <AuditLogDetails
         log={mockLog}
@@ -299,9 +299,9 @@ describe('AuditLogDetails', () => {
         onClose={mockOnClose}
       />
     );
-
     expect(screen.getByText('Detalhes Brutos')).toBeInTheDocument();
-    expect(screen.getByText('{"additional":"data"}')).toBeInTheDocument();
+    const rawDetails = screen.getByText(JSON.stringify({ additional: 'data' }, null, 2));
+    expect(rawDetails).toBeInTheDocument();
   });
 
   it('should handle missing optional sections', () => {
@@ -358,5 +358,85 @@ describe('AuditLogDetails', () => {
 
     const actionTag = screen.getByText('Create');
     expect(actionTag).toHaveClass(`ant-tag-${mockActionConfig.color}`);
+  });
+
+  it('should display raw details with different data types', () => {
+    const complexLog: AuditLog = {
+      ...mockLog,
+      details: JSON.stringify({
+        ...mockParsedDetails,
+        raw: {
+          string: 'texto simples',
+          number: 123,
+          boolean: true,
+          null: null,
+          array: [1, 2, 3],
+          nested: {
+            key: 'value',
+            numbers: [4, 5, 6]
+          }
+        }
+      })
+    };
+
+    render(
+      <AuditLogDetails
+        log={complexLog}
+        visible={true}
+        onClose={mockOnClose}
+      />
+    );
+
+    // Verifica se os dados brutos são exibidos corretamente
+    const rawDetails = screen.getByText(/Detalhes Brutos/);
+    expect(rawDetails).toBeInTheDocument();
+    
+    // Verifica se o JSON está formatado corretamente
+    const formattedJson = screen.getByText(/"string": "texto simples"/);
+    expect(formattedJson).toBeInTheDocument();
+  });
+
+  it('should handle empty raw details', () => {
+    const emptyRawLog: AuditLog = {
+      ...mockLog,
+      details: JSON.stringify({
+        ...mockParsedDetails,
+        raw: {}
+      })
+    };
+
+    render(
+      <AuditLogDetails
+        log={emptyRawLog}
+        visible={true}
+        onClose={mockOnClose}
+      />
+    );
+
+    // Verifica se os dados brutos vazios são exibidos como objeto vazio
+    const rawDetails = screen.getByText(/{}/);
+    expect(rawDetails).toBeInTheDocument();
+  });
+
+  it('should handle raw details as string', () => {
+    const stringRawLog: AuditLog = {
+      ...mockLog,
+      details: JSON.stringify({
+        ...mockParsedDetails,
+        raw: 'Texto bruto como string'
+      })
+    };
+
+    render(
+      <AuditLogDetails
+        log={stringRawLog}
+        visible={true}
+        onClose={mockOnClose}
+      />
+    );
+
+    // Verifica se o texto bruto é exibido corretamente
+    const rawDetails = screen.getByText('Texto bruto como string');
+    expect(rawDetails).toBeInTheDocument();
   });
 }); 
