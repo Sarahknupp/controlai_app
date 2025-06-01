@@ -1,12 +1,13 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose, { Types } from 'mongoose';
+// @ts-ignore
+import { MongoMemoryServer } from 'mongodb-memory-server'; // Importação correta
 import { User, UserRole, IUser } from '../models/User';
 import jwt, { SignOptions } from 'jsonwebtoken';
 
 let mongoServer: MongoMemoryServer;
-
 // Extend global for test tokens
 declare global {
+  // eslint-disable-next-line no-var
   var adminToken: string;
   var userToken: string;
   var adminUser: IUser;
@@ -56,14 +57,14 @@ beforeAll(async () => {
     }) as IUser;
 
     // Create tokens
-    const adminToken = createTestToken(adminUser._id.toString(), UserRole.ADMIN);
-    const userToken = createTestToken(regularUser._id.toString(), UserRole.USER);
+    const adminToken = createTestToken((adminUser._id as Types.ObjectId).toString(), UserRole.ADMIN);
+    const userToken = createTestToken((regularUser._id as Types.ObjectId).toString(), UserRole.USER);
 
     // Make tokens available globally
-    global.adminToken = adminToken;
-    global.userToken = userToken;
-    global.adminUser = adminUser;
-    global.regularUser = regularUser;
+    globalThis.adminToken = adminToken;
+    globalThis.userToken = userToken;
+    globalThis.adminUser = adminUser;
+    globalThis.regularUser = regularUser;
   } catch (error) {
     console.error('Error in test setup:', error);
     throw error;

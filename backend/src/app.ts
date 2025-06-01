@@ -1,13 +1,13 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
+import helmet from 'helmet'; // Importação correta
+import morgan, { StreamOptions } from 'morgan';
 import { rateLimit } from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import path from 'path';
-import logger, { stream } from './utils/logger';
+import { logger, stream } from './utils/logger';
 import { errorHandler } from './middleware/error';
 import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
 import { compressionMiddleware } from './middleware/compression';
@@ -31,7 +31,7 @@ import exportRoutes from './routes/export.routes';
 import importRoutes from './routes/import.routes';
 import syncRoutes from './routes/sync.routes';
 import validationRoutes from './routes/validation.routes';
-import userRoutes from './routes/user.routes';
+// import userRoutes from './routes/user.routes'; // TODO: Create user.routes.ts and uncomment this line
 
 // Load environment variables
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/controlai_vendas';
@@ -82,9 +82,18 @@ app.use(performanceLogger);
 app.use('/reports', express.static(path.join(process.cwd(), 'reports')));
 app.use('/exports', express.static(path.join(process.cwd(), 'exports')));
 
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production' || process.env.REPL_ID) {
+  const distPath = path.join(process.cwd(), '../frontend/dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 // API routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+// app.use('/api/users', userRoutes); // TODO: Create user.routes.ts and uncomment this line
 app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
