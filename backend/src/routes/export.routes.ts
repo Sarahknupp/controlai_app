@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ExportController } from '../controllers/export.controller';
-import { authenticate } from '../middleware/auth.middleware';
+import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorize.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { exportValidation } from '../validations/export.validation';
@@ -13,7 +13,7 @@ router.post(
   '/',
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
-  validate(exportValidation.exportData),
+  validate({ body: exportValidation.exportData }),
   exportController.exportData.bind(exportController)
 );
 
@@ -21,7 +21,7 @@ router.get(
   '/:exportId/status',
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
-  validate(exportValidation.getExportStatus),
+  validate({ body: exportValidation.getExportStatus }),
   exportController.getExportStatus.bind(exportController)
 );
 
@@ -29,7 +29,7 @@ router.get(
   '/:exportId/download',
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
-  validate(exportValidation.downloadExport),
+  validate({ body: exportValidation.downloadExport }),
   exportController.downloadExport.bind(exportController)
 );
 
@@ -37,7 +37,7 @@ router.delete(
   '/:exportId',
   authenticate,
   authorize(['ADMIN']),
-  validate(exportValidation.deleteExport),
+  validate({ body: exportValidation.deleteExport }),
   exportController.deleteExport.bind(exportController)
 );
 

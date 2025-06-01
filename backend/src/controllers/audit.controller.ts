@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { AuditService } from '../services/audit.service';
-import { BadRequestError } from '../errors/bad-request.error';
-import logger from '../utils/logger';
+import { logger } from '../utils/logger';
 import { AuditFilter } from '../types/audit';
 
 export class AuditController {
@@ -13,14 +12,14 @@ export class AuditController {
 
   async getAuditLogs(req: Request, res: Response): Promise<void> {
     try {
-      const filter: AuditFilter = {
+      const filter: any = {
         action: req.query.action as any,
         entityType: req.query.entityType as any,
         entityId: req.query.entityId as string,
         userId: req.query.userId as string,
         status: req.query.status as any,
-        startDate: req.query.startDate as string,
-        endDate: req.query.endDate as string,
+        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
         search: req.query.search as string,
         page: parseInt(req.query.page as string) || 1,
         limit: parseInt(req.query.limit as string) || 10,
@@ -32,17 +31,7 @@ export class AuditController {
       res.json(result);
     } catch (error) {
       logger.error('Error getting audit logs:', error);
-      throw new BadRequestError('Failed to get audit logs');
-    }
-  }
-
-  async getAuditStats(req: Request, res: Response): Promise<void> {
-    try {
-      const stats = await this.auditService.getAuditStats();
-      res.json(stats);
-    } catch (error) {
-      logger.error('Error getting audit stats:', error);
-      throw new BadRequestError('Failed to get audit stats');
+      throw new Error('Failed to get audit logs');
     }
   }
 
@@ -52,13 +41,13 @@ export class AuditController {
       const log = await this.auditService.getAuditLog(id);
 
       if (!log) {
-        throw new BadRequestError(`Audit log not found: ${id}`);
+        throw new Error(`Audit log not found: ${id}`);
       }
 
       res.json(log);
     } catch (error) {
       logger.error('Error getting audit log:', error);
-      throw new BadRequestError('Failed to get audit log');
+      throw new Error('Failed to get audit log');
     }
   }
 
@@ -69,7 +58,7 @@ export class AuditController {
       res.json({ message: 'Audit log deleted successfully' });
     } catch (error) {
       logger.error('Error deleting audit log:', error);
-      throw new BadRequestError('Failed to delete audit log');
+      throw new Error('Failed to delete audit log');
     }
   }
 
@@ -77,17 +66,16 @@ export class AuditController {
     try {
       const { beforeDate } = req.body;
       if (!beforeDate) {
-        throw new BadRequestError('beforeDate is required');
+        throw new Error('beforeDate is required');
       }
 
-      const deletedCount = await this.auditService.clearAuditLogs(new Date(beforeDate));
+      await this.auditService.clearAuditLogs(new Date(beforeDate));
       res.json({
-        message: 'Audit logs cleared successfully',
-        deletedCount
+        message: 'Audit logs cleared successfully'
       });
     } catch (error) {
       logger.error('Error clearing audit logs:', error);
-      throw new BadRequestError('Failed to clear audit logs');
+      throw new Error('Failed to clear audit logs');
     }
   }
 } 

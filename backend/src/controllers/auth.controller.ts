@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { User, UserRole, IUser } from '../models/User';
-import jwt, { Secret, SignOptions } from 'jsonwebtoken';
+import { User, UserRole } from '../models/User';
+import { IUser } from '../types/user';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 // Extend Request type to include user
@@ -8,12 +9,12 @@ interface AuthRequest extends Request {
   user?: IUser;
 }
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET: string = process.env.JWT_SECRET || 'your-secret-key';
 
 // Helper function to generate JWT token
-const generateToken = (user: IUser) => {
+const generateToken = (user: { id: string, role: string }) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user.id, role: user.role },
     JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -29,17 +30,18 @@ export const register = async (req: Request, res: Response) => {
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'User already exists'
       });
+      return;
     }
 
     // Create user
     const user = await User.create(req.body);
 
     // Generate token
-    const token = generateToken(user);
+    const token = generateToken({ id: user.id, role: user.role });
 
     res.status(201).json({
       success: true,
@@ -70,28 +72,31 @@ export const login = async (req: Request, res: Response) => {
 
     // Validate email & password
     if (!email || !password) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Please provide email and password'
       });
+      return;
     }
 
     // Check for user
     const user = await User.findOne({ email, active: true });
     if (!user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
+      return;
     }
 
     // Check if password matches
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
+      return;
     }
 
     // Update last login
@@ -99,7 +104,7 @@ export const login = async (req: Request, res: Response) => {
     await user.save();
 
     // Generate token
-    const token = generateToken(user);
+    const token = generateToken({ id: user.id, role: user.role });
 
     res.json({
       success: true,
@@ -126,14 +131,15 @@ export const login = async (req: Request, res: Response) => {
 // @access  Private
 export const getMe = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?._id) {
-      return res.status(401).json({
+    if (!req.user?.id) {
+      res.status(401).json({
         success: false,
         message: 'Not authorized'
       });
+      return;
     }
 
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user.id).select('-password');
 
     res.json({
       success: true,
@@ -152,11 +158,12 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 // @access  Private
 export const updateDetails = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?._id) {
-      return res.status(401).json({
+    if (!req.user?.id) {
+      res.status(401).json({
         success: false,
         message: 'Not authorized'
       });
+      return;
     }
 
     const fieldsToUpdate = {
@@ -165,7 +172,7 @@ export const updateDetails = async (req: AuthRequest, res: Response) => {
     };
 
     const user = await User.findByIdAndUpdate(
-      req.user._id,
+      req.user.id,
       fieldsToUpdate,
       {
         new: true,
@@ -190,35 +197,38 @@ export const updateDetails = async (req: AuthRequest, res: Response) => {
 // @access  Private
 export const updatePassword = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user?._id) {
-      return res.status(401).json({
+    if (!req.user?.id) {
+      res.status(401).json({
         success: false,
         message: 'Not authorized'
       });
+      return;
     }
 
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     // Check current password
     const isMatch = await user.comparePassword(req.body.currentPassword);
     if (!isMatch) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Current password is incorrect'
       });
+      return;
     }
 
     user.password = req.body.newPassword;
     await user.save();
 
     // Generate new token
-    const token = generateToken(user);
+    const token = generateToken({ id: user.id, role: user.role });
 
     res.json({
       success: true,
@@ -262,10 +272,11 @@ export const getUser = async (req: Request, res: Response) => {
     const user = await User.findById(req.params.id).select('-password');
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({
@@ -295,10 +306,11 @@ export const updateUser = async (req: Request, res: Response) => {
     ).select('-password');
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({
@@ -325,10 +337,11 @@ export const deleteUser = async (req: Request, res: Response) => {
     );
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({

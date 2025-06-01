@@ -46,14 +46,14 @@ beforeAll(async () => {
       email: 'admin@test.com',
       password: 'Admin123!',
       role: UserRole.ADMIN
-    });
+    }) as IUser;
 
     const regularUser = await User.create({
       name: 'Regular User',
       email: 'user@test.com',
       password: 'User123!',
       role: UserRole.USER
-    });
+    }) as IUser;
 
     // Create tokens
     const adminToken = createTestToken(adminUser._id.toString(), UserRole.ADMIN);
@@ -73,7 +73,7 @@ beforeAll(async () => {
 // Clear database between tests
 beforeEach(async () => {
   try {
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
       const collections = await mongoose.connection.db.collections();
       const excludedCollections = ['users']; // Don't clear test users
       await Promise.all(
