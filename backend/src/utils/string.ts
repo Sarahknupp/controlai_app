@@ -47,14 +47,11 @@ export const formatPhoneNumber = (phone: string): string => {
   const cleaned = phone.replace(/\D/g, '');
   if (cleaned.length === 11) {
     return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
-  } else if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
   }
-  return phone;
+  return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
 };
 
 export const formatCPF = (cpf: string): string => {
-  if (!cpf) return '';
   const cleaned = cpf.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{3})(\d{2})$/);
   if (match) {
@@ -64,7 +61,6 @@ export const formatCPF = (cpf: string): string => {
 };
 
 export const formatCNPJ = (cnpj: string): string => {
-  if (!cnpj) return '';
   const cleaned = cnpj.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/);
   if (match) {
@@ -74,7 +70,6 @@ export const formatCNPJ = (cnpj: string): string => {
 };
 
 export const formatCEP = (cep: string): string => {
-  if (!cep) return '';
   const cleaned = cep.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{5})(\d{3})$/);
   if (match) {
@@ -83,31 +78,29 @@ export const formatCEP = (cep: string): string => {
   return cep;
 };
 
+export const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
 export const maskEmail = (email: string): string => {
   if (!email) return '';
   const [username, domain] = email.split('@');
   if (!username || !domain) return email;
   
-  const parts = username.split('.');
-  if (parts.length > 1) {
-    const maskedParts = parts.map((part, index) => {
-      if (index === 0) {
-        return part.charAt(0) + '*'.repeat(part.length - 2) + part.charAt(part.length - 1);
-      }
-      return part.charAt(0) + '*'.repeat(part.length - 2) + part.charAt(part.length - 1);
-    });
-    return `${maskedParts.join('.')}@${domain}`;
-  }
-  
-  const maskedUsername = username.charAt(0) + '*'.repeat(username.length - 2) + username.charAt(username.length - 1);
+  const maskedUsername = username.charAt(0) + '*'.repeat(Math.max(0, username.length - 2)) + username.charAt(username.length - 1);
   return `${maskedUsername}@${domain}`;
 };
 
 export const maskPhone = (phone: string): string => {
   if (!phone) return '';
   const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length !== 11) return phone;
-  return `(${cleaned.slice(0, 2)}) *****-${cleaned.slice(7)}`;
+  if (cleaned.length === 11) {
+    return `(${cleaned.slice(0, 2)}) *****-${cleaned.slice(7)}`;
+  }
+  return `(${cleaned.slice(0, 2)}) ****-${cleaned.slice(6)}`;
 };
 
 export const maskCPF = (cpf: string): string => {

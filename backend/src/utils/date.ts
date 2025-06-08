@@ -1,32 +1,19 @@
-export const formatDate = (date: Date | string): string => {
-  const d = new Date(date);
-  return d.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+import { format, parseISO, isToday as dateFnsIsToday, isYesterday as dateFnsIsYesterday, isThisMonth as dateFnsIsThisMonth, isThisYear as dateFnsIsThisYear, differenceInYears } from 'date-fns';
+import { isToday as _isToday, isYesterday as _isYesterday, isThisMonth as _isThisMonth, isThisYear as _isThisYear } from 'date-fns';
+
+export const formatDate = (date: string | Date): string => {
+  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+  return format(parsedDate, 'dd/MM/yyyy');
 };
 
-export const formatDateTime = (date: Date | string): string => {
-  const d = new Date(date);
-  return d.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }) + ' ' + d.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+export const formatDateTime = (date: string | Date): string => {
+  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+  return format(parsedDate, 'dd/MM/yyyy HH:mm:ss');
 };
 
-export const formatTime = (date: Date | string): string => {
-  const d = new Date(date);
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(d);
+export const formatTime = (date: string | Date): string => {
+  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+  return format(parsedDate, 'HH:mm:ss');
 };
 
 export const formatRelativeTime = (date: Date | string): string => {
@@ -62,21 +49,12 @@ export const formatRelativeTime = (date: Date | string): string => {
   return `${diffInYears} ${diffInYears === 1 ? 'ano' : 'anos'} atrás`;
 };
 
-export const isToday = (date: Date | string): boolean => {
-  const d = new Date(date);
-  const today = new Date();
-  return (
-    d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear()
-  );
+export const isToday = (date: Date): boolean => {
+  return _isToday(date);
 };
 
-export const isYesterday = (date: Date | string): boolean => {
-  const d = new Date(date);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return d.toDateString() === yesterday.toDateString();
+export const isYesterday = (date: Date): boolean => {
+  return _isYesterday(date);
 };
 
 export const isThisWeek = (date: Date | string): boolean => {
@@ -87,16 +65,12 @@ export const isThisWeek = (date: Date | string): boolean => {
   return d >= startOfWeek && d <= endOfWeek;
 };
 
-export const isThisMonth = (date: Date | string): boolean => {
-  const d = new Date(date);
-  const today = new Date();
-  return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+export const isThisMonth = (date: Date): boolean => {
+  return _isThisMonth(date);
 };
 
-export const isThisYear = (date: Date | string): boolean => {
-  const d = new Date(date);
-  const today = new Date();
-  return d.getFullYear() === today.getFullYear();
+export const isThisYear = (date: Date): boolean => {
+  return _isThisYear(date);
 };
 
 export const addDays = (date: Date | string, days: number): Date => {
@@ -170,15 +144,7 @@ export const getEndOfYear = (date: Date | string): Date => {
   return getEndOfDay(d);
 };
 
-export const getAge = (birthDate: Date | string): number => {
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--;
-  }
-  
-  return age;
+export const getAge = (birthDate: string | Date): number => {
+  const parsedDate = typeof birthDate === 'string' ? parseISO(birthDate) : birthDate;
+  return differenceInYears(new Date(), parsedDate);
 }; 

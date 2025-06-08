@@ -1,114 +1,60 @@
-import { Request, Response, NextFunction } from 'express';
-import { Redis } from 'ioredis';
+import Redis from 'ioredis';
+import { logger } from './logging';
 
-// Create Redis client
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD,
-});
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
 
-// Cache options interface
-interface CacheOptions {
-  ttl: number; // Time to live in seconds
-  key?: string; // Custom cache key
-  excludePaths?: string[]; // Paths to exclude from caching
-}
-
-// Default cache options
-const defaultOptions: CacheOptions = {
-  ttl: 300, // 5 minutes
-  excludePaths: ['/api/auth', '/api/health'],
-};
-
-// Generate cache key
-const generateCacheKey = (req: Request, customKey?: string): string => {
-  if (customKey) {
-    return `cache:${customKey}`;
-  }
-  return `cache:${req.method}:${req.originalUrl}`;
-};
-
-// Check if path should be cached
-const shouldCache = (req: Request, excludePaths?: string[]): boolean => {
-  if (!excludePaths) return true;
-  return !excludePaths.some(path => req.path.startsWith(path));
-};
-
-// Cache middleware factory
-export const createCacheMiddleware = (options: Partial<CacheOptions> = {}) => {
-  const cacheOptions = { ...defaultOptions, ...options };
-
-  return async (req: Request, res: Response, next: NextFunction) => {
+export const createCacheMiddleware = (ttl: number = 300) => {
+  return async (req: any, res: any, next: any) => {
     // Skip caching for non-GET requests
     if (req.method !== 'GET') {
       return next();
     }
 
-    // Check if path should be cached
-    if (!shouldCache(req, cacheOptions.excludePaths)) {
+    // Skip caching for excluded paths
+    const excludedPaths = ['/api/auth/login', '/api/auth/register'];
+    if (excludedPaths.includes(req.originalUrl)) {
       return next();
     }
 
+    const key = `cache:${req.originalUrl}`;
+
     try {
-      // Generate cache key
-      const cacheKey = generateCacheKey(req, cacheOptions.key);
-
-      // Try to get cached response
-      const cachedResponse = await redis.get(cacheKey);
-
-      if (cachedResponse) {
-        // Return cached response
-        const { data, headers } = JSON.parse(cachedResponse);
-        Object.entries(headers).forEach(([key, value]) => {
-          res.setHeader(key, value as string);
-        });
+      const cachedData = await redis.get(key);
+      if (cachedData) {
+        const data = JSON.parse(cachedData);
+        res.setHeader('content-type', 'application/json');
         return res.json(data);
       }
 
-      // Capture response
+      // Override json function
       const originalJson = res.json;
-      res.json = function (body: any): Response {
-        // Cache response
-        redis.setex(
-          cacheKey,
-          cacheOptions.ttl,
-          JSON.stringify({
-            data: body,
-            headers: res.getHeaders(),
-          })
-        );
-
-        // Restore original json function
-        res.json = originalJson;
-        return res.json(body);
+      res.json = function(body: any) {
+        redis.setex(key, ttl, JSON.stringify(body))
+          .catch(err => logger.error('Cache error', { error: err.message }));
+        return originalJson.call(this, body);
       };
 
       next();
-    } catch (error) {
-      // Log error and continue without caching
-      console.error('Cache middleware error:', error);
+    } catch (err) {
+      logger.error('Cache error', { error: err.message });
       next();
     }
   };
 };
 
-// Clear cache middleware
-export const clearCache = async (req: Request, res: Response, next: NextFunction) => {
+export const clearCache = async (req: any, res: any, next: any) => {
   try {
-    const pattern = req.query.pattern as string;
-    if (pattern) {
-      // Clear specific cache keys
-      const keys = await redis.keys(`cache:${pattern}`);
-      if (keys.length > 0) {
-        await redis.del(...keys);
-      }
+    const pattern = req.query.pattern ? `cache:${req.query.pattern}` : 'cache:*';
+    const keys = await redis.keys(pattern);
+
+    if (keys.length > 0) {
+      await redis.del(...keys);
     } else {
-      // Clear all cache
       await redis.flushdb();
     }
+
     next();
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }; 

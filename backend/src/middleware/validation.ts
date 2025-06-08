@@ -1,88 +1,74 @@
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { BadRequestError } from '../utils/errors';
-import logger from '../utils/logger';
+import logger from './logging';
 
 // Validation middleware factory
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
-
+    const { error } = schema.validate(req.body, { abortEarly: false });
     if (error) {
-      const errors = error.details
-        .slice(0, 3) // Limita a 3 erros
-        .map((detail) => ({
+      logger.error('Validation error', { error: error.details });
+      return res.status(400).json({
+        success: false,
+        message: 'Validation Error',
+        errors: error.details.map(detail => ({
           field: detail.path.join('.'),
-          message: detail.message,
-        }));
-      throw new BadRequestError('Validation error', errors);
+          message: detail.message
+        }))
+      });
     }
-
-    req.body = value;
     next();
   };
 };
 
 // Common validation schemas
-export const validationSchemas = {
+export const schemas = {
   // User schemas
   createUser: Joi.object({
-    name: Joi.string().required().min(3).max(50),
-    email: Joi.string().required().email(),
+    name: Joi.string().required(),
+    email: Joi.string().email().required(),
     password: Joi.string().required().min(6),
-    role: Joi.string().valid('user', 'admin').default('user'),
+    role: Joi.string().valid('user', 'admin').default('user')
   }),
 
   updateUser: Joi.object({
-    name: Joi.string().min(3).max(50),
+    name: Joi.string(),
     email: Joi.string().email(),
     password: Joi.string().min(6),
-    role: Joi.string().valid('user', 'admin'),
-    active: Joi.boolean(),
+    role: Joi.string().valid('user', 'admin')
   }),
 
   // Product schemas
   createProduct: Joi.object({
-    name: Joi.string().required().min(3).max(100),
-    description: Joi.string().required().min(10),
+    name: Joi.string().required(),
+    description: Joi.string().required(),
     price: Joi.number().required().min(0),
     stock: Joi.number().required().min(0),
-    category: Joi.string().required(),
-    image: Joi.string().uri(),
+    category: Joi.string().required()
   }),
 
   updateProduct: Joi.object({
-    name: Joi.string().min(3).max(100),
-    description: Joi.string().min(10),
+    name: Joi.string(),
+    description: Joi.string(),
     price: Joi.number().min(0),
     stock: Joi.number().min(0),
-    category: Joi.string(),
-    image: Joi.string().uri(),
+    category: Joi.string()
   }),
 
   // Order schemas
   createOrder: Joi.object({
-    items: Joi.array().items(
+    customerId: Joi.string().required(),
+    products: Joi.array().items(
       Joi.object({
         productId: Joi.string().required(),
-        quantity: Joi.number().required().min(1),
+        quantity: Joi.number().required().min(1)
       })
-    ).required().min(1),
-    shippingAddress: Joi.object({
-      street: Joi.string().required(),
-      city: Joi.string().required(),
-      state: Joi.string().required(),
-      zipCode: Joi.string().required(),
-      country: Joi.string().required(),
-    }).required(),
+    ).required()
   }),
 
   updateOrder: Joi.object({
-    status: Joi.string().valid('pending', 'processing', 'shipped', 'delivered', 'cancelled'),
-    trackingNumber: Joi.string(),
+    status: Joi.string().valid('pending', 'processing', 'completed', 'cancelled').required()
   }),
 
   // Authentication schemas
