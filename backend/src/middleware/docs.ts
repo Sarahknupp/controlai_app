@@ -1,7 +1,7 @@
 import { Express } from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { version } from '../../package.json';
+import { logger } from '../utils/logger';
 
 // Swagger options
 const options: swaggerJsdoc.Options = {
@@ -10,21 +10,21 @@ const options: swaggerJsdoc.Options = {
     info: {
       title: 'ControlAI API',
       version: '1.0.0',
-      description: 'API documentation for ControlAI',
+      description: 'API documentation for ControlAI'
     },
     servers: [
       {
-        url: 'http://localhost:3000',
-        description: 'Development server',
-      },
+        url: process.env.API_URL || 'http://localhost:3000',
+        description: 'API Server'
+      }
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
+          bearerFormat: 'JWT'
+        }
       },
       schemas: {
         Error: {
@@ -141,16 +141,21 @@ const options: swaggerJsdoc.Options = {
         },
       },
     },
+    security: [
+      {
+        bearerAuth: []
+      }
+    ]
   },
-  apis: ['./src/routes/*.ts', './src/models/*.ts'],
+  apis: ['./src/routes/*.ts', './src/models/*.ts']
 };
 
 // Generate Swagger documentation
 const swaggerSpec = swaggerJsdoc(options);
 
 // Apply documentation middleware to Express app
-export const setupSwagger = (app: Express) => {
-  // Serve Swagger documentation
+export const applyDocsMiddleware = (app: Express) => {
+  // Serve Swagger UI
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Serve Swagger JSON
@@ -158,6 +163,8 @@ export const setupSwagger = (app: Express) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });
+
+  logger.info('Swagger documentation available at /api-docs');
 };
 
 // Swagger decorators

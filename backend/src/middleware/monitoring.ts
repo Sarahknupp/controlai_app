@@ -1,100 +1,134 @@
 import { Request, Response, NextFunction } from 'express';
-import { createLogger, format, transports } from 'winston';
+import winston from 'winston';
+import { logger } from '../utils/logger';
 import { IUser } from '../types/user';
 
+const { format, transports } = winston;
+
 // Create logger instance
-const logger = createLogger({
+const logger = winston.createLogger({
   level: 'info',
   format: format.combine(
     format.timestamp(),
     format.json()
   ),
   transports: [
-    new transports.File({ filename: 'logs/metrics.log' }),
-  ],
+    new transports.File({ filename: 'logs/monitoring.log' })
+  ]
 });
 
+// Add console transport in development
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new transports.Console({
+    format: format.combine(
+      format.colorize(),
+      format.simple()
+    )
+  }));
+}
+
 // Metrics interface
-interface Metrics {
+interface Metric {
   timestamp: number;
   method: string;
   path: string;
   statusCode: number;
   responseTime: number;
+  ip: string;
+  userAgent: string;
   userId?: string;
-  userAgent?: string;
-  ip?: string;
   error?: string;
 }
 
+interface RequestMetrics {
+  count: number;
+  totalTime: number;
+  minTime: number;
+  maxTime: number;
+}
+
 // Store metrics in memory (in production, use a proper metrics database)
-const metrics: Metrics[] = [];
+const metrics: { [key: string]: RequestMetrics } = {};
 
 // Clean up old metrics every hour
 setInterval(() => {
   const oneHourAgo = Date.now() - 3600000;
-  const index = metrics.findIndex(m => m.timestamp > oneHourAgo);
+  const index = Object.keys(metrics).findIndex(key => metrics[key].timestamp > oneHourAgo);
   if (index > 0) {
-    metrics.splice(0, index);
+    const keys = Object.keys(metrics).slice(0, index);
+    keys.forEach(key => delete metrics[key]);
   }
 }, 3600000);
 
 // Monitoring middleware
 export const monitoringMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Capture request start time
   const start = Date.now();
+  const path = req.path;
 
-  // Capture response
-  const originalJson = res.json;
-  res.json = function (body: any): Response {
-    // Calculate response time
-    const responseTime = Date.now() - start;
-
-    // Create metrics object
-    const metric: Metrics = {
-      timestamp: Date.now(),
-      method: req.method,
-      path: req.originalUrl,
-      statusCode: res.statusCode,
-      responseTime,
-      userId: (req.user as IUser)?.id,
-      userAgent: req.get('user-agent'),
-      ip: req.ip,
+  // Initialize metrics for this path if not exists
+  if (!metrics[path]) {
+    metrics[path] = {
+      count: 0,
+      totalTime: 0,
+      minTime: Infinity,
+      maxTime: 0
     };
+  }
 
-    // Add to metrics array
-    metrics.push(metric);
+  // Log request start
+  logger.info('Request started', {
+    method: req.method,
+    path,
+    query: req.query,
+    body: req.method !== 'GET' ? req.body : undefined,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    userId: req.user?.id
+  });
 
-    // Log metric
-    logger.info('Request metric', metric);
+  // Track response
+  res.on('finish', () => {
+    const duration = Date.now() - start;
 
-    // Restore original json function
-    res.json = originalJson;
-    return res.json(body);
-  };
+    // Update metrics
+    metrics[path].count++;
+    metrics[path].totalTime += duration;
+    metrics[path].minTime = Math.min(metrics[path].minTime, duration);
+    metrics[path].maxTime = Math.max(metrics[path].maxTime, duration);
+
+    // Log request completion
+    logger.info('Request completed', {
+      method: req.method,
+      path,
+      statusCode: res.statusCode,
+      duration,
+      metrics: {
+        count: metrics[path].count,
+        avgTime: metrics[path].totalTime / metrics[path].count,
+        minTime: metrics[path].minTime,
+        maxTime: metrics[path].maxTime
+      }
+    });
+  });
 
   next();
 };
 
 // Error monitoring middleware
 export const errorMonitoringMiddleware = (error: Error, req: Request, res: Response, next: NextFunction) => {
-  // Create error metric
-  const metric: Metrics = {
+  const metric: Metric = {
     timestamp: Date.now(),
     method: req.method,
-    path: req.originalUrl,
+    path: req.path,
     statusCode: res.statusCode,
     responseTime: 0,
-    userId: (req.user as IUser)?.id,
-    userAgent: req.get('user-agent'),
     ip: req.ip,
-    error: error.message,
+    userAgent: req.get('user-agent') || '',
+    userId: req.user?.id,
+    error: error.message
   };
 
-  // Add to metrics array
   metrics.push(metric);
-
-  // Log error metric
   logger.error('Error metric', metric);
 
   next(error);
@@ -102,43 +136,31 @@ export const errorMonitoringMiddleware = (error: Error, req: Request, res: Respo
 
 // Get metrics
 export const getMetrics = () => {
-  return metrics;
+  return Object.entries(metrics).reduce((acc, [path, data]) => {
+    acc[path] = {
+      ...data,
+      avgTime: data.totalTime / data.count
+    };
+    return acc;
+  }, {} as { [key: string]: RequestMetrics & { avgTime: number } });
 };
 
 // Get metrics summary
 export const getMetricsSummary = () => {
   const summary = {
     totalRequests: metrics.length,
-    averageResponseTime: 0,
+    errors: metrics.filter(m => m.error).length,
+    averageResponseTime: metrics.reduce((acc, m) => acc + m.responseTime, 0) / metrics.length || 0,
     requestsByMethod: {} as Record<string, number>,
     requestsByPath: {} as Record<string, number>,
-    requestsByStatusCode: {} as Record<number, number>,
-    errors: 0,
+    requestsByStatusCode: {} as Record<string, number>
   };
 
-  if (metrics.length > 0) {
-    // Calculate average response time
-    const totalResponseTime = metrics.reduce((sum, m) => sum + m.responseTime, 0);
-    summary.averageResponseTime = totalResponseTime / metrics.length;
-
-    // Count requests by method
-    metrics.forEach(m => {
-      summary.requestsByMethod[m.method] = (summary.requestsByMethod[m.method] || 0) + 1;
-    });
-
-    // Count requests by path
-    metrics.forEach(m => {
-      summary.requestsByPath[m.path] = (summary.requestsByPath[m.path] || 0) + 1;
-    });
-
-    // Count requests by status code
-    metrics.forEach(m => {
-      summary.requestsByStatusCode[m.statusCode] = (summary.requestsByStatusCode[m.statusCode] || 0) + 1;
-    });
-
-    // Count errors
-    summary.errors = metrics.filter(m => m.error).length;
-  }
+  metrics.forEach(metric => {
+    summary.requestsByMethod[metric.method] = (summary.requestsByMethod[metric.method] || 0) + 1;
+    summary.requestsByPath[metric.path] = (summary.requestsByPath[metric.path] || 0) + 1;
+    summary.requestsByStatusCode[metric.statusCode] = (summary.requestsByStatusCode[metric.statusCode] || 0) + 1;
+  });
 
   return summary;
 }; 

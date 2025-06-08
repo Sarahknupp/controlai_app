@@ -2,7 +2,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.test.ts'],
+  testMatch: ['**/*.spec.ts', '**/*.test.ts'],
   moduleNameMapper: {
     '^winston$': '<rootDir>/src/__mocks__/winston.ts'
   },

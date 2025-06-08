@@ -1,36 +1,38 @@
 import { Request, Response, NextFunction } from 'express';
-import { createLogger, format, transports } from 'winston';
+import winston from 'winston';
+import { format, transports } from 'winston';
 import { IUser } from '../types/user';
+import { logger } from '../utils/logger';
 
 // Extend Express Request type to include user
 declare global {
   namespace Express {
     interface Request {
       user?: IUser;
+      startTime?: number;
     }
   }
 }
 
-// Create logger instance
-const logger = createLogger({
-  level: 'info',
+const loggerInstance = winston.createLogger({
+  level: process.env.LOG_LEVEL || 'info',
   format: format.combine(
     format.timestamp(),
     format.json()
   ),
   transports: [
     new transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new transports.File({ filename: 'logs/combined.log' }),
-  ],
+    new transports.File({ filename: 'logs/combined.log' })
+  ]
 });
 
 // Add console transport in development
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new transports.Console({
+  loggerInstance.add(new transports.Console({
     format: format.combine(
       format.colorize(),
       format.simple()
-    ),
+    )
   }));
 }
 
@@ -41,54 +43,57 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   // Log request
   logger.info('Incoming request', {
     method: req.method,
-    url: req.originalUrl,
+    url: req.url,
     ip: req.ip,
     userAgent: req.get('user-agent'),
-    userId: req.user?.id,
-    body: req.method !== 'GET' ? req.body : undefined,
-    query: Object.keys(req.query).length ? req.query : undefined,
+    userId: req.user?.id
   });
 
-  // Log response
+  // Store original send function
   const originalSend = res.send;
+
+  // Override send function
   res.send = function (body) {
     const responseTime = Date.now() - start;
-    const statusCode = res.statusCode;
 
+    // Log response
     logger.info('Outgoing response', {
       method: req.method,
-      url: req.originalUrl,
-      statusCode,
+      url: req.url,
+      statusCode: res.statusCode,
       responseTime: `${responseTime}ms`,
-      userId: req.user?.id,
+      userId: req.user?.id
     });
 
+    // Restore original send function
+    res.send = originalSend;
+
+    // Call original send function
     return originalSend.call(this, body);
   };
 
+  req.startTime = start;
   next();
 };
 
 // Error logging middleware
-export const errorLogger = (error: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorLogger = (err: Error, req: Request, res: Response, next: NextFunction) => {
   logger.error('Error occurred', {
     error: {
-      name: error.name,
-      message: error.message,
-      stack: error.stack,
+      name: err.name,
+      message: err.message,
+      stack: err.stack
     },
     request: {
       method: req.method,
-      url: req.originalUrl,
+      url: req.url,
       ip: req.ip,
       userAgent: req.get('user-agent'),
-      userId: req.user?.id,
-      body: req.method !== 'GET' ? req.body : undefined,
-      query: Object.keys(req.query).length ? req.query : undefined,
-    },
+      userId: req.user?.id
+    }
   });
 
-  next(error);
+  next(err);
 };
 
 // Performance monitoring middleware
@@ -99,7 +104,7 @@ export const performanceLogger = (req: Request, res: Response, next: NextFunctio
     const [seconds, nanoseconds] = process.hrtime(start);
     const duration = seconds * 1000 + nanoseconds / 1000000;
 
-    logger.info('Request performance', {
+    loggerInstance.info('Request performance', {
       method: req.method,
       url: req.originalUrl,
       statusCode: res.statusCode,
@@ -109,4 +114,6 @@ export const performanceLogger = (req: Request, res: Response, next: NextFunctio
   });
 
   next();
-}; 
+};
+
+export default loggerInstance; 

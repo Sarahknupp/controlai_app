@@ -6,13 +6,24 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/backend/src/$1'
   },
-  setupFilesAfterEnv: ['<rootDir>/backend/src/tests/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/backend/src/__tests__/setup.ts'],
+  coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'backend/src/**/*.ts',
     '!backend/src/**/*.d.ts',
-    '!backend/src/tests/**/*.ts'
+    '!backend/src/**/*.test.ts',
+    '!backend/src/__mocks__/**'
   ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov'],
-  verbose: true
+  verbose: true,
+  moduleDirectories: ['node_modules', 'backend/src'],
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  transform: {
+    '^.+\\.ts$': 'ts-jest'
+  },
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.json'
+    }
+  }
 }; 
