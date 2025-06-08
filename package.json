@@ -6,13 +6,16 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "tsc && react-scripts build",
     "test": "jest",
     "test-connection": "ts-node src/test-connection.ts",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "react-scripts test --ci --coverage --watchAll=false",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "deploy": "vercel --prod",
+    "deploy:staging": "vercel",
+    "deploy:preview": "vercel --preview"
   },
   "keywords": [],
   "author": "",

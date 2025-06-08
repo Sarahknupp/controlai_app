@@ -243,3 +243,89 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE.md](L
 Seu Nome - [@seutwitter](https://twitter.com/seutwitter) - email@example.com
 
 Link do Projeto: [https://github.com/seu-usuario/app_controlaivendas](https://github.com/seu-usuario/app_controlaivendas)# controlai_app
+
+## Deploy
+
+### Pré-requisitos
+
+1. Instale o Vercel CLI:
+```bash
+npm install -g vercel
+```
+
+2. Faça login no Vercel:
+```bash
+vercel login
+```
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+# Banco de Dados
+MONGODB_URI=sua_uri_mongodb
+REDIS_URL=sua_url_redis
+
+# Autenticação
+JWT_SECRET=seu_secret_jwt
+JWT_EXPIRES_IN=7d
+
+# Email
+SMTP_HOST=seu_host_smtp
+SMTP_PORT=587
+SMTP_USER=seu_usuario_smtp
+SMTP_PASS=sua_senha_smtp
+
+# Outros
+NODE_ENV=production
+PORT=3000
+```
+
+### Comandos de Deploy
+
+1. Deploy em Produção:
+```bash
+npm run deploy
+```
+
+2. Deploy em Staging:
+```bash
+npm run deploy:staging
+```
+
+3. Deploy Preview:
+```bash
+npm run deploy:preview
+```
+
+### Estrutura do Deploy
+
+- Frontend: `/build`
+- Backend: `/backend/src/server.ts`
+- API Routes: `/api/*`
+
+### Monitoramento
+
+Após o deploy, você pode monitorar sua aplicação no dashboard do Vercel:
+- Logs
+- Métricas de Performance
+- Erros
+- Deployments
+
+### Troubleshooting
+
+1. Se o build falhar:
+   - Verifique se todas as dependências estão instaladas
+   - Verifique se todas as variáveis de ambiente estão configuradas
+   - Verifique os logs de build no dashboard do Vercel
+
+2. Se a aplicação não iniciar:
+   - Verifique os logs de runtime no dashboard do Vercel
+   - Verifique se as variáveis de ambiente estão corretas
+   - Verifique se as portas estão configuradas corretamente
+
+3. Se houver problemas com o banco de dados:
+   - Verifique se a URI do MongoDB está correta
+   - Verifique se o banco está acessível
+   - Verifique se as credenciais estão corretas
