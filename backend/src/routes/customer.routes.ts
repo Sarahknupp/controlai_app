@@ -19,18 +19,26 @@ import {
 
 const router = express.Router();
 
+// Validation schemas
+const customerIdSchema = {
+  params: {
+    customerId: { type: 'number' as const, required: true, min: 1 }
+  }
+};
+
 // Protect all routes
 router.use(protect);
 
-// Routes accessible by all authenticated users
+// Base routes
 router.get('/', validate(getCustomersValidation), getCustomers);
-router.get('/:id', getCustomer);
-router.get('/:id/purchases', validate(getCustomerPurchasesValidation), getCustomerPurchases);
-
-// Routes accessible only by admin
-router.use(authorize(UserRole.ADMIN));
 router.post('/', validate(createCustomerValidation), createCustomer);
-router.put('/:id', validate(updateCustomerValidation), updateCustomer);
-router.delete('/:id', deleteCustomer);
+
+// Customer-specific routes
+router.get('/:customerId', validate(customerIdSchema), getCustomer);
+router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), updateCustomer);
+router.delete('/:customerId', validate(customerIdSchema), deleteCustomer);
+
+// Customer purchases
+router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), getCustomerPurchases);
 
 export default router; 

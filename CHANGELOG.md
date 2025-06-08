@@ -1,6 +1,41 @@
 # Changelog
 
-## [Não Lançado]
+## [Unreleased]
+
+### Changed
+- Refatoração completa das rotas Express para melhor organização e clareza:
+  - Renomeados parâmetros genéricos para nomes mais descritivos (ex: `:id` -> `:userId`, `:saleId`, `:customerId`)
+  - Organização das rotas em seções lógicas (base routes, specific routes)
+  - Adicionada validação consistente para todos os parâmetros
+  - Melhorada a estrutura de autenticação e autorização
+  - Padronização dos nomes de rotas e métodos HTTP
+  - Removidos protocolos/domínios desnecessários das rotas
+
+### Added
+- Novos schemas de validação para parâmetros de rota
+- Documentação atualizada sobre convenções de rotas
+- Exemplos de uso das novas rotas
+
+### Fixed
+- Corrigido problema de "Missing parameter name" em rotas Express
+- Melhorada a validação de parâmetros em todas as rotas
+- Padronização da estrutura de validação usando `params`, `query` e `body`
+
+## [0.1.0] - 2024-03-20
+
+### Added
+- Configuração inicial do projeto
+- Estrutura básica do backend com Express e TypeScript
+- Rotas iniciais para produtos, vendas, clientes e usuários
+- Sistema de autenticação e autorização
+- Validação de dados com middleware personalizado
+- Documentação inicial do projeto
+
+### Changed
+- Nenhuma mudança significativa
+
+### Fixed
+- Nenhum bug reportado
 
 ### Corrigido
 - Corrigido erro "Missing parameter name" em rotas Express
