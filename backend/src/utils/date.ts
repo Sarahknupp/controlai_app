@@ -1,22 +1,23 @@
 export const formatDate = (date: Date | string): string => {
   const d = new Date(date);
-  return new Intl.DateTimeFormat('pt-BR', {
+  return d.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(d);
+  });
 };
 
 export const formatDateTime = (date: Date | string): string => {
   const d = new Date(date);
-  return new Intl.DateTimeFormat('pt-BR', {
+  return d.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+  }) + ' ' + d.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-  }).format(d);
+  });
 };
 
 export const formatTime = (date: Date | string): string => {
@@ -75,28 +76,21 @@ export const isYesterday = (date: Date | string): boolean => {
   const d = new Date(date);
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  return (
-    d.getDate() === yesterday.getDate() &&
-    d.getMonth() === yesterday.getMonth() &&
-    d.getFullYear() === yesterday.getFullYear()
-  );
+  return d.toDateString() === yesterday.toDateString();
 };
 
 export const isThisWeek = (date: Date | string): boolean => {
   const d = new Date(date);
   const today = new Date();
-  const diff = today.getTime() - d.getTime();
-  const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return diffDays < 7;
+  const startOfWeek = getStartOfWeek(today);
+  const endOfWeek = getEndOfWeek(today);
+  return d >= startOfWeek && d <= endOfWeek;
 };
 
 export const isThisMonth = (date: Date | string): boolean => {
   const d = new Date(date);
   const today = new Date();
-  return (
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear()
-  );
+  return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
 };
 
 export const isThisYear = (date: Date | string): boolean => {
@@ -138,7 +132,7 @@ export const getEndOfDay = (date: Date | string): Date => {
 export const getStartOfWeek = (date: Date | string): Date => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const diff = d.getDate() - day;
   d.setDate(diff);
   return getStartOfDay(d);
 };
@@ -146,7 +140,7 @@ export const getStartOfWeek = (date: Date | string): Date => {
 export const getEndOfWeek = (date: Date | string): Date => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? 0 : 7);
+  const diff = d.getDate() + (6 - day);
   d.setDate(diff);
   return getEndOfDay(d);
 };

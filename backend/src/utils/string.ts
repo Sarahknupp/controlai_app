@@ -45,9 +45,10 @@ export const removeExtraSpaces = (str: string): string => {
 export const formatPhoneNumber = (phone: string): string => {
   if (!phone) return '';
   const cleaned = phone.replace(/\D/g, '');
-  const match = cleaned.match(/^(\d{2})(\d{5})(\d{4})$/);
-  if (match) {
-    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  if (cleaned.length === 11) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  } else if (cleaned.length === 10) {
+    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
   }
   return phone;
 };
@@ -86,6 +87,17 @@ export const maskEmail = (email: string): string => {
   if (!email) return '';
   const [username, domain] = email.split('@');
   if (!username || !domain) return email;
+  
+  const parts = username.split('.');
+  if (parts.length > 1) {
+    const maskedParts = parts.map((part, index) => {
+      if (index === 0) {
+        return part.charAt(0) + '*'.repeat(part.length - 2) + part.charAt(part.length - 1);
+      }
+      return part.charAt(0) + '*'.repeat(part.length - 2) + part.charAt(part.length - 1);
+    });
+    return `${maskedParts.join('.')}@${domain}`;
+  }
   
   const maskedUsername = username.charAt(0) + '*'.repeat(username.length - 2) + username.charAt(username.length - 1);
   return `${maskedUsername}@${domain}`;
