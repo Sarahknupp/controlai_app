@@ -17,7 +17,7 @@ interface RateLimitStore {
 
 const store: RateLimitStore = {};
 
-export const rateLimit = (windowMs: number = 60000, max: number = 100) => {
+export function createRateLimiter({ windowMs, max, message, statusCode }: RateLimitConfig) {
   return (req: Request, res: Response, next: NextFunction) => {
     const key = req.ip;
     const now = Date.now();
@@ -37,8 +37,8 @@ export const rateLimit = (windowMs: number = 60000, max: number = 100) => {
     // Check if limit exceeded
     if (store[key].count > max) {
       logger.warn('Rate limit exceeded', { ip: key, count: store[key].count });
-      return res.status(429).json({
-        error: 'Too many requests',
+      return res.status(statusCode || 429).json({
+        error: message || 'Too many requests',
         retryAfter: Math.ceil((store[key].resetTime + windowMs - now) / 1000)
       });
     }
@@ -50,19 +50,19 @@ export const rateLimit = (windowMs: number = 60000, max: number = 100) => {
 
     next();
   };
-};
+}
 
 // Default rate limiter (100 requests per 15 minutes)
-export const defaultRateLimiter = rateLimit(15 * 60 * 1000, 100);
+export const defaultRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 100 });
 
 // Auth rate limiter (5 requests per 15 minutes)
-export const authRateLimiter = rateLimit(15 * 60 * 1000, 5);
+export const authRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
 
 // Create stricter rate limiter for authentication routes
-export const authRateLimiterStrict = rateLimit(60 * 60 * 1000, 5);
+export const authRateLimiterStrict = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 5 });
 
 // Create rate limiter for API routes
-export const apiRateLimiter = rateLimit(15 * 60 * 1000, 100);
+export const apiRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 100 });
 
 // Create rate limiter for public routes
-export const publicRateLimiter = rateLimit(60 * 60 * 1000, 1000); 
+export const publicRateLimiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 1000 }); 
