@@ -1,40 +1,24 @@
-import winston from 'winston';
-import path from 'path';
+import { createLogger, format, transports } from 'winston';
 
-const logDir = 'logs';
-const logLevel = process.env.LOG_LEVEL || 'info';
+export const { colorize, combine, timestamp, json, simple } = format;
 
-const logger = winston.createLogger({
-  level: logLevel,
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
+export const logger = createLogger({
+  level: process.env.LOG_LEVEL || 'info',
+  format: combine(
+    timestamp(),
+    json()
   ),
   transports: [
-    // Write all logs to console
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    }),
-    // Write all logs with level 'error' and below to error.log
-    new winston.transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error'
-    }),
-    // Write all logs with level 'info' and below to combined.log
-    new winston.transports.File({
-      filename: path.join(logDir, 'combined.log')
-    })
+    new transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new transports.File({ filename: 'logs/combined.log' })
   ]
 });
 
-// Create a stream object for Morgan
-export const stream = {
-  write: (message: string) => {
-    logger.info(message.trim());
-  }
-};
-
-export { logger }; 
+if (process.env.NODE_ENV !== 'production') {
+  logger.add(new transports.Console({
+    format: combine(
+      colorize(),
+      simple()
+    )
+  }));
+} 
