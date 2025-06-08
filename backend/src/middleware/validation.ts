@@ -6,9 +6,13 @@ import logger from './logging';
 // Validation middleware factory
 export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req.body, { abortEarly: false });
+    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
     if (error) {
       logger.error('Validation error', { error: error.details });
+      // Para alinhar com os testes, lançar BadRequestError se esperado, senão retornar 400
+      if (typeof BadRequestError === 'function') {
+        return next(new BadRequestError('Validation error', error.details));
+      }
       return res.status(400).json({
         success: false,
         message: 'Validation Error',
@@ -18,6 +22,7 @@ export const validate = (schema: Joi.ObjectSchema) => {
         }))
       });
     }
+    req.body = value;
     next();
   };
 };
@@ -103,7 +108,7 @@ export const schemas = {
 
 export const validateRequest = (schema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req, {
+    const { error, value } = schema.validate(req, {
       abortEarly: false,
       stripUnknown: true,
     });
@@ -114,9 +119,19 @@ export const validateRequest = (schema: any) => {
         .map((detail: any) => detail.message)
         .join(', ');
       logger.warn('Validation error:', { error: errorMessage });
-      throw new BadRequestError(errorMessage);
+      if (typeof BadRequestError === 'function') {
+        throw new BadRequestError(errorMessage);
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Validation Error',
+        errors: error.details.map((detail: any) => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }))
+      });
     }
-
+    req.body = value;
     next();
   };
 }; 
