@@ -1,19 +1,32 @@
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/*.spec.ts', '**/*.test.ts'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+  },
   moduleNameMapper: {
-    '^winston$': '<rootDir>/src/__mocks__/winston.ts'
+    '^winston$': '<rootDir>/src/__mocks__/winston.ts',
+    '^twilio$': '<rootDir>/src/__mocks__/twilio.ts'
   },
   setupFiles: ['<rootDir>/src/__tests__/setup.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
-    '!src/**/__mocks__/**'
+    '!src/**/__mocks__/**',
+    '!src/index.ts',
+    '!src/config/**',
+    '!src/types/**'
   ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov'],
-  verbose: true
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  }
 }; 
