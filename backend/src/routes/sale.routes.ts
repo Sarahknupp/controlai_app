@@ -20,19 +20,26 @@ import { authorize } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
+// Validation schemas
+const saleIdSchema = {
+  params: {
+    id: { type: 'number' as const, required: true, min: 1 }
+  }
+};
+
 // Protect all routes
 router.use(protect);
 
 // Routes accessible by all authenticated users
-router.get('/', validate(getSalesValidation), getSales);
+router.get('/', validate({ query: getSalesValidation }), getSales);
 router.get('/stats', getSalesStats);
-router.get('/:id', getSale);
+router.get('/:id', validate(saleIdSchema), getSale);
 
 // Routes requiring admin or manager role
 router.use(authorize(UserRole.ADMIN, UserRole.MANAGER));
 
-router.post('/', validate(createSaleValidation), createSale);
-router.patch('/:id/cancel', validate(cancelSaleValidation), cancelSale);
-router.post('/:id/payments', validate(addPaymentValidation), addPayment);
+router.post('/', validate({ body: createSaleValidation }), createSale);
+router.patch('/:id/cancel', validate({ ...saleIdSchema, body: cancelSaleValidation }), cancelSale);
+router.post('/:id/payments', validate({ ...saleIdSchema, body: addPaymentValidation }), addPayment);
 
 export default router; 
