@@ -12,10 +12,12 @@ export const validate = (schema: Joi.ObjectSchema) => {
     });
 
     if (error) {
-      const errors = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }));
+      const errors = error.details
+        .slice(0, 3) // Limita a 3 erros
+        .map((detail) => ({
+          field: detail.path.join('.'),
+          message: detail.message,
+        }));
       throw new BadRequestError('Validation error', errors);
     }
 
@@ -122,6 +124,7 @@ export const validateRequest = (schema: any) => {
 
     if (error) {
       const errorMessage = error.details
+        .slice(0, 3) // Limita a 3 erros
         .map((detail: any) => detail.message)
         .join(', ');
       logger.warn('Validation error:', { error: errorMessage });
