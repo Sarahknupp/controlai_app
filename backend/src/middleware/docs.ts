@@ -8,17 +8,13 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Control AI Vendas API',
-      version,
-      description: 'API documentation for Control AI Vendas application',
-      contact: {
-        name: 'API Support',
-        email: 'support@controlaivendas.com',
-      },
+      title: 'ControlAI API',
+      version: '1.0.0',
+      description: 'API documentation for ControlAI',
     },
     servers: [
       {
-        url: process.env.API_URL || 'http://localhost:3000',
+        url: 'http://localhost:3000',
         description: 'Development server',
       },
     ],
@@ -34,29 +30,13 @@ const options: swaggerJsdoc.Options = {
         Error: {
           type: 'object',
           properties: {
-            status: {
-              type: 'string',
-              example: 'error',
+            success: {
+              type: 'boolean',
+              example: false,
             },
             message: {
               type: 'string',
               example: 'Error message',
-            },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  field: {
-                    type: 'string',
-                    example: 'fieldName',
-                  },
-                  message: {
-                    type: 'string',
-                    example: 'Error message',
-                  },
-                },
-              },
             },
           },
         },
@@ -86,7 +66,7 @@ const options: swaggerJsdoc.Options = {
           properties: {
             id: {
               type: 'string',
-              example: '123e4567-e89b-12d3-a456-426614174000',
+              example: '507f1f77bcf86cd799439011',
             },
             name: {
               type: 'string',
@@ -105,16 +85,6 @@ const options: swaggerJsdoc.Options = {
               type: 'boolean',
               example: true,
             },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-01-01T00:00:00.000Z',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-01-01T00:00:00.000Z',
-            },
           },
         },
         Product: {
@@ -122,7 +92,7 @@ const options: swaggerJsdoc.Options = {
           properties: {
             id: {
               type: 'string',
-              example: '123e4567-e89b-12d3-a456-426614174000',
+              example: '507f1f77bcf86cd799439011',
             },
             name: {
               type: 'string',
@@ -140,24 +110,6 @@ const options: swaggerJsdoc.Options = {
               type: 'integer',
               example: 100,
             },
-            category: {
-              type: 'string',
-              example: 'Electronics',
-            },
-            active: {
-              type: 'boolean',
-              example: true,
-            },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-01-01T00:00:00.000Z',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-01-01T00:00:00.000Z',
-            },
           },
         },
         Order: {
@@ -165,75 +117,41 @@ const options: swaggerJsdoc.Options = {
           properties: {
             id: {
               type: 'string',
-              example: '123e4567-e89b-12d3-a456-426614174000',
+              example: '507f1f77bcf86cd799439011',
             },
-            userId: {
-              type: 'string',
-              example: '123e4567-e89b-12d3-a456-426614174000',
+            user: {
+              $ref: '#/components/schemas/User',
             },
-            items: {
+            products: {
               type: 'array',
               items: {
-                type: 'object',
-                properties: {
-                  productId: {
-                    type: 'string',
-                    example: '123e4567-e89b-12d3-a456-426614174000',
-                  },
-                  quantity: {
-                    type: 'integer',
-                    example: 1,
-                  },
-                  price: {
-                    type: 'number',
-                    example: 99.99,
-                  },
-                },
+                $ref: '#/components/schemas/Product',
               },
             },
             total: {
               type: 'number',
-              example: 99.99,
+              example: 299.97,
             },
             status: {
               type: 'string',
-              enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
+              enum: ['pending', 'processing', 'completed', 'cancelled'],
               example: 'pending',
-            },
-            createdAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-01-01T00:00:00.000Z',
-            },
-            updatedAt: {
-              type: 'string',
-              format: 'date-time',
-              example: '2024-01-01T00:00:00.000Z',
             },
           },
         },
       },
     },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
   },
-  apis: ['./src/routes/*.ts'], // Path to the API routes
+  apis: ['./src/routes/*.ts', './src/models/*.ts'],
 };
 
 // Generate Swagger documentation
 const swaggerSpec = swaggerJsdoc(options);
 
 // Apply documentation middleware to Express app
-export const applyDocsMiddleware = (app: Express) => {
+export const setupSwagger = (app: Express) => {
   // Serve Swagger documentation
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Control AI Vendas API Documentation',
-  }));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   // Serve Swagger JSON
   app.get('/api-docs.json', (req, res) => {
@@ -251,23 +169,12 @@ export const swaggerDecorators = {
    *     Error:
    *       type: object
    *       properties:
-   *         status:
-   *           type: string
-   *           example: error
+   *         success:
+   *           type: boolean
+   *           example: false
    *         message:
    *           type: string
    *           example: Error message
-   *         errors:
-   *           type: array
-   *           items:
-   *             type: object
-   *             properties:
-   *               field:
-   *                 type: string
-   *                 example: fieldName
-   *               message:
-   *                 type: string
-   *                 example: Error message
    */
 
   /**
@@ -300,7 +207,7 @@ export const swaggerDecorators = {
    *       properties:
    *         id:
    *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
+   *           example: 507f1f77bcf86cd799439011
    *         name:
    *           type: string
    *           example: John Doe
@@ -314,14 +221,6 @@ export const swaggerDecorators = {
    *         active:
    *           type: boolean
    *           example: true
-   *         createdAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
-   *         updatedAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
    */
 
   /**
@@ -333,7 +232,7 @@ export const swaggerDecorators = {
    *       properties:
    *         id:
    *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
+   *           example: 507f1f77bcf86cd799439011
    *         name:
    *           type: string
    *           example: Product Name
@@ -346,20 +245,6 @@ export const swaggerDecorators = {
    *         stock:
    *           type: integer
    *           example: 100
-   *         category:
-   *           type: string
-   *           example: Electronics
-   *         active:
-   *           type: boolean
-   *           example: true
-   *         createdAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
-   *         updatedAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
    */
 
   /**
@@ -371,38 +256,19 @@ export const swaggerDecorators = {
    *       properties:
    *         id:
    *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
-   *         userId:
-   *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
-   *         items:
+   *           example: 507f1f77bcf86cd799439011
+   *         user:
+   *           $ref: '#/components/schemas/User'
+   *         products:
    *           type: array
    *           items:
-   *             type: object
-   *             properties:
-   *               productId:
-   *                 type: string
-   *                 example: 123e4567-e89b-12d3-a456-426614174000
-   *               quantity:
-   *                 type: integer
-   *                 example: 2
-   *               price:
-   *                 type: number
-   *                 example: 99.99
+   *             $ref: '#/components/schemas/Product'
    *         total:
    *           type: number
-   *           example: 199.98
+   *           example: 299.97
    *         status:
    *           type: string
    *           enum: [pending, processing, completed, cancelled]
    *           example: pending
-   *         createdAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
-   *         updatedAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
    */
 }; 
