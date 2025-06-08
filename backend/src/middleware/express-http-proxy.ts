@@ -80,8 +80,8 @@ export const proxyHelpers = {
     return defaultOptions.proxyTimeout!;
   },
 
-  // Get proxy timeout
-  getProxyTimeout: (): number => {
+  // Get timeout
+  getTimeout: (): number => {
     return defaultOptions.timeout!;
   },
 
