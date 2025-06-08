@@ -1,57 +1,20 @@
 import { body, query, param } from 'express-validator';
 import { PaymentMethod } from '../../models/Sale';
+import Joi from 'joi';
 
-export const createSaleValidation = [
-  body('customer')
-    .isMongoId()
-    .withMessage('Customer ID is required and must be valid'),
+export const createSaleValidation = Joi.object({
+  productId: Joi.string().required(),
+  quantity: Joi.number().required().min(1),
+  customerId: Joi.string().required(),
+  totalAmount: Joi.number().required().min(0)
+});
 
-  body('items')
-    .isArray({ min: 1 })
-    .withMessage('At least one item is required'),
-
-  body('items.*.product')
-    .isMongoId()
-    .withMessage('Product ID must be valid'),
-
-  body('items.*.quantity')
-    .isInt({ min: 1 })
-    .withMessage('Quantity must be at least 1'),
-
-  body('items.*.price')
-    .isFloat({ min: 0 })
-    .withMessage('Price must be a positive number'),
-
-  body('payments')
-    .isArray({ min: 1 })
-    .withMessage('At least one payment is required'),
-
-  body('payments.*.method')
-    .isIn(Object.values(PaymentMethod))
-    .withMessage('Invalid payment method'),
-
-  body('payments.*.amount')
-    .isFloat({ min: 0.01 })
-    .withMessage('Payment amount must be greater than 0'),
-
-  body('subtotal')
-    .isFloat({ min: 0 })
-    .withMessage('Subtotal must be a positive number'),
-
-  body('total')
-    .isFloat({ min: 0 })
-    .withMessage('Total must be a positive number'),
-
-  body('tax')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Tax must be a positive number'),
-
-  body('discount')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('Discount must be a positive number')
-];
+export const updateSaleValidation = Joi.object({
+  productId: Joi.string(),
+  quantity: Joi.number().min(1),
+  customerId: Joi.string(),
+  totalAmount: Joi.number().min(0)
+});
 
 export const getSalesValidation = [
   query('startDate')

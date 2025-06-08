@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import winston from 'winston';
-import { format, transports } from 'winston';
+import { format } from 'winston';
 import { IUser } from '../types/user';
-import { logger } from '../utils/logger';
 
 // Extend Express Request type to include user
 declare global {
@@ -14,106 +13,136 @@ declare global {
   }
 }
 
-const loggerInstance = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.json()
+// Log levels
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4
+};
+
+// Log colors
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white'
+};
+
+// Add colors to winston
+winston.addColors(colors);
+
+// Create logger
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  levels,
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.colorize({ all: true }),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`
+    )
   ),
   transports: [
-    new transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new transports.File({ filename: 'logs/combined.log' })
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error'
+    }),
+    new winston.transports.File({ filename: 'logs/all.log' })
   ]
 });
 
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
-  loggerInstance.add(new transports.Console({
-    format: format.combine(
-      format.colorize(),
-      format.simple()
-    )
-  }));
+// Logging options interface
+interface LoggingOptions {
+  level?: string;
+  message?: string;
+  skip?: (req: Request) => boolean;
 }
 
-// Request logging middleware
-export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-
-  // Log request
-  logger.info('Incoming request', {
-    method: req.method,
-    url: req.url,
-    ip: req.ip,
-    userAgent: req.get('user-agent'),
-    userId: req.user?.id
-  });
-
-  // Store original send function
-  const originalSend = res.send;
-
-  // Override send function
-  res.send = function (body) {
-    const responseTime = Date.now() - start;
-
-    // Log response
-    logger.info('Outgoing response', {
-      method: req.method,
-      url: req.url,
-      statusCode: res.statusCode,
-      responseTime: `${responseTime}ms`,
-      userId: req.user?.id
-    });
-
-    // Restore original send function
-    res.send = originalSend;
-
-    // Call original send function
-    return originalSend.call(this, body);
-  };
-
-  req.startTime = start;
-  next();
+// Default logging options
+const defaultOptions: LoggingOptions = {
+  level: 'info',
+  message: 'Request completed',
+  skip: (req: Request) => false
 };
 
-// Error logging middleware
-export const errorLogger = (err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error('Error occurred', {
-    error: {
-      name: err.name,
-      message: err.message,
-      stack: err.stack
-    },
-    request: {
-      method: req.method,
-      url: req.url,
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-      userId: req.user?.id
+// Logging middleware factory
+export const createLoggingMiddleware = (options: LoggingOptions = {}) => {
+  const loggingOptions = { ...defaultOptions, ...options };
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Skip logging if skip function returns true
+    if (loggingOptions.skip!(req)) {
+      return next();
     }
-  });
 
-  next(err);
-};
+    // Get start time
+    const start = Date.now();
 
-// Performance monitoring middleware
-export const performanceLogger = (req: Request, res: Response, next: NextFunction) => {
-  const start = process.hrtime();
-
-  res.on('finish', () => {
-    const [seconds, nanoseconds] = process.hrtime(start);
-    const duration = seconds * 1000 + nanoseconds / 1000000;
-
-    loggerInstance.info('Request performance', {
+    // Log request
+    logger.http('Request started', {
       method: req.method,
       url: req.originalUrl,
-      statusCode: res.statusCode,
-      duration: `${duration.toFixed(2)}ms`,
-      userId: req.user?.id,
+      ip: req.ip,
+      userId: req.user?.id
     });
-  });
 
-  next();
+    // Log response
+    res.on('finish', () => {
+      // Get response time
+      const duration = Date.now() - start;
+
+      // Log response
+      logger.log(loggingOptions.level!, loggingOptions.message!, {
+        method: req.method,
+        url: req.originalUrl,
+        status: res.statusCode,
+        duration,
+        ip: req.ip,
+        userId: req.user?.id
+      });
+    });
+
+    next();
+  };
 };
 
-export default loggerInstance; 
+// Logging helper functions
+export const loggingHelpers = {
+  // Log error
+  logError: (error: Error, req?: Request): void => {
+    logger.error('Error occurred', {
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      },
+      request: req ? {
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+        userId: req.user?.id
+      } : undefined
+    });
+  },
+
+  // Log warning
+  logWarning: (message: string, data?: any): void => {
+    logger.warn(message, data);
+  },
+
+  // Log info
+  logInfo: (message: string, data?: any): void => {
+    logger.info(message, data);
+  },
+
+  // Log debug
+  logDebug: (message: string, data?: any): void => {
+    logger.debug(message, data);
+  }
+};
+
+export default logger; 

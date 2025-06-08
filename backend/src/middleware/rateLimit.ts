@@ -1,68 +1,120 @@
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../utils/logger';
+import { logger } from './logging';
+import { errorHelpers } from './errorHandler';
 
-interface RateLimitConfig {
-  windowMs: number;
-  max: number;
+// Rate limit options interface
+interface RateLimitOptions {
+  windowMs?: number;
+  max?: number;
   message?: string;
-  statusCode?: number;
+  keyGenerator?: (req: Request) => string;
+  skip?: (req: Request) => boolean;
 }
 
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
-  };
-}
+// Default rate limit options
+const defaultOptions: RateLimitOptions = {
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: 'Too many requests',
+  keyGenerator: (req: Request) => req.ip,
+  skip: (req: Request) => false
+};
 
-const store: RateLimitStore = {};
+// Store for rate limit data
+const store = new Map<string, { count: number; resetTime: number }>();
 
-export function createRateLimiter({ windowMs, max, message, statusCode }: RateLimitConfig) {
+// Rate limit middleware factory
+export const createRateLimitMiddleware = (options: RateLimitOptions = {}) => {
+  const rateLimitOptions = { ...defaultOptions, ...options };
+
   return (req: Request, res: Response, next: NextFunction) => {
-    const key = req.ip;
-    const now = Date.now();
-    const windowStart = now - windowMs;
+    try {
+      // Skip rate limit if skip function returns true
+      if (rateLimitOptions.skip!(req)) {
+        return next();
+      }
 
-    // Initialize or reset if window has passed
-    if (!store[key] || store[key].resetTime < windowStart) {
-      store[key] = {
-        count: 0,
-        resetTime: now
-      };
+      // Get key for rate limit
+      const key = rateLimitOptions.keyGenerator!(req);
+
+      // Get current time
+      const now = Date.now();
+
+      // Get rate limit data
+      let data = store.get(key);
+
+      // Initialize rate limit data if not exists
+      if (!data) {
+        data = {
+          count: 0,
+          resetTime: now + rateLimitOptions.windowMs!
+        };
+        store.set(key, data);
+      }
+
+      // Reset count if window has passed
+      if (now > data.resetTime) {
+        data.count = 0;
+        data.resetTime = now + rateLimitOptions.windowMs!;
+      }
+
+      // Increment count
+      data.count++;
+
+      // Set rate limit headers
+      res.setHeader('X-RateLimit-Limit', rateLimitOptions.max!);
+      res.setHeader('X-RateLimit-Remaining', Math.max(0, rateLimitOptions.max! - data.count));
+      res.setHeader('X-RateLimit-Reset', Math.ceil(data.resetTime / 1000));
+
+      // Check if rate limit exceeded
+      if (data.count > rateLimitOptions.max!) {
+        // Log rate limit exceeded
+        logger.warn('Rate limit exceeded', {
+          key,
+          count: data.count,
+          max: rateLimitOptions.max,
+          windowMs: rateLimitOptions.windowMs
+        });
+
+        // Create rate limit error
+        const error = errorHelpers.createError(
+          rateLimitOptions.message!,
+          429,
+          'RATE_LIMIT_EXCEEDED',
+          {
+            key,
+            count: data.count,
+            max: rateLimitOptions.max,
+            windowMs: rateLimitOptions.windowMs
+          }
+        );
+
+        // Pass error to error handler
+        return next(error);
+      }
+
+      next();
+    } catch (error) {
+      logger.error('Rate limit error', { error: (error as Error).message });
+      next(error);
     }
-
-    // Increment counter
-    store[key].count++;
-
-    // Check if limit exceeded
-    if (store[key].count > max) {
-      logger.warn('Rate limit exceeded', { ip: key, count: store[key].count });
-      return res.status(statusCode || 429).json({
-        error: message || 'Too many requests',
-        retryAfter: Math.ceil((store[key].resetTime + windowMs - now) / 1000)
-      });
-    }
-
-    // Add rate limit headers
-    res.setHeader('X-RateLimit-Limit', max);
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, max - store[key].count));
-    res.setHeader('X-RateLimit-Reset', Math.ceil(store[key].resetTime / 1000));
-
-    next();
   };
-}
+};
 
-// Default rate limiter (100 requests per 15 minutes)
-export const defaultRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 100 });
+// Rate limit helper functions
+export const rateLimitHelpers = {
+  // Get rate limit data
+  getRateLimitData: (key: string): { count: number; resetTime: number } | undefined => {
+    return store.get(key);
+  },
 
-// Auth rate limiter (5 requests per 15 minutes)
-export const authRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5 });
+  // Reset rate limit data
+  resetRateLimitData: (key: string): void => {
+    store.delete(key);
+  },
 
-// Create stricter rate limiter for authentication routes
-export const authRateLimiterStrict = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 5 });
-
-// Create rate limiter for API routes
-export const apiRateLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 100 });
-
-// Create rate limiter for public routes
-export const publicRateLimiter = createRateLimiter({ windowMs: 60 * 60 * 1000, max: 1000 }); 
+  // Clear all rate limit data
+  clearRateLimitData: (): void => {
+    store.clear();
+  }
+}; 

@@ -21,6 +21,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/joi": "^17.2.2",
     "@types/multer": "^1.4.12",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
@@ -35,6 +36,7 @@
     "i18next": "^23.7.16",
     "i18next-fs-backend": "^2.3.1",
     "i18next-http-middleware": "^3.5.0",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^7.0.3",
     "morgan": "^1.10.0",
@@ -45,9 +47,9 @@
     "qrcode": "^1.5.4",
     "react-icons": "^5.5.0",
     "tesseract.js": "^6.0.1",
+    "twilio": "^4.0.0",
     "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1",
-    "twilio": "^4.0.0"
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",

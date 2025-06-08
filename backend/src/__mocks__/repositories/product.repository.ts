@@ -1,27 +1,23 @@
 import { IProduct } from '../../types/product';
 
-export const mockProductRepository = {
-  create: jest.fn(),
-  findById: jest.fn(),
-  findAll: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-  updateStock: jest.fn(),
-  addImages: jest.fn(),
-  removeImage: jest.fn(),
-};
-
-export const mockProduct: IProduct = {
-  id: 1,
+export const mockProduct = {
+  id: '1',
   name: 'Test Product',
-  description: 'Test description',
-  price: 99.99,
+  description: 'Test Description',
+  price: 100,
   stock: 10,
-  categories: ['test'],
-  images: ['image1.jpg'],
-  specifications: {},
   createdAt: new Date(),
-  updatedAt: new Date(),
+  updatedAt: new Date()
 };
 
-export default mockProductRepository; 
+export const mockProductRepository = {
+  findById: jest.fn().mockResolvedValue(mockProduct),
+  findAll: jest.fn().mockResolvedValue([mockProduct]),
+  create: jest.fn().mockResolvedValue(mockProduct),
+  update: jest.fn().mockResolvedValue(mockProduct),
+  delete: jest.fn().mockResolvedValue(true),
+  findByCategory: jest.fn().mockResolvedValue([mockProduct]),
+  updateStock: jest.fn().mockResolvedValue(mockProduct)
+};
+
+export const ProductRepository = jest.fn(() => mockProductRepository); 

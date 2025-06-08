@@ -1,14 +1,12 @@
-import { format, parseISO, isToday as dateFnsIsToday, isYesterday as dateFnsIsYesterday, isThisMonth as dateFnsIsThisMonth, isThisYear as dateFnsIsThisYear, differenceInYears, startOfDay, endOfDay, subDays, isSameDay, isSameMonth, isSameYear } from 'date-fns';
+import { format, parseISO, isToday as dateFnsIsToday, isYesterday as dateFnsIsYesterday, isThisMonth as dateFnsIsThisMonth, isThisYear as dateFnsIsThisYear, differenceInYears, startOfDay, endOfDay, subDays, isSameDay, isSameWeek, isSameMonth, isSameYear, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { isToday as _isToday, isYesterday as _isYesterday, isThisMonth as _isThisMonth, isThisYear as _isThisYear } from 'date-fns';
 
-export const formatDate = (date: string | Date): string => {
-  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
-  return format(parsedDate, 'dd/MM/yyyy');
+export const formatDate = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd');
 };
 
-export const formatDateTime = (date: string | Date): string => {
-  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
-  return format(parsedDate, 'dd/MM/yyyy HH:mm:ss');
+export const formatDateTime = (date: Date): string => {
+  return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
 };
 
 export const formatTime = (date: string | Date): string => {
@@ -58,20 +56,19 @@ export const isYesterday = (date: Date): boolean => {
   return isSameDay(date, yesterday);
 };
 
-export const isThisWeek = (date: Date | string): boolean => {
-  const d = new Date(date);
+export const isThisWeek = (date: Date): boolean => {
   const today = new Date();
-  const startOfWeek = getStartOfWeek(today);
-  const endOfWeek = getEndOfWeek(today);
-  return d >= startOfWeek && d <= endOfWeek;
+  return isSameWeek(date, today, { weekStartsOn: 0 }); // 0 = Sunday
 };
 
 export const isThisMonth = (date: Date): boolean => {
-  return isSameMonth(date, new Date());
+  const today = new Date();
+  return isSameMonth(date, today);
 };
 
 export const isThisYear = (date: Date): boolean => {
-  return isSameYear(date, new Date());
+  const today = new Date();
+  return isSameYear(date, today);
 };
 
 export const addDays = (date: Date | string, days: number): Date => {
@@ -101,31 +98,39 @@ export const getEndOfDay = (date: Date): Date => {
 };
 
 export const getStartOfWeek = (date: Date): Date => {
-  const day = date.getDay();
-  const diff = date.getDate() - day;
-  return new Date(date.setDate(diff));
+  const start = startOfWeek(date, { weekStartsOn: 0 }); // 0 = Sunday
+  start.setHours(0, 0, 0, 0);
+  return start;
 };
 
 export const getEndOfWeek = (date: Date): Date => {
-  const day = date.getDay();
-  const diff = date.getDate() + (6 - day);
-  return new Date(date.setDate(diff));
+  const end = endOfWeek(date, { weekStartsOn: 0 }); // 0 = Sunday
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
 export const getStartOfMonth = (date: Date): Date => {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+  const start = startOfMonth(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
 };
 
 export const getEndOfMonth = (date: Date): Date => {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const end = endOfMonth(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
 export const getStartOfYear = (date: Date): Date => {
-  return new Date(date.getFullYear(), 0, 1);
+  const start = startOfYear(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
 };
 
 export const getEndOfYear = (date: Date): Date => {
-  return new Date(date.getFullYear(), 11, 31);
+  const end = endOfYear(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
 export const getAge = (birthDate: Date): number => {
@@ -138,4 +143,12 @@ export const getAge = (birthDate: Date): number => {
   }
   
   return age;
+};
+
+export const parseDate = (dateString: string): Date => {
+  return new Date(dateString);
+};
+
+export const isValidDate = (date: Date): boolean => {
+  return date instanceof Date && !isNaN(date.getTime());
 }; 

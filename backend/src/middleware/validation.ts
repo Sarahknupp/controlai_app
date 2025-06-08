@@ -1,34 +1,111 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
-import { BadRequestError } from '../utils/errors';
-import logger from './logging';
+import { Schema } from 'joi';
+import { logger } from './logging';
+
+// Validation options interface
+interface ValidationOptions {
+  abortEarly?: boolean;
+  allowUnknown?: boolean;
+  stripUnknown?: boolean;
+}
+
+// Default validation options
+const defaultOptions: ValidationOptions = {
+  abortEarly: false,
+  allowUnknown: true,
+  stripUnknown: true
+};
 
 // Validation middleware factory
-export const validate = (schema: Joi.ObjectSchema) => {
+export const createValidationMiddleware = (schema: Schema, options: ValidationOptions = {}) => {
+  const validationOptions = { ...defaultOptions, ...options };
+
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
-    if (error) {
-      logger.error('Validation error', { error: error.details });
-      // Para alinhar com os testes, lançar BadRequestError se esperado, senão retornar 400
-      if (typeof BadRequestError === 'function') {
-        return next(new BadRequestError('Validation error', error.details));
-      }
-      return res.status(400).json({
-        success: false,
-        message: 'Validation Error',
-        errors: error.details.map(detail => ({
+    try {
+      // Validate request body
+      const { error, value } = schema.validate(req.body, validationOptions);
+
+      if (error) {
+        // Format validation errors
+        const errors = error.details.map(detail => ({
           field: detail.path.join('.'),
           message: detail.message
-        }))
-      });
+        }));
+
+        // Log validation errors
+        logger.warn('Validation error', {
+          errors,
+          body: req.body
+        });
+
+        return res.status(400).json({
+          error: 'Validation Error',
+          details: errors
+        });
+      }
+
+      // Replace request body with validated value
+      req.body = value;
+
+      next();
+    } catch (error) {
+      logger.error('Validation error', { error: (error as Error).message });
+      next(error);
     }
-    req.body = value;
-    next();
   };
 };
 
+// Validation helper functions
+export const validationHelpers = {
+  // Format validation error
+  formatValidationError: (error: any): any => {
+    if (!error) {
+      return null;
+    }
+
+    if (error.isJoi) {
+      return {
+        error: 'Validation Error',
+        details: error.details.map((detail: any) => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }))
+      };
+    }
+
+    return {
+      error: 'Validation Error',
+      message: error.message
+    };
+  },
+
+  // Validate object against schema
+  validateObject: (schema: Schema, object: any, options: ValidationOptions = {}): any => {
+    const validationOptions = { ...defaultOptions, ...options };
+    const { error, value } = schema.validate(object, validationOptions);
+
+    if (error) {
+      throw error;
+    }
+
+    return value;
+  },
+
+  // Validate array of objects against schema
+  validateArray: (schema: Schema, array: any[], options: ValidationOptions = {}): any[] => {
+    const validationOptions = { ...defaultOptions, ...options };
+    const { error, value } = schema.validate(array, validationOptions);
+
+    if (error) {
+      throw error;
+    }
+
+    return value;
+  }
+};
+
 // Common validation schemas
-export const schemas = {
+export const validationSchemas = {
   // User schemas
   createUser: Joi.object({
     name: Joi.string().required(),

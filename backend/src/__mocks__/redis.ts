@@ -1,39 +1,30 @@
 export class MockRedis {
-  private store: Map<string, string>;
-  private ttlStore: Map<string, number>;
+  private store: Map<string, { value: any; expiry?: number }>;
 
   constructor() {
     this.store = new Map();
-    this.ttlStore = new Map();
   }
 
   async get(key: string): Promise<string | null> {
-    const value = this.store.get(key);
-    if (!value) return null;
-
-    const ttl = this.ttlStore.get(key);
-    if (ttl && ttl < Date.now()) {
+    const item = this.store.get(key);
+    if (!item) return null;
+    if (item.expiry && item.expiry < Date.now()) {
       this.store.delete(key);
-      this.ttlStore.delete(key);
       return null;
     }
-
-    return value;
+    return item.value;
   }
 
-  async set(key: string, value: string, ttl?: number): Promise<'OK'> {
-    this.store.set(key, value);
-    if (ttl) {
-      this.ttlStore.set(key, Date.now() + ttl * 1000);
-    }
+  async set(key: string, value: any, expiry?: number): Promise<'OK'> {
+    this.store.set(key, {
+      value,
+      expiry: expiry ? Date.now() + expiry * 1000 : undefined
+    });
     return 'OK';
   }
 
   async del(key: string): Promise<number> {
-    const exists = this.store.has(key);
-    this.store.delete(key);
-    this.ttlStore.delete(key);
-    return exists ? 1 : 0;
+    return this.store.delete(key) ? 1 : 0;
   }
 
   async exists(key: string): Promise<number> {
@@ -41,21 +32,21 @@ export class MockRedis {
   }
 
   async expire(key: string, seconds: number): Promise<number> {
-    if (!this.store.has(key)) return 0;
-    this.ttlStore.set(key, Date.now() + seconds * 1000);
+    const item = this.store.get(key);
+    if (!item) return 0;
+    item.expiry = Date.now() + seconds * 1000;
     return 1;
   }
 
   async ttl(key: string): Promise<number> {
-    const ttl = this.ttlStore.get(key);
-    if (!ttl) return -2;
-    const remaining = Math.ceil((ttl - Date.now()) / 1000);
-    return remaining > 0 ? remaining : -2;
+    const item = this.store.get(key);
+    if (!item || !item.expiry) return -1;
+    const ttl = Math.ceil((item.expiry - Date.now()) / 1000);
+    return ttl > 0 ? ttl : -2;
   }
 
   async flushall(): Promise<'OK'> {
     this.store.clear();
-    this.ttlStore.clear();
     return 'OK';
   }
 

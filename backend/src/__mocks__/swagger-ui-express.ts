@@ -1,9 +1,7 @@
-export const serve = jest.fn();
-export const setup = jest.fn();
+const serve = jest.fn().mockReturnValue([]);
+const setup = jest.fn().mockReturnValue([]);
 
-const swaggerUi = {
+module.exports = {
   serve,
   setup
-};
-
-export default swaggerUi; 
+}; 

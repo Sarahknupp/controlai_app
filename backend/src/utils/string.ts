@@ -1,6 +1,6 @@
-export const capitalize = (str: string): string => {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+export const capitalize = (text: string): string => {
+  if (!text) return '';
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
 };
 
 export const capitalizeWords = (str: string): string => {
@@ -11,20 +11,20 @@ export const capitalizeWords = (str: string): string => {
     .join(' ');
 };
 
-export const slugify = (str: string): string => {
-  if (!str) return '';
-  return str
+export const slugify = (text: string): string => {
+  return text
+    .toString()
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .replace(/(^-|-$)+/g, '');
 };
 
-export const truncate = (str: string, length: number, suffix = '...'): string => {
-  if (!str) return '';
-  if (str.length <= length) return str;
-  return str.substring(0, length).trim() + suffix;
+export const truncate = (text: string, length: number): string => {
+  if (!text) return '';
+  if (text.length <= length) return text;
+  return text.slice(0, length) + '...';
 };
 
 export const removeAccents = (str: string): string => {
@@ -43,29 +43,47 @@ export const removeExtraSpaces = (str: string): string => {
 };
 
 export const formatPhoneNumber = (phone: string): string => {
-  const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.length === 11) {
-    return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  if (!phone) return '';
+  
+  // Remove non-numeric characters
+  const numbers = phone.replace(/\D/g, '');
+  
+  // Format based on length
+  if (numbers.length === 11) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  } else if (numbers.length === 10) {
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
   }
-  return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+  
+  return numbers;
 };
 
 export const formatCPF = (cpf: string): string => {
-  const cleaned = cpf.replace(/\D/g, '');
-  const match = cleaned.match(/^(\d{3})(\d{3})(\d{3})(\d{2})$/);
-  if (match) {
-    return `${match[1]}.${match[2]}.${match[3]}-${match[4]}`;
+  if (!cpf) return '';
+  
+  // Remove non-numeric characters
+  const numbers = cpf.replace(/\D/g, '');
+  
+  // Format as XXX.XXX.XXX-XX
+  if (numbers.length === 11) {
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
   }
-  return cpf;
+  
+  return numbers;
 };
 
 export const formatCNPJ = (cnpj: string): string => {
-  const cleaned = cnpj.replace(/\D/g, '');
-  const match = cleaned.match(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/);
-  if (match) {
-    return `${match[1]}.${match[2]}.${match[3]}/${match[4]}-${match[5]}`;
+  if (!cnpj) return '';
+  
+  // Remove non-numeric characters
+  const numbers = cnpj.replace(/\D/g, '');
+  
+  // Format as XX.XXX.XXX/XXXX-XX
+  if (numbers.length === 14) {
+    return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12)}`;
   }
-  return cnpj;
+  
+  return numbers;
 };
 
 export const formatCEP = (cep: string): string => {
@@ -77,32 +95,37 @@ export const formatCEP = (cep: string): string => {
   return cep;
 };
 
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
-  }).format(amount);
+  }).format(value);
+};
+
+export const formatPercentage = (value: number): string => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(value / 100);
 };
 
 export const maskEmail = (email: string): string => {
-  const [username, domain] = email.split('@');
-  const [name, ...rest] = username.split('.');
+  if (!email) return '';
   
-  const maskedName = name.length > 2 
-    ? `${name[0]}${'*'.repeat(name.length - 2)}${name[name.length - 1]}`
-    : name;
-    
-  const maskedRest = rest.map(part => 
-    part.length > 2 
-      ? `${part[0]}${'*'.repeat(part.length - 2)}${part[part.length - 1]}`
-      : part
-  ).join('.');
+  const [localPart, domain] = email.split('@');
+  if (!localPart || !domain) return email;
   
-  const maskedUsername = rest.length > 0 
-    ? `${maskedName}.${maskedRest}`
-    : maskedName;
-    
-  return `${maskedUsername}@${domain}`;
+  // Mask local part
+  const maskedLocal = localPart
+    .split('.')
+    .map(part => {
+      if (part.length <= 2) return part;
+      return `${part[0]}${'*'.repeat(part.length - 2)}${part[part.length - 1]}`;
+    })
+    .join('.');
+  
+  return `${maskedLocal}@${domain}`;
 };
 
 export const maskPhone = (phone: string): string => {

@@ -1,47 +1,38 @@
-import { format } from 'winston';
-
-const mockFormat = {
-  combine: jest.fn().mockReturnValue({}),
-  timestamp: jest.fn().mockReturnValue({}),
-  json: jest.fn().mockReturnValue({}),
-  colorize: jest.fn().mockReturnValue({}),
-  simple: jest.fn().mockReturnValue({}),
-  printf: jest.fn().mockReturnValue({}),
+const format = {
+  combine: jest.fn(() => format),
+  timestamp: jest.fn(() => format),
+  json: jest.fn(() => format),
+  colorize: jest.fn(() => format),
+  simple: jest.fn(() => format),
+  printf: jest.fn(() => format),
+  label: jest.fn(() => format),
+  errors: jest.fn(() => format)
 };
 
-const mockTransports = {
-  Console: jest.fn().mockImplementation(() => ({
-    format: mockFormat,
-  })),
-  File: jest.fn().mockImplementation(() => ({
-    format: mockFormat,
-  })),
+const transports = {
+  Console: jest.fn(),
+  File: jest.fn()
 };
 
-const mockLogger = {
-  info: jest.fn(),
+const loggerInstance = {
   error: jest.fn(),
+  info: jest.fn(),
   warn: jest.fn(),
   debug: jest.fn(),
   add: jest.fn(),
-  remove: jest.fn(),
-  clear: jest.fn(),
-  close: jest.fn(),
-  format: mockFormat,
+  format,
+  transports,
   level: 'info',
-  levels: {
-    error: 0,
-    warn: 1,
-    info: 2,
-    debug: 3,
-  },
+  silent: false
 };
 
-const createLogger = jest.fn().mockReturnValue(mockLogger);
+const createLogger = jest.fn(() => loggerInstance);
 
-export default {
+const logger = Object.assign(loggerInstance, {
   createLogger,
-  format: mockFormat,
-  transports: mockTransports,
-  levels: mockLogger.levels,
-}; 
+  format,
+  transports
+});
+
+export { format, transports, createLogger };
+export default logger; 

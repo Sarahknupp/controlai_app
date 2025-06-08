@@ -1,10 +1,28 @@
 import { Express } from 'express';
 import helmet from 'helmet';
-import cors from 'cors';
 import { logger } from './logging';
 
-// Security headers middleware
-export const securityHeaders = helmet({
+// Security options interface
+interface SecurityOptions {
+  contentSecurityPolicy?: boolean | object;
+  crossOriginEmbedderPolicy?: boolean | object;
+  crossOriginOpenerPolicy?: boolean | object;
+  crossOriginResourcePolicy?: boolean | object;
+  dnsPrefetchControl?: boolean | object;
+  expectCt?: boolean | object;
+  frameguard?: boolean | object;
+  hidePoweredBy?: boolean | object;
+  hsts?: boolean | object;
+  ieNoOpen?: boolean | object;
+  noSniff?: boolean | object;
+  originAgentCluster?: boolean | object;
+  permittedCrossDomainPolicies?: boolean | object;
+  referrerPolicy?: boolean | object;
+  xssFilter?: boolean | object;
+}
+
+// Default security options
+const defaultOptions: SecurityOptions = {
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -21,8 +39,14 @@ export const securityHeaders = helmet({
   crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: true,
   crossOriginResourcePolicy: { policy: 'same-site' },
-  dnsPrefetchControl: { allow: false },
-  frameguard: { action: 'deny' },
+  dnsPrefetchControl: true,
+  expectCt: {
+    enforce: true,
+    maxAge: 30
+  },
+  frameguard: {
+    action: 'deny'
+  },
   hidePoweredBy: true,
   hsts: {
     maxAge: 31536000,
@@ -31,46 +55,131 @@ export const securityHeaders = helmet({
   },
   ieNoOpen: true,
   noSniff: true,
+  originAgentCluster: true,
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   xssFilter: true
-});
+};
 
-// Apply security middleware to Express app
-export const applySecurityMiddleware = (app: Express) => {
-  // Apply helmet for security headers
-  app.use(helmet());
+// Security middleware factory
+export const createSecurityMiddleware = (options: SecurityOptions = {}) => {
+  const securityOptions = { ...defaultOptions, ...options };
 
-  // Configure CORS
-  app.use(cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-  }));
-
-  // Remove sensitive headers
-  app.use((req: any, res: any, next: any) => {
-    res.set('X-Powered-By', '');
-    res.set('Server', '');
-    next();
+  // Log security configuration
+  logger.info('Security middleware configured', {
+    contentSecurityPolicy: !!securityOptions.contentSecurityPolicy,
+    crossOriginEmbedderPolicy: !!securityOptions.crossOriginEmbedderPolicy,
+    crossOriginOpenerPolicy: !!securityOptions.crossOriginOpenerPolicy,
+    crossOriginResourcePolicy: !!securityOptions.crossOriginResourcePolicy,
+    dnsPrefetchControl: !!securityOptions.dnsPrefetchControl,
+    expectCt: !!securityOptions.expectCt,
+    frameguard: !!securityOptions.frameguard,
+    hidePoweredBy: !!securityOptions.hidePoweredBy,
+    hsts: !!securityOptions.hsts,
+    ieNoOpen: !!securityOptions.ieNoOpen,
+    noSniff: !!securityOptions.noSniff,
+    originAgentCluster: !!securityOptions.originAgentCluster,
+    permittedCrossDomainPolicies: !!securityOptions.permittedCrossDomainPolicies,
+    referrerPolicy: !!securityOptions.referrerPolicy,
+    xssFilter: !!securityOptions.xssFilter
   });
 
-  // Log security events
-  app.use((req: any, res: any, next: any) => {
-    const ip = req.ip || req.connection.remoteAddress;
-    const userAgent = req.get('user-agent');
-    const forwardedFor = req.get('x-forwarded-for');
-    const forwardedProto = req.get('x-forwarded-proto');
+  return helmet(securityOptions);
+};
 
-    if (forwardedFor || forwardedProto) {
-      logger.info('Proxy detected', {
-        ip,
-        forwardedFor,
-        forwardedProto,
-        userAgent
-      });
+// Apply security middleware
+export const applySecurityMiddleware = (app: Express, options: SecurityOptions = {}) => {
+  const securityMiddleware = createSecurityMiddleware(options);
+  app.use(securityMiddleware);
+
+  // Log security middleware setup
+  logger.info('Security middleware applied');
+};
+
+// Security helper functions
+export const securityHelpers = {
+  // Validate CSP directive
+  validateCspDirective: (directive: string, value: string[]): boolean => {
+    const validDirectives = [
+      'defaultSrc',
+      'scriptSrc',
+      'styleSrc',
+      'imgSrc',
+      'connectSrc',
+      'fontSrc',
+      'objectSrc',
+      'mediaSrc',
+      'frameSrc',
+      'sandbox',
+      'reportUri',
+      'childSrc',
+      'formAction',
+      'frameAncestors',
+      'pluginTypes',
+      'baseUri',
+      'upgradeInsecureRequests',
+      'blockAllMixedContent',
+      'requireSriFor',
+      'workerSrc',
+      'manifestSrc',
+      'prefetchSrc',
+      'navigateTo'
+    ];
+
+    if (!validDirectives.includes(directive)) {
+      return false;
     }
 
-    next();
-  });
+    const validValues = [
+      "'self'",
+      "'unsafe-inline'",
+      "'unsafe-eval'",
+      "'none'",
+      'data:',
+      'https:',
+      'http:',
+      'blob:',
+      'mediastream:',
+      'filesystem:'
+    ];
+
+    return value.every(v => validValues.includes(v));
+  },
+
+  // Validate HSTS options
+  validateHstsOptions: (options: any): boolean => {
+    if (!options) {
+      return false;
+    }
+
+    if (typeof options.maxAge !== 'number' || options.maxAge < 0) {
+      return false;
+    }
+
+    if (typeof options.includeSubDomains !== 'boolean') {
+      return false;
+    }
+
+    if (typeof options.preload !== 'boolean') {
+      return false;
+    }
+
+    return true;
+  },
+
+  // Validate referrer policy
+  validateReferrerPolicy: (policy: string): boolean => {
+    const validPolicies = [
+      'no-referrer',
+      'no-referrer-when-downgrade',
+      'same-origin',
+      'origin',
+      'strict-origin',
+      'origin-when-cross-origin',
+      'strict-origin-when-cross-origin',
+      'unsafe-url'
+    ];
+
+    return validPolicies.includes(policy);
+  }
 }; 
