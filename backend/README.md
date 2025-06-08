@@ -300,12 +300,12 @@ npm run deploy:preview # Deploy em preview
 
 ## 📝 Notas de Atualização
 
-### Rotas Corrigidas
-- Corrigido problema de "Missing parameter name" em rotas Express
-- Implementada validação consistente para parâmetros de rota
-- Padronizada nomenclatura de parâmetros (ex: `:userId`, `:productId`)
-- Adicionada validação de schemas para todos os parâmetros
-- Melhorada estrutura de autenticação e autorização
+### Rotas Normalizadas
+- Removidos protocolos e domínios das rotas
+- Corrigidos parâmetros inválidos em todas as rotas
+- Implementada validação consistente para parâmetros
+- Padronizada nomenclatura de parâmetros
+- Adicionados testes para verificar comportamento de rotas inválidas
 
 ### Melhorias Recentes
 - Adicionados testes para tratamento de rotas inválidas
