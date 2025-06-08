@@ -30,7 +30,7 @@ router.get(
 router.get(
   '/system',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   metricsController.getSystemMetrics.bind(metricsController)
 );
 
@@ -38,7 +38,7 @@ router.get(
 router.get(
   '/usage',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   validateRequest(metricsValidation.getUsageMetrics),
   metricsController.getUsageMetrics.bind(metricsController)
 );

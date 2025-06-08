@@ -8,6 +8,13 @@ import { reportValidation } from '../validations/report.validation';
 const router = Router();
 const reportController = new ReportController();
 
+// Validation schemas
+const reportIdSchema = {
+  params: {
+    reportId: { type: 'number' as const, required: true, min: 1 }
+  }
+};
+
 // Generate a new report
 router.post(
   '/',
@@ -26,17 +33,17 @@ router.get(
 
 // Get a specific report
 router.get(
-  '/:id',
+  '/:reportId',
   authenticate,
-  validate(reportValidation.getReport),
+  validate({ ...reportIdSchema, ...reportValidation.getReport }),
   reportController.getReport.bind(reportController)
 );
 
 // Delete a report
 router.delete(
-  '/:id',
+  '/:reportId',
   authenticate,
-  validate(reportValidation.deleteReport),
+  validate({ ...reportIdSchema, ...reportValidation.deleteReport }),
   reportController.deleteReport.bind(reportController)
 );
 
