@@ -7,7 +7,7 @@ import { rateLimit } from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
 import compression from 'compression';
 import path from 'path';
-import logger, { stream } from './utils/logger';
+import { logger, stream } from './utils/logger';
 import { errorHandler } from './middleware/error';
 import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
 import { compressionMiddleware } from './middleware/compression';

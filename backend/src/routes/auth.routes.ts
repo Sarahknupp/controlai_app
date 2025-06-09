@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import {
   register,
   login,
@@ -8,51 +8,63 @@ import {
   getUsers,
   getUser,
   updateUser,
-  deleteUser
+  deleteUser,
+  forgotPassword,
+  resetPassword
 } from '../controllers/auth.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
-import { validate } from '../middleware/validate.middleware';
-import {
-  registerValidation,
-  loginValidation,
-  updateDetailsValidation,
-  updatePasswordValidation
-} from '../validations/auth.validation';
+import { validateRequest } from '../middleware/validate.middleware';
+import Joi from 'joi';
 import { UserRole } from '../models/User';
 
-const router = express.Router();
+const router = Router();
+
+// Validation schemas
+const registerSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+  role: Joi.string().valid('user', 'publisher').default('user')
+});
+
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required()
+});
+
+const updateDetailsSchema = Joi.object({
+  name: Joi.string(),
+  email: Joi.string().email()
+});
+
+const updatePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required(),
+  newPassword: Joi.string().min(6).required()
+});
+
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  password: Joi.string().min(6).required()
+});
 
 // Public routes
-router.post('/login', validate(loginValidation), (req, res): void => {
-  login(req, res);
-});
+router.post('/login', validateRequest(loginSchema), login);
+router.post('/forgotpassword', validateRequest(forgotPasswordSchema), forgotPassword);
+router.put('/resetpassword/:resettoken', validateRequest(resetPasswordSchema), resetPassword);
 
 // Protected routes
-router.use(protect);
-
-router.get('/me', (req, res): void => {
-  getMe(req, res);
-});
-
-router.put('/updatedetails', validate(updateDetailsValidation), (req, res): void => {
-  updateDetails(req, res);
-});
-
-router.put('/updatepassword', validate(updatePasswordValidation), (req, res): void => {
-  updatePassword(req, res);
-});
+router.get('/me', protect, getMe);
+router.put('/updatedetails', protect, validateRequest(updateDetailsSchema), updateDetails);
+router.put('/updatepassword', protect, validateRequest(updatePasswordSchema), updatePassword);
 
 // Admin only routes
 router.use(authorize(UserRole.ADMIN));
-
-router.post('/register', validate(registerValidation), (req, res): void => {
-  register(req, res);
-});
-
-router.get('/users', (req, res): void => {
-  getUsers(req, res);
-});
-
+router.post('/register', validateRequest(registerSchema), register);
+router.get('/users', getUsers);
 router.route('/users/:id')
   .get((req, res): void => {
     getUser(req, res);

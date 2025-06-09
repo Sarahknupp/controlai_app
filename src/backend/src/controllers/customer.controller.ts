@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { Customer, ICustomer } from '../models/Customer';
+import { Customer, ICustomer } from '../../backend/src/models/Customer';
 import { ApiError } from '../utils/ApiError';
 import { catchAsync } from '../utils/catchAsync';
 import { FilterQuery } from 'mongoose';

@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors';
 import { IUser } from '../types/user';
 import logger from '../utils/logger';
+import { User, UserRole } from '../models/User';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ErrorResponse } from '../utils/errorResponse';
 
 // Extend Express Request type to include user
 declare global {
@@ -46,16 +49,15 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 };
 
 // Middleware to check if user has required role
-export const authorize = (...roles: string[]) => {
+export const authorize = (...roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      throw new UnauthorizedError('User not authenticated');
+      return next(new ErrorResponse('Not authorized to access this route', 401));
     }
 
     if (!roles.includes(req.user.role)) {
-      throw new ForbiddenError('Insufficient permissions');
+      return next(new ErrorResponse(`User role ${req.user.role} is not authorized to access this route`, 403));
     }
-
     next();
   };
 };
@@ -85,4 +87,25 @@ export const checkOwnership = (req: Request, res: Response, next: NextFunction) 
   }
 
   next();
-}; 
+};
+
+// Protect routes
+export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  let token;
+
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+    req.user = await User.findById(decoded.id);
+    next();
+  } catch (err) {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
+}); 

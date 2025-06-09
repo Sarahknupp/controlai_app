@@ -1,4 +1,4 @@
-import { IPayment } from '../models/Payment';
+import { IPayment } from '../../backend/src/models/Payment';
 import { ISale } from '../types/sale';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -6,7 +6,7 @@ import puppeteer from 'puppeteer';
 import path from 'path';
 import fs from 'fs/promises';
 import QRCode from 'qrcode';
-import { ReceiptHistory } from '../models/ReceiptHistory';
+import { ReceiptHistory } from '../../backend/src/models/ReceiptHistory';
 
 interface ReceiptData {
   receiptNumber: string;
