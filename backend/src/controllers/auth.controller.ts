@@ -124,20 +124,21 @@ export const login = async (req: Request, res: Response) => {
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
 // @access  Private
-export const getMe = async (req: AuthRequest, res: Response) => {
+export const getMe = async (req: Request, res: Response) => {
   try {
-    if (!req.user?._id) {
+    const user = (req as any).user;
+    if (!user?._id) {
       return res.status(401).json({
         success: false,
         message: 'Not authorized'
       });
     }
 
-    const user = await User.findById(req.user._id).select('-password');
+    const foundUser = await User.findById(user._id).select('-password');
 
     res.json({
       success: true,
-      data: user
+      data: foundUser
     });
   } catch (error: any) {
     res.status(400).json({
@@ -150,9 +151,10 @@ export const getMe = async (req: AuthRequest, res: Response) => {
 // @desc    Update user details
 // @route   PUT /api/auth/updatedetails
 // @access  Private
-export const updateDetails = async (req: AuthRequest, res: Response) => {
+export const updateDetails = async (req: Request, res: Response) => {
   try {
-    if (!req.user?._id) {
+    const user = (req as any).user;
+    if (!user?._id) {
       return res.status(401).json({
         success: false,
         message: 'Not authorized'
@@ -164,8 +166,8 @@ export const updateDetails = async (req: AuthRequest, res: Response) => {
       email: req.body.email
     };
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
       fieldsToUpdate,
       {
         new: true,
@@ -175,7 +177,7 @@ export const updateDetails = async (req: AuthRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: user
+      data: updatedUser
     });
   } catch (error: any) {
     res.status(400).json({
@@ -188,17 +190,18 @@ export const updateDetails = async (req: AuthRequest, res: Response) => {
 // @desc    Update password
 // @route   PUT /api/auth/updatepassword
 // @access  Private
-export const updatePassword = async (req: AuthRequest, res: Response) => {
+export const updatePassword = async (req: Request, res: Response) => {
   try {
-    if (!req.user?._id) {
+    const user = (req as any).user;
+    if (!user?._id) {
       return res.status(401).json({
         success: false,
         message: 'Not authorized'
       });
     }
 
-    const user = await User.findById(req.user._id);
-    if (!user) {
+    const foundUser = await User.findById(user._id);
+    if (!foundUser) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -206,7 +209,7 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
     }
 
     // Check current password
-    const isMatch = await user.comparePassword(req.body.currentPassword);
+    const isMatch = await foundUser.comparePassword(req.body.currentPassword);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
@@ -214,11 +217,11 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    user.password = req.body.newPassword;
-    await user.save();
+    foundUser.password = req.body.newPassword;
+    await foundUser.save();
 
     // Generate new token
-    const token = generateToken(user);
+    const token = generateToken(foundUser);
 
     res.json({
       success: true,
