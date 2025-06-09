@@ -3,6 +3,19 @@ import { User, UserRole } from '../models/User';
 import { IUser } from '../types/user';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import {
+  register,
+  login,
+  getMe,
+  updateDetails,
+  updatePassword,
+  getUsers,
+  getUser,
+  updateUser,
+  deleteUser,
+  forgotPassword,
+  resetPassword
+} from '../controllers/auth.controller';
 
 // Extend Request type to include user
 interface AuthRequest extends Request {
