@@ -23,45 +23,45 @@ import { UserRole } from '../models/User';
 const router = express.Router();
 
 // Public routes
-router.post('/login', validate(loginValidation), (req, res, next): void => {
-  login(req, res, next);
+router.post('/login', validate(loginValidation), (req, res): void => {
+  login(req, res);
 });
 
 // Protected routes
 router.use(protect);
 
-router.get('/me', (req, res, next): void => {
-  getMe(req, res, next);
+router.get('/me', (req, res): void => {
+  getMe(req, res);
 });
 
-router.put('/updatedetails', validate(updateDetailsValidation), (req, res, next): void => {
-  updateDetails(req, res, next);
+router.put('/updatedetails', validate(updateDetailsValidation), (req, res): void => {
+  updateDetails(req, res);
 });
 
-router.put('/updatepassword', validate(updatePasswordValidation), (req, res, next): void => {
-  updatePassword(req, res, next);
+router.put('/updatepassword', validate(updatePasswordValidation), (req, res): void => {
+  updatePassword(req, res);
 });
 
 // Admin only routes
 router.use(authorize(UserRole.ADMIN));
 
-router.post('/register', validate(registerValidation), (req, res, next): void => {
-  register(req, res, next);
+router.post('/register', validate(registerValidation), (req, res): void => {
+  register(req, res);
 });
 
-router.get('/users', (req, res, next): void => {
-  getUsers(req, res, next);
+router.get('/users', (req, res): void => {
+  getUsers(req, res);
 });
 
 router.route('/users/:id')
-  .get((req, res, next): void => {
-    getUser(req, res, next);
+  .get((req, res): void => {
+    getUser(req, res);
   })
-  .put((req, res, next): void => {
-    updateUser(req, res, next);
+  .put((req, res): void => {
+    updateUser(req, res);
   })
-  .delete((req, res, next): void => {
-    deleteUser(req, res, next);
+  .delete((req, res): void => {
+    deleteUser(req, res);
   });
 
 export default router; 
