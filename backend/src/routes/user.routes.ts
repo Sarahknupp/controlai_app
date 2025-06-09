@@ -1,19 +1,19 @@
-import express from 'express';
-import { authenticate } from '../middleware/auth';
+import { Router } from 'express';
+import { protect, authorize } from '../middleware/auth.middleware';
+import { UserRole } from '../models/User';
+import { getUsers, getUser, updateUser, deleteUser } from '../controllers/auth.controller';
 
-const router = express.Router();
+const router = Router();
 
-// Middleware de autenticação
-router.use(authenticate);
+// Admin only routes
+router.use(authorize(UserRole.ADMIN));
 
-// Rota para obter o perfil do usuário
-router.get('/profile', (req, res): void => {
-  res.json({ message: 'Perfil do usuário' });
-});
+router.route('/')
+  .get(getUsers);
 
-// Rota para atualizar o perfil do usuário
-router.put('/profile', (req, res): void => {
-  res.json({ message: 'Perfil do usuário atualizado' });
-});
+router.route('/:id')
+  .get(getUser)
+  .put(updateUser)
+  .delete(deleteUser);
 
 export default router; 

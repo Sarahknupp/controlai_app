@@ -21,7 +21,7 @@ declare global {
 }
 
 // Protect routes
-export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const protect = asyncHandler(async (req: AuthRequest, res: Response, next: NextFunction) => {
   let token: string | undefined;
 
   if (req.headers.authorization?.startsWith('Bearer')) {
@@ -49,7 +49,7 @@ export const protect = asyncHandler(async (req: Request, res: Response, next: Ne
 
 // Grant access to specific roles
 export const authorize = (...roles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new UnauthorizedError('Not authorized to access this route');
     }
