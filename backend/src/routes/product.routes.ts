@@ -55,13 +55,36 @@ const imagesSchema = {
 };
 
 // Routes
-router.post('/', validateRequest(createProductSchema), productController.createProduct);
-router.put('/:id', validateRequest({ ...productIdSchema, ...updateProductSchema }), productController.updateProduct);
-router.delete('/:id', validateRequest(productIdSchema), productController.deleteProduct);
-router.get('/:id', validateRequest(productIdSchema), productController.getProduct);
-router.get('/', validateRequest(productFilterSchema), productController.getProducts);
-router.put('/:id/stock', validateRequest({ ...productIdSchema, ...stockUpdateSchema }), productController.updateStock);
-router.post('/:id/images', validateRequest({ ...productIdSchema, ...imagesSchema }), productController.addImages);
-router.delete('/:id/images/:imageId', validateRequest(imageIdSchema), productController.removeImage);
+router.post('/', validateRequest(createProductSchema), (req, res, next): void => {
+  productController.createProduct(req, res, next);
+});
+
+router.put('/:id', validateRequest({ ...productIdSchema, ...updateProductSchema }), (req, res, next): void => {
+  productController.updateProduct(req, res, next);
+});
+
+router.delete('/:id', validateRequest(productIdSchema), (req, res, next): void => {
+  productController.deleteProduct(req, res, next);
+});
+
+router.get('/:id', validateRequest(productIdSchema), (req, res, next): void => {
+  productController.getProduct(req, res, next);
+});
+
+router.get('/', validateRequest(productFilterSchema), (req, res, next): void => {
+  productController.getProducts(req, res, next);
+});
+
+router.put('/:id/stock', validateRequest({ ...productIdSchema, ...stockUpdateSchema }), (req, res, next): void => {
+  productController.updateStock(req, res, next);
+});
+
+router.post('/:id/images', validateRequest({ ...productIdSchema, ...imagesSchema }), (req, res, next): void => {
+  productController.addImages(req, res, next);
+});
+
+router.delete('/:id/images/:imageId', validateRequest(imageIdSchema), (req, res, next): void => {
+  productController.removeImage(req, res, next);
+});
 
 export default router; 

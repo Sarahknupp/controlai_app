@@ -13,7 +13,9 @@ router.get(
   '/receipt/:saleId',
   authenticate,
   authorize(['admin', 'manager', 'cashier']),
-  pdfController.generateSaleReceipt.bind(pdfController)
+  (req, res, next): void => {
+    pdfController.generateSaleReceipt.bind(pdfController)(req, res, next);
+  }
 );
 
 // Generate sales report
@@ -22,7 +24,9 @@ router.get(
   authenticate,
   authorize(['admin', 'manager']),
   validateRequest(pdfValidation.generateReport),
-  pdfController.generateSalesReport.bind(pdfController)
+  (req, res, next): void => {
+    pdfController.generateSalesReport.bind(pdfController)(req, res, next);
+  }
 );
 
 export default router; 

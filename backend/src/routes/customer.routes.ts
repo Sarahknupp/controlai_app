@@ -23,14 +23,30 @@ const router = express.Router();
 router.use(protect);
 
 // Routes accessible by all authenticated users
-router.get('/', validate(getCustomersValidation), getCustomers);
-router.get('/:id', getCustomer);
-router.get('/:id/purchases', validate(getCustomerPurchasesValidation), getCustomerPurchases);
+router.get('/', validate(getCustomersValidation), (req, res, next): void => {
+  getCustomers(req, res, next);
+});
+
+router.get('/:id', (req, res, next): void => {
+  getCustomer(req, res, next);
+});
+
+router.get('/:id/purchases', validate(getCustomerPurchasesValidation), (req, res, next): void => {
+  getCustomerPurchases(req, res, next);
+});
 
 // Routes accessible only by admin
 router.use(authorize(UserRole.ADMIN));
-router.post('/', validate(createCustomerValidation), createCustomer);
-router.put('/:id', validate(updateCustomerValidation), updateCustomer);
-router.delete('/:id', deleteCustomer);
+router.post('/', validate(createCustomerValidation), (req, res, next): void => {
+  createCustomer(req, res, next);
+});
+
+router.put('/:id', validate(updateCustomerValidation), (req, res, next): void => {
+  updateCustomer(req, res, next);
+});
+
+router.delete('/:id', (req, res, next): void => {
+  deleteCustomer(req, res, next);
+});
 
 export default router; 
