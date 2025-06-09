@@ -1,6 +1,7 @@
 import express from 'express';
 import { protect, authorize } from '../middleware/auth.middleware';
 import { UserRole } from '../models/User';
+import { validate } from '../middleware/validation/validate';
 import {
   createCustomer,
   getCustomers,
@@ -9,7 +10,6 @@ import {
   deleteCustomer,
   getCustomerPurchases
 } from '../controllers/customer.controller';
-import { validate } from '../middleware/validation/validate';
 import {
   createCustomerValidation,
   getCustomersValidation,
