@@ -54,7 +54,7 @@ app.get('/', (req: Request, res: Response) => {
 app.use(errorHandler);
 
 // Inicialização do servidor
-const PORT = parseInt(process.env.PORT || '', 10) || 3001;
+const PORT = parseInt(process.env.PORT, 10) || 3002;
 
 async function startServer() {
   try {
