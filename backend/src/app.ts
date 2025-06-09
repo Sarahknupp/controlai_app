@@ -23,7 +23,6 @@ import reportRoutes from './routes/report.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import auditRoutes from './routes/audit.routes';
 import metricsRoutes from './routes/metrics.routes';
-import emailRoutes from './routes/email.routes';
 import notificationRoutes from './routes/notification.routes';
 import backupRoutes from './routes/backup.routes';
 import exportRoutes from './routes/export.routes';
@@ -32,7 +31,6 @@ import validationRoutes from './routes/validation.routes';
 
 // Load environment variables
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/controlai_vendas';
-const PORT = process.env.PORT || 5000;
 
 // Create Express app
 const app = express();
@@ -93,7 +91,7 @@ app.use(errorLogger);
 app.use(errorHandler);
 
 // 404 handler
-app.use((req, res) => {
+app.use((_, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
@@ -107,12 +105,5 @@ app.get('/health', (_, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
-// Start server
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-  });
-}
 
 export default app; 
