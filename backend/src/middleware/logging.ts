@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import winston from 'winston';
 import { format } from 'winston';
 import { IUser } from '../types/user';
+import { logger } from '../utils/logger';
 
 // Extend Express Request type to include user
 declare global {
@@ -145,4 +146,78 @@ export const loggingHelpers = {
   }
 };
 
-export default logger; 
+export default logger;
+
+// Request logger middleware
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
+  // Log request
+  logger.info('Incoming request', {
+    method: req.method,
+    url: req.url,
+    ip: req.ip,
+    user: req.user ? req.user.id : 'anonymous'
+  });
+
+  // Store original send function
+  const originalSend = res.send;
+
+  // Override send function
+  res.send = function (body: any): Response {
+    // Log response
+    logger.info('Outgoing response', {
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      responseTime: Date.now() - req._startTime
+    });
+
+    // Restore original send function
+    res.send = originalSend;
+
+    // Call original send function
+    return originalSend.call(this, body);
+  };
+
+  // Add start time to request
+  req._startTime = Date.now();
+
+  next();
+}
+
+// Error logger middleware
+export function errorLogger(error: Error, req: Request, res: Response, next: NextFunction): void {
+  logger.error('Error occurred', {
+    error: {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    },
+    request: {
+      method: req.method,
+      url: req.url,
+      ip: req.ip,
+      user: req.user ? req.user.id : 'anonymous'
+    }
+  });
+
+  next(error);
+}
+
+// Performance logger middleware
+export function performanceLogger(req: Request, res: Response, next: NextFunction): void {
+  const start = process.hrtime();
+
+  res.on('finish', () => {
+    const [seconds, nanoseconds] = process.hrtime(start);
+    const duration = seconds * 1000 + nanoseconds / 1000000;
+
+    logger.info('Request performance', {
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      duration: `${duration.toFixed(2)}ms`
+    });
+  });
+
+  next();
+} 

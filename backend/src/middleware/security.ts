@@ -1,6 +1,7 @@
 import { Express } from 'express';
 import helmet from 'helmet';
 import { logger } from './logging';
+import mongoSanitize from 'express-mongo-sanitize';
 
 // Security options interface
 interface SecurityOptions {
@@ -88,12 +89,24 @@ export const createSecurityMiddleware = (options: SecurityOptions = {}) => {
 };
 
 // Apply security middleware
-export const applySecurityMiddleware = (app: Express, options: SecurityOptions = {}) => {
-  const securityMiddleware = createSecurityMiddleware(options);
-  app.use(securityMiddleware);
+export const applySecurityMiddleware = (app: Express): void => {
+  try {
+    // Prevent NoSQL injection
+    app.use(mongoSanitize());
+    
+    // Add security headers
+    app.use((req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      res.setHeader('X-Frame-Options', 'DENY');
+      res.setHeader('X-XSS-Protection', '1; mode=block');
+      next();
+    });
 
-  // Log security middleware setup
-  logger.info('Security middleware applied');
+    logger.info('Security middleware applied successfully');
+  } catch (error) {
+    logger.error('Error applying security middleware:', error);
+    throw error;
+  }
 };
 
 // Security helper functions

@@ -2,6 +2,7 @@ import { Express } from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { logger } from '../utils/logger';
+import path from 'path';
 
 // Swagger options
 const options: swaggerJsdoc.Options = {
@@ -154,17 +155,23 @@ const options: swaggerJsdoc.Options = {
 const swaggerSpec = swaggerJsdoc(options);
 
 // Apply documentation middleware to Express app
-export const applyDocsMiddleware = (app: Express) => {
-  // Serve Swagger UI
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+export const applyDocsMiddleware = (app: Express): void => {
+  try {
+    // Serve API documentation
+    app.use('/api-docs', (req, res, next) => {
+      res.sendFile(path.join(__dirname, '../docs/index.html'));
+    });
 
-  // Serve Swagger JSON
-  app.get('/api-docs.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-  });
+    // Serve OpenAPI specification
+    app.use('/api-spec', (req, res, next) => {
+      res.sendFile(path.join(__dirname, '../docs/openapi.json'));
+    });
 
-  logger.info('Swagger documentation available at /api-docs');
+    logger.info('Documentation middleware applied successfully');
+  } catch (error) {
+    logger.error('Error applying documentation middleware:', error);
+    throw error;
+  }
 };
 
 // Swagger decorators

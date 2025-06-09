@@ -1,24 +1,39 @@
-import { createLogger, format, transports } from 'winston';
+import winston from 'winston';
+import { StreamOptions } from 'morgan';
 
-export const { colorize, combine, timestamp, json, simple } = format;
+// Define colors
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
+};
 
-export const logger = createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: combine(
-    timestamp(),
-    json()
+// Add colors to winston
+winston.addColors(colors);
+
+// Create logger
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.colorize({ all: true }),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+    ),
   ),
   transports: [
-    new transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new transports.File({ filename: 'logs/combined.log' })
-  ]
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+    }),
+    new winston.transports.File({ filename: 'logs/all.log' }),
+  ],
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new transports.Console({
-    format: combine(
-      colorize(),
-      simple()
-    )
-  }));
-} 
+// Export stream for morgan
+export const stream: StreamOptions = {
+  write: (message: string) => logger.info(message.trim()),
+}; 

@@ -30,15 +30,30 @@ const customerIdSchema = {
 router.use(protect);
 
 // Base routes
-router.get('/', validate(getCustomersValidation), (req, res, next): void => { getCustomers(req, res, next); });
-router.post('/', validate(createCustomerValidation), (req, res, next): void => { createCustomer(req, res, next); });
+router.get('/', validate(getCustomersValidation), async (req, res, next): Promise<void> => {
+  await getCustomers(req, res, next);
+});
+
+router.post('/', validate(createCustomerValidation), async (req, res, next): Promise<void> => {
+  await createCustomer(req, res, next);
+});
 
 // Customer-specific routes
-router.get('/:customerId', validate(customerIdSchema), (req, res, next): void => { getCustomer(req, res, next); });
-router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), (req, res, next): void => { updateCustomer(req, res, next); });
-router.delete('/:customerId', validate(customerIdSchema), (req, res, next): void => { deleteCustomer(req, res, next); });
+router.get('/:customerId', validate(customerIdSchema), async (req, res, next): Promise<void> => {
+  await getCustomer(req, res, next);
+});
+
+router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), async (req, res, next): Promise<void> => {
+  await updateCustomer(req, res, next);
+});
+
+router.delete('/:customerId', validate(customerIdSchema), async (req, res, next): Promise<void> => {
+  await deleteCustomer(req, res, next);
+});
 
 // Customer purchases
-router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), (req, res, next): void => { getCustomerPurchases(req, res, next); });
+router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), async (req, res, next): Promise<void> => {
+  await getCustomerPurchases(req, res, next);
+});
 
 export default router; 

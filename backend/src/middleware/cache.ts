@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Redis from 'ioredis';
 import { logger } from './logging';
+import { Express } from 'express';
 
 // Create Redis client
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
@@ -110,5 +111,28 @@ export const cacheHelpers = {
     if (keys.length > 0) {
       await redis.del(...keys);
     }
+  }
+};
+
+export const applyCacheMiddleware = (app: Express): void => {
+  try {
+    // Cache control middleware
+    app.use((req, res, next) => {
+      // Skip caching for non-GET requests
+      if (req.method !== 'GET') {
+        return next();
+      }
+
+      // Set cache headers
+      res.setHeader('Cache-Control', 'public, max-age=300'); // 5 minutes
+      res.setHeader('ETag', `"${Date.now()}"`);
+      
+      next();
+    });
+
+    logger.info('Cache middleware applied successfully');
+  } catch (error) {
+    logger.error('Error applying cache middleware:', error);
+    throw error;
   }
 }; 

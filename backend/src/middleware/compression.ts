@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import compression from 'compression';
 import { logger } from './logging';
+import { Express } from 'express';
 
 // Compression options interface
 interface CompressionOptions {
@@ -146,27 +147,30 @@ export const compressionLogger = (req: any, res: any, next: any) => {
   next();
 };
 
+// Compression options
+const compressionOptions = {
+  level: 6, // Compression level (0-9)
+  threshold: 1024, // Only compress responses larger than 1kb
+  filter: (req: any, res: any) => {
+    // Don't compress if client doesn't support compression
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    // Use default compression filter
+    return compression.filter(req, res);
+  }
+};
+
 // Apply compression middleware
-export const applyCompressionMiddleware = (app: any) => {
-  // Configure compression options
-  const compressionOptions = {
-    // Only compress responses larger than 1kb
-    threshold: 1024,
-    // Don't compress responses that are already compressed
-    filter: shouldCompress,
-    // Compression level (1-9, 9 being highest)
-    level: 6
-  };
+export const applyCompressionMiddleware = (app: Express): void => {
+  try {
+    app.use(compression(compressionOptions));
+    logger.info('Compression middleware applied successfully');
+  } catch (error) {
+    logger.error('Error applying compression middleware:', error);
+    throw error;
+  }
+};
 
-  // Apply compression middleware
-  app.use(compression(compressionOptions));
-
-  // Apply compression logger
-  app.use(compressionLogger);
-
-  // Log compression middleware setup
-  logger.info('Compression middleware configured', {
-    threshold: compressionOptions.threshold,
-    level: compressionOptions.level
-  });
-}; 
+// Export alias
+export const compressionMiddleware = applyCompressionMiddleware; 
