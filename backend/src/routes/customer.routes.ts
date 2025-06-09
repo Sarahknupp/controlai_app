@@ -30,15 +30,15 @@ const customerIdSchema = {
 router.use(protect);
 
 // Base routes
-router.get('/', validate(getCustomersValidation), getCustomers);
-router.post('/', validate(createCustomerValidation), createCustomer);
+router.get('/', validate(getCustomersValidation), (req, res, next): void => { getCustomers(req, res, next); });
+router.post('/', validate(createCustomerValidation), (req, res, next): void => { createCustomer(req, res, next); });
 
 // Customer-specific routes
-router.get('/:customerId', validate(customerIdSchema), getCustomer);
-router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), updateCustomer);
-router.delete('/:customerId', validate(customerIdSchema), deleteCustomer);
+router.get('/:customerId', validate(customerIdSchema), (req, res, next): void => { getCustomer(req, res, next); });
+router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), (req, res, next): void => { updateCustomer(req, res, next); });
+router.delete('/:customerId', validate(customerIdSchema), (req, res, next): void => { deleteCustomer(req, res, next); });
 
 // Customer purchases
-router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), getCustomerPurchases);
+router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), (req, res, next): void => { getCustomerPurchases(req, res, next); });
 
 export default router; 

@@ -134,4 +134,13 @@ export const validateObjectId = (
 export default {
   authenticate,
   authorize
-}; 
+};
+
+// Export authenticateToken function
+export function authenticateToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+  // validação do token (JWT.verify, etc.)
+  next();
+} 
