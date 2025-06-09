@@ -25,7 +25,7 @@ declare global {
 
 // Protect routes
 export const protect = (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -60,7 +60,7 @@ export const protect = (
           message: 'Not authorized to access this route'
         });
       }
-      req.user = user;
+      (req as any).user = user;
       next();
     } catch (error) {
       res.status(500).json({
