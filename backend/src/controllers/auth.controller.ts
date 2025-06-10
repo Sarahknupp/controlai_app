@@ -4,6 +4,7 @@ import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { UnauthorizedError, BadRequestError, NotFoundError } from '../utils/errors';
 import { asyncHandler } from '../utils/asyncHandler';
+import crypto from 'crypto';
 
 // Extend Request type to include user
 interface AuthRequest extends Request {
@@ -282,3 +283,68 @@ export const deleteUser = async (req: Request, res: Response) => {
     });
   }
 };
+
+// @desc    Forgot password
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+export const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new NotFoundError('No user with that email');
+  }
+
+  // Generate reset token
+  const resetToken = user.getResetPasswordToken();
+  await user.save({ validateBeforeSave: false });
+
+  // TODO: Send email with reset token
+  // For now, just return the token in development
+  res.json({
+    success: true,
+    data: {
+      message: 'Password reset token generated',
+      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+    }
+  });
+});
+
+// @desc    Reset password
+// @route   PUT /api/auth/resetpassword/:resettoken
+// @access  Public
+export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  // Get hashed token
+  const resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(token)
+    .digest('hex');
+
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() }
+  });
+
+  if (!user) {
+    throw new BadRequestError('Invalid or expired token');
+  }
+
+  // Set new password
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  // Generate new token
+  const newToken = generateToken(user);
+
+  res.json({
+    success: true,
+    data: {
+      token: newToken
+    }
+  });
+});

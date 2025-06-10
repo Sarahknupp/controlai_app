@@ -62,18 +62,13 @@ router.put('/updatedetails', protect, validateRequest(updateDetailsSchema), upda
 router.put('/updatepassword', protect, validateRequest(updatePasswordSchema), updatePassword);
 
 // Admin only routes
+router.use(protect);
 router.use(authorize(UserRole.ADMIN));
 router.post('/register', validateRequest(registerSchema), register);
 router.get('/users', getUsers);
 router.route('/users/:id')
-  .get((req, res): void => {
-    getUser(req, res);
-  })
-  .put((req, res): void => {
-    updateUser(req, res);
-  })
-  .delete((req, res): void => {
-    deleteUser(req, res);
-  });
+  .get(getUser)
+  .put(updateUser)
+  .delete(deleteUser);
 
 export default router; 

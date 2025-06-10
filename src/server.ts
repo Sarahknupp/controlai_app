@@ -50,18 +50,31 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    services: {
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    }
+  });
+});
+
 // Error Handler (deve ser o último middleware)
 app.use(errorHandler);
 
 // Inicialização do servidor
-const PORT = parseInt(process.env.PORT, 10) || 3002;
+const PORT = parseInt(process.env.PORT, 10) || 3001;
 
 async function startServer() {
   try {
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`📡 API disponível em http://localhost:${PORT}`);
+      console.log(`✅ Backend iniciado na porta ${PORT}`);
+    }).on('error', err => {
+      console.error(`❌ Erro ao iniciar servidor: ${err.message}`);
+      process.exit(1);
     });
   } catch (error) {
     console.error('❌ Erro ao iniciar o servidor:', error);

@@ -48,17 +48,17 @@ export const protect = asyncHandler(async (req: AuthRequest, res: Response, next
 });
 
 // Grant access to specific roles
-export const authorize = (...roles: UserRole[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authorize = (role: UserRole) => {
+  return asyncHandler(async (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) {
       throw new UnauthorizedError('Not authorized to access this route');
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (req.user.role !== role) {
       throw new UnauthorizedError(`User role ${req.user.role} is not authorized to access this route`);
     }
     next();
-  };
+  });
 };
 
 // Validate ObjectId middleware
