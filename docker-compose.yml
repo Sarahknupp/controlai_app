@@ -12,12 +12,19 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-    command: npx ts-node src/server.ts
+    privileged: true  # Para permitir ajustes de sysctl
     sysctls:
       - fs.inotify.max_user_watches=524288
+    command: npx ts-node src/server.ts
     depends_on:
       frontend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -31,7 +38,7 @@ services:
     environment:
       - NODE_ENV=development
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
