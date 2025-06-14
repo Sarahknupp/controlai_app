@@ -121,6 +121,67 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
 
 O frontend estará disponível em http://localhost:5173 e se comunicará com o backend na porta 5000.
 
+## Como Executar com Docker Compose
+
+Para executar o projeto usando Docker Compose, siga estes passos:
+
+1. Certifique-se de ter o Docker e Docker Compose instalados:
+   ```bash
+   docker --version
+   docker-compose --version
+   ```
+
+2. Na raiz do projeto, execute:
+   ```bash
+   docker-compose up --build
+   ```
+
+3. Os serviços estarão disponíveis em:
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:3001/api
+   - Health Check: http://localhost:3001/health
+   - MongoDB: mongodb://localhost:27017
+
+4. Para parar os containers:
+   ```bash
+   docker-compose down
+   ```
+
+5. Para ver os logs:
+   ```bash
+   # Logs de todos os serviços
+   docker-compose logs -f
+   
+   # Logs de um serviço específico
+   docker-compose logs -f backend
+   docker-compose logs -f frontend
+   docker-compose logs -f mongodb
+   ```
+
+### Variáveis de Ambiente no Docker
+
+O Docker Compose configura automaticamente:
+- MongoDB:
+  - Porta: 27017
+  - Banco de dados: controlai_vendas
+  - Dados persistentes em volume
+
+- Backend:
+  - Porta: 3001
+  - NODE_ENV: production
+  - MONGO_URI: mongodb://mongodb:27017/controlai_vendas
+
+- Frontend:
+  - Porta: 5173
+  - VITE_BACKEND_URL: http://localhost:3001/api
+
+Para sobrescrever estas variáveis, você pode:
+1. Criar um arquivo `.env` na raiz do projeto
+2. Ou passar as variáveis diretamente no comando:
+   ```bash
+   NODE_ENV=development docker-compose up
+   ```
+
 ## Estrutura do Projeto
 
 ### Frontend

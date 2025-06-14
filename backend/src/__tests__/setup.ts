@@ -7,7 +7,7 @@ import { mockLogger } from '../__mocks__/logger';
 import { MockRedis } from '../__mocks__/redis';
 import swaggerUi from '../__mocks__/swagger-ui-express';
 
-let mongoServer: MongoMemoryServer;
+let mongod: MongoMemoryServer;
 // Extend global for test tokens
 declare global {
   // eslint-disable-next-line no-var
@@ -83,10 +83,10 @@ beforeAll(async () => {
     await mongoose.disconnect();
     await mongoose.connection.close();
     
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = await mongoServer.getUri();
+    mongod = await MongoMemoryServer.create();
+    const uri = mongod.getUri();
     
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(uri);
 
     // Create test users
     const adminUser = await User.create({
@@ -119,22 +119,12 @@ beforeAll(async () => {
 });
 
 // Clear database between tests
-beforeEach(async () => {
-  try {
-    if (mongoose.connection.readyState === 1 && mongoose.connection.db) {
-      const collections = await mongoose.connection.db.collections();
-      const excludedCollections = ['users']; // Don't clear test users
-      await Promise.all(
-        collections
-          .filter(collection => !excludedCollections.includes(collection.collectionName))
-          .map(collection => collection.deleteMany({}))
-      );
-    }
-    jest.clearAllMocks();
-  } catch (error) {
-    console.error('Error in test cleanup:', error);
-    throw error;
+afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
   }
+  jest.clearAllMocks();
 });
 
 // Disconnect and close database after tests
@@ -143,8 +133,8 @@ afterAll(async () => {
     if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect();
     }
-    if (mongoServer) {
-      await mongoServer.stop();
+    if (mongod) {
+      await mongod.stop();
     }
   } catch (error) {
     console.error('Error in test teardown:', error);

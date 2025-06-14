@@ -31,18 +31,18 @@ import importRoutes from './routes/import.routes';
 import validationRoutes from './routes/validation.routes';
 
 // Load environment variables
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/controlai_vendas';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/controlai_vendas';
 
 // Create Express app
 const app = express();
 
 // Connect to MongoDB
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGO_URI)
   .then(() => {
-    logger.info('Connected to MongoDB');
+    logger.info('✅ Conectado ao MongoDB com sucesso!');
   })
   .catch((err) => {
-    logger.error('MongoDB connection error:', err);
+    logger.error('❌ Falha ao conectar ao MongoDB:', err);
     if (process.env.NODE_ENV !== 'test') {
       process.exit(1);
     }
@@ -105,6 +105,11 @@ app.get('/health', (_, res) => {
     status: 'ok',
     timestamp: new Date().toISOString()
   });
+});
+
+// rota raiz para evitar 404
+app.get('/', (_req, res): void => {
+  res.status(200).json({ message: 'Welcome to ControlAI ERP API' });
 });
 
 export default app; 
