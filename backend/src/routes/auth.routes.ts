@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import {
   register,
   login,
@@ -13,6 +13,7 @@ import {
   resetPassword
 } from '../controllers/auth.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
+
 import { validate } from '../middleware/validation/validate';
 import {
   registerValidation,
@@ -24,7 +25,39 @@ import {
 } from '../middleware/validation/auth.validation';
 import { UserRole } from '../models/User';
 
-const router = express.Router();
+const router = Router();
+
+// Validation schemas
+const registerSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(6).required(),
+  role: Joi.string().valid('user', 'publisher').default('user')
+});
+
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required()
+});
+
+const updateDetailsSchema = Joi.object({
+  name: Joi.string(),
+  email: Joi.string().email()
+});
+
+const updatePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required(),
+  newPassword: Joi.string().min(6).required()
+});
+
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().email().required()
+});
+
+const resetPasswordSchema = Joi.object({
+  token: Joi.string().required(),
+  password: Joi.string().min(6).required()
+});
 
 // Public routes
 router.post('/register', validate(registerValidation), register);
@@ -39,13 +72,14 @@ router.get('/me', getMe);
 router.put('/updatedetails', validate(updateDetailsValidation), updateDetails);
 router.patch('/update-password', validate(updatePasswordValidation), updatePassword);
 
-// Admin only routes
-router.use(authorize(UserRole.ADMIN));
 
+// Admin only routes
+router.use(protect);
+router.use(authorize(UserRole.ADMIN));
 router.get('/users', getUsers);
 router.route('/users/:id')
   .get(getUser)
-  .put(validate(updateDetailsValidation), updateUser)
+  .put(updateUser)
   .delete(deleteUser);
 
 export default router; 

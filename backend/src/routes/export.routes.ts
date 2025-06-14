@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorize.middleware';
 import { validate } from '../middleware/validate.middleware';
 import { exportValidation } from '../validations/export.validation';
+import { UserRole } from '../models/user.model';
 
 const router = Router();
 const exportController = new ExportController();

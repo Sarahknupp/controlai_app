@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { Product } from '../models/Product';
+import { Product } from '../../backend/src/models/Product';
 
 // @desc    Criar novo produto
 // @route   POST /api/products

@@ -4,6 +4,7 @@ import { UnauthorizedError, ForbiddenError } from '../utils/errors';
 import { logger } from './logging';
 import { IUser } from '../types/user';
 
+
 // Auth options interface
 interface AuthOptions {
   secret: string;
@@ -196,7 +197,6 @@ export const authorize = (roles: string[]) => {
       });
       return next(new ForbiddenError('Insufficient permissions'));
     }
-
     next();
   };
 };
@@ -256,4 +256,25 @@ export const checkOwnership = (req: Request, res: Response, next: NextFunction) 
   }
 
   next();
-}; 
+};
+
+// Protect routes
+export const protect = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  let token;
+
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token) {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string };
+    req.user = await User.findById(decoded.id);
+    next();
+  } catch (err) {
+    return next(new ErrorResponse('Not authorized to access this route', 401));
+  }
+}); 

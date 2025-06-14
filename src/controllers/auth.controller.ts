@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
+import { User } from '../../backend/src/models/User';
 
 // Gerar Token JWT
 const generateToken = (id: string): string => {

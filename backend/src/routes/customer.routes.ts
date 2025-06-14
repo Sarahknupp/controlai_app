@@ -29,6 +29,7 @@ const customerIdSchema = {
 // Protect all routes
 router.use(protect);
 
+
 // Base routes
 router.get('/', validate(getCustomersValidation), async (req, res, next): Promise<void> => {
   await getCustomers(req, res, next);

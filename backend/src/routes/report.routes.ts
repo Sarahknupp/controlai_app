@@ -20,7 +20,9 @@ router.post(
   '/',
   authenticate,
   validate(reportValidation.generateReport),
-  reportController.generateReport.bind(reportController)
+  (req, res, next): void => {
+    reportController.generateReport(req, res, next);
+  }
 );
 
 // Get all reports with filtering
@@ -28,7 +30,9 @@ router.get(
   '/',
   authenticate,
   validate(reportValidation.getReports),
-  reportController.getReports.bind(reportController)
+  (req, res, next): void => {
+    reportController.getReports(req, res, next);
+  }
 );
 
 // Get a specific report

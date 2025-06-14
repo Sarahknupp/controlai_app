@@ -90,4 +90,5 @@ router.put('/:productId/stock', validateRequest(stockUpdateSchema), productContr
 router.post('/:productId/images', validateRequest(imagesSchema), productController.addImages);
 router.delete('/:productId/images/:imageId', validateRequest(imageIdSchema), productController.removeImage);
 
+
 export default router; 

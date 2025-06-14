@@ -1,5 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -14,7 +15,10 @@ export interface IUser extends Document {
   role: UserRole;
   active: boolean;
   lastLogin: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
+  getResetPasswordToken(): string;
 }
 
 const userSchema = new Schema({
@@ -47,7 +51,9 @@ const userSchema = new Schema({
   lastLogin: {
     type: Date,
     default: Date.now
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date
 }, {
   timestamps: true
 });
@@ -73,3 +79,4 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 export const User = mongoose.model<IUser>('User', userSchema);
 
 export { UserRole }; 
+

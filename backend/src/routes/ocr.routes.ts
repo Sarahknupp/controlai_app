@@ -7,31 +7,20 @@ import { ocrController } from '../controllers/ocr.controller';
 const router = Router();
 
 // OCR routes
-router.post(
-  '/scan',
-  authenticate,
-  validate(ocrValidation.scanDocument),
-  ocrController.scanDocument
-);
+router.post('/scan', authenticate, (req, res, next): void => {
+  ocrController.scanDocument(req, res, next);
+});
 
-router.post(
-  '/process',
-  authenticate,
-  validate(ocrValidation.processImage),
-  ocrController.processImage
-);
+router.post('/process', authenticate, (req, res, next): void => {
+  ocrController.processImage(req, res, next);
+});
 
-router.get(
-  '/stats',
-  authenticate,
-  ocrController.getStats
-);
+router.get('/stats', authenticate, (req, res, next): void => {
+  ocrController.getStats(req, res, next);
+});
 
-router.get(
-  '/history',
-  authenticate,
-  validate(ocrValidation.getHistory),
-  ocrController.getHistory
-);
+router.get('/history', authenticate, (req, res, next): void => {
+  ocrController.getHistory(req, res, next);
+});
 
 export default router; 

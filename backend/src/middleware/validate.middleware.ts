@@ -1,11 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import { Schema } from 'joi';
+import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
 
-type ValidationSchema = {
-  body?: any;
-  query?: any;
-  params?: any;
-};
+export const validateRequest = (schema: Schema) => {
+  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { error } = schema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true
+    });
 
 export const validate = (schema: ValidationSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -35,5 +38,7 @@ export const validate = (schema: ValidationSchema) => {
     } catch (error) {
       return next(error);
     }
-  };
+
+    next();
+  });
 }; 

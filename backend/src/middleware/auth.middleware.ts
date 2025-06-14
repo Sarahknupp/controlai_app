@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { User, UserRole, IUser } from '../models/User';
 import { UnauthorizedError } from '../utils/errors';
 import { UserService } from '../services/user.service';
+import { asyncHandler } from '../utils/asyncHandler';
 
 // Extend Request type to include user
 interface AuthRequest extends Request {
@@ -18,66 +19,37 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: string;
-      };
+      user?: IUser;
     }
   }
 }
 
 // Protect routes
-export const protect = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    let token: string | undefined;
+export const protect = asyncHandler(async (req: AuthRequest, res: Response, next: NextFunction) => {
+  let token: string | undefined;
 
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith('Bearer')
-    ) {
-      token = req.headers.authorization.split(' ')[1];
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
-
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
-
-      // Get user from token
-      const user = await User.findById(decoded.id).select('-password');
-      if (!user || !user.active) {
-        return res.status(401).json({
-          success: false,
-          message: 'Not authorized to access this route'
-        });
-      }
-
-      req.user = user;
-      next();
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: 'Server Error'
-    });
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
   }
-};
+
+  if (!token) {
+    throw new UnauthorizedError('Not authorized to access this route');
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string };
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user || !user.active) {
+      throw new UnauthorizedError('Not authorized to access this route');
+    }
+    
+    req.user = user;
+    next();
+  } catch (error) {
+    throw new UnauthorizedError('Not authorized to access this route');
+  }
+});
 
 // Middleware para autenticação
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -112,23 +84,17 @@ export const authorize = (...roles: UserRole[]) => {
       });
     }
     next();
-  };
+  });
 };
 
 // Validate ObjectId middleware
-export const validateObjectId = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const validateObjectId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   if (!req.params.id?.match(/^[0-9a-fA-F]{24}$/)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid ID format'
-    });
+    throw new UnauthorizedError('Invalid ID format');
   }
   next();
-};
+});
+
 
 // Export default para facilitar mocks
 export default {
