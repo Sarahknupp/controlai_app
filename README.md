@@ -1,105 +1,138 @@
-# ControlAI Vendas ERP
+# ControlAI Vendas - Sistema ERP Completo
 
-[![CI Status](https://github.com/your-username/controlai-vendas/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/controlai-vendas/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
-
-**ControlAI Vendas** é um sistema ERP completo para gestão empresarial, com módulos de vendas, estoque, finanças e muito mais.
+Este repositório contém o sistema ERP "ControlAI Vendas", com frontend em React + Vite e backend em Node.js + Express + TypeScript. A seguir, as instruções para instalação, configuração e deploy.
 
 ---
 
-## Tecnologias
+## 📁 Estrutura do Projeto
 
-* **Frontend:** React 18 · TypeScript · Vite · TailwindCSS
-* **Backend:** Node.js 18 · Express · TypeScript · MongoDB · Mongoose
-* **DevOps:** Docker · Docker Compose · GitHub Actions
+controlai-vendas/
+├── backend/             # API Express (TypeScript)
+│   ├── src/
+│   ├── package.json
+│   └── tsconfig.json
+├── frontend/            # App React + Vite (TypeScript)
+│   ├── src/
+│   ├── package.json
+│   └── tsconfig.json
+├── docker-compose.yml   # Orquestração Docker (frontend, backend, mongodb)
+└── README.md            # Este arquivo
 
----
+## 🔧 Pré-requisitos
 
-## Funcionalidades Principais
-
-* PDV (Ponto de Venda)
-* Gestão de Estoque
-* Emissão de Documentos Fiscais (NF-e, NFC-e)
-* Relatórios e Métricas
-* Autenticação JWT
-* Módulo de Backup e Sincronização
-
----
-
-## 🚀 Quick Start
-
-### 1. Clone o repositório
-
-bash
-git clone https://github.com/your-username/controlai-vendas.git
-cd controlai-vendas
+* [Node.js 18+ e npm](https://nodejs.org/)
+* [Docker & Docker Compose](https://docs.docker.com/compose/)
+* Conta MongoDB Atlas (para produção) ou MongoDB local
 
 ---
 
-### 2. Configurar variáveis de ambiente
+## ⚙️ Configuração de Variáveis de Ambiente
 
-Crie um `.env` na raiz com:
+Na raiz de cada serviço (backend e frontend), crie um arquivo `.env` com as chaves abaixo.
 
-```
-# Backend
+### Backend (`backend/.env`)
+
+env
 PORT=3001
-MONGODB_URI=<sua-URI-MongoDB>
-JWT_SECRET=<seu-Secret>
+MONGODB_URI=<sua_uri_mongodb>
+JWT_SECRET=<seu_jwt_secret>
+REDIS_URL=<sua_url_redis>  # ex: redis://localhost:6379
+NODE_ENV=development
 
-# Frontend (no diretório frontend)
-VITE_API_URL=http://localhost:3001/api
-```
+### Frontend (`frontend/.env`)
 
-### 3. Instalar dependências e rodar localmente
+env
+VITE_API_URL=<http://localhost:3001/api>
 
-bash
-# Backend
-cd backend
-npm install
-npm run dev
-
-# Frontend (em outra aba)
-cd ../frontend
-npm install
-npm run dev
+> **Importante:** nunca commite credenciais reais no repositório. Utilize variáveis de ambiente.
 
 ---
 
-Acesse:
+## 🚀 Desenvolvimento Local
 
-* Frontend: [http://localhost:5173](http://localhost:5173)
-* Backend API: [http://localhost:3001/api](http://localhost:3001/api)
-* Health check: [http://localhost:3001/health](http://localhost:3001/health)
+### Backend
+
+bash
+cd backend
+dotenv -e .env npm install
+npm run dev  # usa ts-node-dev
+
+A API estará em `http://localhost:3001/api` e health-check em `/health`.
+
+### Frontend
+
+bash
+cd frontend
+dotenv -e .env npm install
+npm run dev  # usa Vite
+
+O app ficará disponível em `http://localhost:5173`.
 
 ---
 
 ## 🐳 Docker Compose
 
-bash
-docker-compose up --build -d
+Tudo em um comando (na raiz):
 
-Serviços:
+bash
+docker-compose up --build
 
 * Frontend: [http://localhost:5173](http://localhost:5173)
 * Backend API: [http://localhost:3001/api](http://localhost:3001/api)
-* MongoDB: mongodb://localhost:27017/controlai\_vendas
+* Health: [http://localhost:3001/health](http://localhost:3001/health)
+* MongoDB: mongodb://mongodb:27017/controlai\_vendas
 
-Para parar:
+Para parar e remover containers:
 
 bash
 docker-compose down
 
 ---
 
-## 🤝 Contribuição
+## ✅ CI/CD (GitHub Actions)
 
-1. Faça um fork
-2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
-3. Commit e push (`git commit -m "Add feature" && git push origin feature/nova-funcionalidade`)
-4. Abra um Pull Request
+Workflow configurado em `.github/workflows/ci.yml`:
+
+1. `npm ci`
+2. `npm run lint`
+3. `npm test`
+4. Build & push Docker
+5. Deploy via SSH (docker-compose pull && up -d)
+
+> **Segredos** configurados no GitHub (`Settings > Secrets`):
+>
+> * `MONGODB_URI`, `JWT_SECRET`, `REDIS_URL`, `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SSH_HOST`, `SSH_USERNAME`, `SSH_KEY`
 
 ---
 
-## 📄 Licença
+## 📚 Scripts Disponíveis
 
-Este projeto está licenciado sob a Licença MIT. Consulte o arquivo [LICENSE.md](LICENSE.md) para mais detalhes.
+### Backend (`package.json`)
+
+* `npm run dev`: inicia em modo desenvolvimento
+* `npm start`: inicia em produção
+* `npm run build`: compila TypeScript
+* `npm test`: executa testes via Jest
+
+### Frontend (`package.json`)
+
+* `npm run dev`: inicia Vite
+* `npm run build`: gera build de produção
+* `npm run preview`: serve build de produção
+* `npm run lint`: ESLint
+* `npm test`: testes (Jest + Testing Library)
+
+---
+
+## Contribuição
+
+1. Fork deste repositório
+2. Crie uma branch: `git checkout -b feature/nova-feature`
+3. Faça commits claros
+4. Crie Pull Request
+
+---
+
+## 📝 Licença
+
+Este projeto está licenciado sob MIT. Veja \[LICENSE.md].
