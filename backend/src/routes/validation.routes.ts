@@ -15,7 +15,9 @@ router.post(
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
   validateRequest(validationValidation.validateData),
-  validationController.validateData.bind(validationController)
+  (req, res, next): void => {
+    validationController.validateData.bind(validationController)(req, res, next);
+  }
 );
 
 // Get validation status
@@ -23,7 +25,9 @@ router.get(
   '/status',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  validationController.getValidationStatus.bind(validationController)
+  (req, res, next): void => {
+    validationController.getValidationStatus.bind(validationController)(req, res, next);
+  }
 );
 
 export default router; 

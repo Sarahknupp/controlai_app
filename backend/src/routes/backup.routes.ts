@@ -10,46 +10,28 @@ const router = Router();
 const backupController = new BackupController();
 
 // Create backup
-router.post(
-  '/',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(backupValidation.createBackup),
-  backupController.createBackup.bind(backupController)
-);
+router.post('/create', authenticate, authorize([UserRole.ADMIN]), (req, res, next): void => {
+  backupController.createBackup(req, res, next);
+});
 
 // Restore backup
-router.post(
-  '/:backupId/restore',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(backupValidation.restoreBackup),
-  backupController.restoreBackup.bind(backupController)
-);
+router.post('/restore', authenticate, authorize([UserRole.ADMIN]), (req, res, next): void => {
+  backupController.restoreBackup(req, res, next);
+});
 
 // List backups
-router.get(
-  '/',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  backupController.listBackups.bind(backupController)
-);
+router.get('/', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  backupController.listBackups(req, res, next);
+});
 
 // Delete backup
-router.delete(
-  '/:backupId',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(backupValidation.deleteBackup),
-  backupController.deleteBackup.bind(backupController)
-);
+router.delete('/:id', authenticate, authorize([UserRole.ADMIN]), (req, res, next): void => {
+  backupController.deleteBackup(req, res, next);
+});
 
 // Get backup status
-router.get(
-  '/status',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  backupController.getBackupStatus.bind(backupController)
-);
+router.get('/status', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  backupController.getBackupStatus(req, res, next);
+});
 
 export default router; 

@@ -10,48 +10,28 @@ const router = Router();
 const notificationController = new NotificationController();
 
 // Send general notification
-router.post(
-  '/',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  validateRequest(notificationValidation.sendNotification),
-  notificationController.sendNotification.bind(notificationController)
-);
+router.post('/send', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  notificationController.sendNotification(req, res, next);
+});
 
 // Send low stock alert
-router.post(
-  '/low-stock',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  validateRequest(notificationValidation.sendLowStockAlert),
-  notificationController.sendLowStockAlert.bind(notificationController)
-);
+router.post('/low-stock', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  notificationController.sendLowStockAlert(req, res, next);
+});
 
 // Send sales target alert
-router.post(
-  '/sales-target',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  validateRequest(notificationValidation.sendSalesTargetAlert),
-  notificationController.sendSalesTargetAlert.bind(notificationController)
-);
+router.post('/sales-target', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  notificationController.sendSalesTargetAlert(req, res, next);
+});
 
 // Send system maintenance notification
-router.post(
-  '/maintenance',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(notificationValidation.sendSystemMaintenanceNotification),
-  notificationController.sendSystemMaintenanceNotification.bind(notificationController)
-);
+router.post('/maintenance', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  notificationController.sendMaintenanceNotification(req, res, next);
+});
 
 // Send security alert
-router.post(
-  '/security',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(notificationValidation.sendSecurityAlert),
-  notificationController.sendSecurityAlert.bind(notificationController)
-);
+router.post('/security', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+  notificationController.sendSecurityAlert(req, res, next);
+});
 
 export default router; 

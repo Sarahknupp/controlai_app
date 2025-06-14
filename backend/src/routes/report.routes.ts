@@ -8,12 +8,21 @@ import { reportValidation } from '../validations/report.validation';
 const router = Router();
 const reportController = new ReportController();
 
+// Validation schemas
+const reportIdSchema = {
+  params: {
+    reportId: { type: 'number' as const, required: true, min: 1 }
+  }
+};
+
 // Generate a new report
 router.post(
   '/',
   authenticate,
   validate(reportValidation.generateReport),
-  reportController.generateReport.bind(reportController)
+  (req, res, next): void => {
+    reportController.generateReport(req, res, next);
+  }
 );
 
 // Get all reports with filtering
@@ -21,22 +30,24 @@ router.get(
   '/',
   authenticate,
   validate(reportValidation.getReports),
-  reportController.getReports.bind(reportController)
+  (req, res, next): void => {
+    reportController.getReports(req, res, next);
+  }
 );
 
 // Get a specific report
 router.get(
-  '/:id',
+  '/:reportId',
   authenticate,
-  validate(reportValidation.getReport),
+  validate({ ...reportIdSchema, ...reportValidation.getReport }),
   reportController.getReport.bind(reportController)
 );
 
 // Delete a report
 router.delete(
-  '/:id',
+  '/:reportId',
   authenticate,
-  validate(reportValidation.deleteReport),
+  validate({ ...reportIdSchema, ...reportValidation.deleteReport }),
   reportController.deleteReport.bind(reportController)
 );
 

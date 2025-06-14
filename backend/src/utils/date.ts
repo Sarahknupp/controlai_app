@@ -1,31 +1,17 @@
-export const formatDate = (date: Date | string): string => {
-  const d = new Date(date);
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(d);
+import { format, parseISO, isToday as dateFnsIsToday, isYesterday as dateFnsIsYesterday, isThisMonth as dateFnsIsThisMonth, isThisYear as dateFnsIsThisYear, differenceInYears, startOfDay, endOfDay, subDays, isSameDay, isSameWeek, isSameMonth, isSameYear, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { isToday as _isToday, isYesterday as _isYesterday, isThisMonth as _isThisMonth, isThisYear as _isThisYear } from 'date-fns';
+
+export const formatDate = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd');
 };
 
-export const formatDateTime = (date: Date | string): string => {
-  const d = new Date(date);
-  return new Intl.DateTimeFormat('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(d);
+export const formatDateTime = (date: Date): string => {
+  return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
 };
 
-export const formatTime = (date: Date | string): string => {
-  const d = new Date(date);
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  }).format(d);
+export const formatTime = (date: string | Date): string => {
+  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+  return format(parsedDate, 'HH:mm:ss');
 };
 
 export const formatRelativeTime = (date: Date | string): string => {
@@ -61,48 +47,28 @@ export const formatRelativeTime = (date: Date | string): string => {
   return `${diffInYears} ${diffInYears === 1 ? 'ano' : 'anos'} atrás`;
 };
 
-export const isToday = (date: Date | string): boolean => {
-  const d = new Date(date);
-  const today = new Date();
-  return (
-    d.getDate() === today.getDate() &&
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear()
-  );
+export const isToday = (date: Date): boolean => {
+  return _isToday(date);
 };
 
-export const isYesterday = (date: Date | string): boolean => {
-  const d = new Date(date);
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return (
-    d.getDate() === yesterday.getDate() &&
-    d.getMonth() === yesterday.getMonth() &&
-    d.getFullYear() === yesterday.getFullYear()
-  );
+export const isYesterday = (date: Date): boolean => {
+  const yesterday = subDays(new Date(), 1);
+  return isSameDay(date, yesterday);
 };
 
-export const isThisWeek = (date: Date | string): boolean => {
-  const d = new Date(date);
+export const isThisWeek = (date: Date): boolean => {
   const today = new Date();
-  const diff = today.getTime() - d.getTime();
-  const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return diffDays < 7;
+  return isSameWeek(date, today, { weekStartsOn: 0 }); // 0 = Sunday
 };
 
-export const isThisMonth = (date: Date | string): boolean => {
-  const d = new Date(date);
+export const isThisMonth = (date: Date): boolean => {
   const today = new Date();
-  return (
-    d.getMonth() === today.getMonth() &&
-    d.getFullYear() === today.getFullYear()
-  );
+  return isSameMonth(date, today);
 };
 
-export const isThisYear = (date: Date | string): boolean => {
-  const d = new Date(date);
+export const isThisYear = (date: Date): boolean => {
   const today = new Date();
-  return d.getFullYear() === today.getFullYear();
+  return isSameYear(date, today);
 };
 
 export const addDays = (date: Date | string, days: number): Date => {
@@ -123,68 +89,66 @@ export const addYears = (date: Date | string, years: number): Date => {
   return d;
 };
 
-export const getStartOfDay = (date: Date | string): Date => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+export const getStartOfDay = (date: Date): Date => {
+  return startOfDay(date);
 };
 
-export const getEndOfDay = (date: Date | string): Date => {
-  const d = new Date(date);
-  d.setHours(23, 59, 59, 999);
-  return d;
+export const getEndOfDay = (date: Date): Date => {
+  return endOfDay(date);
 };
 
-export const getStartOfWeek = (date: Date | string): Date => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  return getStartOfDay(d);
+export const getStartOfWeek = (date: Date): Date => {
+  const start = startOfWeek(date, { weekStartsOn: 0 }); // 0 = Sunday
+  start.setHours(0, 0, 0, 0);
+  return start;
 };
 
-export const getEndOfWeek = (date: Date | string): Date => {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? 0 : 7);
-  d.setDate(diff);
-  return getEndOfDay(d);
+export const getEndOfWeek = (date: Date): Date => {
+  const end = endOfWeek(date, { weekStartsOn: 0 }); // 0 = Sunday
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
-export const getStartOfMonth = (date: Date | string): Date => {
-  const d = new Date(date);
-  d.setDate(1);
-  return getStartOfDay(d);
+export const getStartOfMonth = (date: Date): Date => {
+  const start = startOfMonth(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
 };
 
-export const getEndOfMonth = (date: Date | string): Date => {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + 1);
-  d.setDate(0);
-  return getEndOfDay(d);
+export const getEndOfMonth = (date: Date): Date => {
+  const end = endOfMonth(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
-export const getStartOfYear = (date: Date | string): Date => {
-  const d = new Date(date);
-  d.setMonth(0, 1);
-  return getStartOfDay(d);
+export const getStartOfYear = (date: Date): Date => {
+  const start = startOfYear(date);
+  start.setHours(0, 0, 0, 0);
+  return start;
 };
 
-export const getEndOfYear = (date: Date | string): Date => {
-  const d = new Date(date);
-  d.setMonth(11, 31);
-  return getEndOfDay(d);
+export const getEndOfYear = (date: Date): Date => {
+  const end = endOfYear(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
 
-export const getAge = (birthDate: Date | string): number => {
+export const getAge = (birthDate: Date): number => {
   const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--;
   }
   
   return age;
+};
+
+export const parseDate = (dateString: string): Date => {
+  return new Date(dateString);
+};
+
+export const isValidDate = (date: Date): boolean => {
+  return date instanceof Date && !isNaN(date.getTime());
 }; 

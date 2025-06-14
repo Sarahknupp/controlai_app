@@ -14,7 +14,9 @@ router.post(
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
   validate(syncValidation.syncData),
-  syncController.syncData.bind(syncController)
+  (req, res, next): void => {
+    syncController.syncData.bind(syncController)(req, res, next);
+  }
 );
 
 router.get(
@@ -22,7 +24,9 @@ router.get(
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
   validate(syncValidation.getSyncStatus),
-  syncController.getSyncStatus.bind(syncController)
+  (req, res, next): void => {
+    syncController.getSyncStatus.bind(syncController)(req, res, next);
+  }
 );
 
 router.post(
@@ -30,7 +34,9 @@ router.post(
   authenticate,
   authorize(['ADMIN']),
   validate(syncValidation.cancelSync),
-  syncController.cancelSync.bind(syncController)
+  (req, res, next): void => {
+    syncController.cancelSync.bind(syncController)(req, res, next);
+  }
 );
 
 export default router; 

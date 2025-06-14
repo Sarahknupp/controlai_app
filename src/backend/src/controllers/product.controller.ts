@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { Product, ProductDocument } from '../models/Product';
+import { Product, ProductDocument } from '../../backend/src/models/Product';
 import { ApiError } from '../utils/ApiError';
 import { catchAsync } from '../utils/catchAsync';
 import { FilterQuery } from 'mongoose';

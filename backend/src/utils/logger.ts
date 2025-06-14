@@ -1,40 +1,39 @@
 import winston from 'winston';
-import path from 'path';
+import { StreamOptions } from 'morgan';
 
-const logDir = 'logs';
-const logLevel = process.env.LOG_LEVEL || 'info';
-
-const logger = winston.createLogger({
-  level: logLevel,
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  transports: [
-    // Write all logs to console
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    }),
-    // Write all logs with level 'error' and below to error.log
-    new winston.transports.File({
-      filename: path.join(logDir, 'error.log'),
-      level: 'error'
-    }),
-    // Write all logs with level 'info' and below to combined.log
-    new winston.transports.File({
-      filename: path.join(logDir, 'combined.log')
-    })
-  ]
-});
-
-// Create a stream object for Morgan
-export const stream = {
-  write: (message: string) => {
-    logger.info(message.trim());
-  }
+// Define colors
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
 };
 
-export { logger }; 
+// Add colors to winston
+winston.addColors(colors);
+
+// Create logger
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.colorize({ all: true }),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+    ),
+  ),
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+    }),
+    new winston.transports.File({ filename: 'logs/all.log' }),
+  ],
+});
+
+// Export stream for morgan
+export const stream: StreamOptions = {
+  write: (message: string) => logger.info(message.trim()),
+}; 

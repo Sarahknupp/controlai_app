@@ -1,21 +1,27 @@
-# Imagem base
+
 FROM node:18-alpine
 
-# Diretório de trabalho
 WORKDIR /app
 
-# Instalação de dependências
-COPY package*.json ./
-RUN npm ci --only=production
+# Install global dependencies and curl for healthcheck
+RUN apk add --no-cache curl && \
+    npm install -g typescript ts-node
 
-# Cópia do código fonte
+# Copy package files
+COPY package*.json ./
+
+# Update multer to version 1.4.4
+RUN npm install multer@1.4.4 --save
+
+# Install all dependencies including devDependencies
+RUN npm ci
+
+# Copy source code
 COPY . .
 
-# Compilação do TypeScript
-RUN npm run build
+# Expose port
+EXPOSE 3001
 
-# Exposição da porta
-EXPOSE 3000
+# Start the application
+CMD ["npx", "ts-node", "src/server.ts"] 
 
-# Comando para iniciar a aplicação
-CMD ["npm", "start"] 

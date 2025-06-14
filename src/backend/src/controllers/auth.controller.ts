@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { User } from '../models';
+import { User } from '../../backend/src/models/User';
 import { ApiError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/authenticate';
 import jwt from 'jsonwebtoken';

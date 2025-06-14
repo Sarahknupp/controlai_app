@@ -1,98 +1,210 @@
 import { Request, Response, NextFunction } from 'express';
-import { createLogger, format, transports } from 'winston';
+import winston from 'winston';
+import { format } from 'winston';
 import { IUser } from '../types/user';
+import { logger } from '../utils/logger';
 
 // Extend Express Request type to include user
 declare global {
   namespace Express {
     interface Request {
       user?: IUser;
+      startTime?: number;
     }
   }
 }
 
-// Create logger instance
-const logger = createLogger({
-  level: 'info',
-  format: format.combine(
-    format.timestamp(),
-    format.json()
+// Log levels
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4
+};
+
+// Log colors
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white'
+};
+
+// Add colors to winston
+winston.addColors(colors);
+
+// Create logger
+export const logger = winston.createLogger({
+  level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+  levels,
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.colorize({ all: true }),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`
+    )
   ),
   transports: [
-    new transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new transports.File({ filename: 'logs/combined.log' }),
-  ],
+    new winston.transports.Console(),
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error'
+    }),
+    new winston.transports.File({ filename: 'logs/all.log' })
+  ]
 });
 
-// Add console transport in development
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new transports.Console({
-    format: format.combine(
-      format.colorize(),
-      format.simple()
-    ),
-  }));
+// Logging options interface
+interface LoggingOptions {
+  level?: string;
+  message?: string;
+  skip?: (req: Request) => boolean;
 }
 
-// Request logging middleware
-export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
+// Default logging options
+const defaultOptions: LoggingOptions = {
+  level: 'info',
+  message: 'Request completed',
+  skip: (req: Request) => false
+};
 
+// Logging middleware factory
+export const createLoggingMiddleware = (options: LoggingOptions = {}) => {
+  const loggingOptions = { ...defaultOptions, ...options };
+
+  return (req: Request, res: Response, next: NextFunction) => {
+    // Skip logging if skip function returns true
+    if (loggingOptions.skip!(req)) {
+      return next();
+    }
+
+    // Get start time
+    const start = Date.now();
+
+    // Log request
+    logger.http('Request started', {
+      method: req.method,
+      url: req.originalUrl,
+      ip: req.ip,
+      userId: req.user?.id
+    });
+
+    // Log response
+    res.on('finish', () => {
+      // Get response time
+      const duration = Date.now() - start;
+
+      // Log response
+      logger.log(loggingOptions.level!, loggingOptions.message!, {
+        method: req.method,
+        url: req.originalUrl,
+        status: res.statusCode,
+        duration,
+        ip: req.ip,
+        userId: req.user?.id
+      });
+    });
+
+    next();
+  };
+};
+
+// Logging helper functions
+export const loggingHelpers = {
+  // Log error
+  logError: (error: Error, req?: Request): void => {
+    logger.error('Error occurred', {
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      },
+      request: req ? {
+        method: req.method,
+        url: req.originalUrl,
+        ip: req.ip,
+        userId: req.user?.id
+      } : undefined
+    });
+  },
+
+  // Log warning
+  logWarning: (message: string, data?: any): void => {
+    logger.warn(message, data);
+  },
+
+  // Log info
+  logInfo: (message: string, data?: any): void => {
+    logger.info(message, data);
+  },
+
+  // Log debug
+  logDebug: (message: string, data?: any): void => {
+    logger.debug(message, data);
+  }
+};
+
+export default logger;
+
+// Request logger middleware
+export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   // Log request
   logger.info('Incoming request', {
     method: req.method,
-    url: req.originalUrl,
+    url: req.url,
     ip: req.ip,
-    userAgent: req.get('user-agent'),
-    userId: req.user?.id,
-    body: req.method !== 'GET' ? req.body : undefined,
-    query: Object.keys(req.query).length ? req.query : undefined,
+    user: req.user ? req.user.id : 'anonymous'
   });
 
-  // Log response
+  // Store original send function
   const originalSend = res.send;
-  res.send = function (body) {
-    const responseTime = Date.now() - start;
-    const statusCode = res.statusCode;
 
+  // Override send function
+  res.send = function (body: any): Response {
+    // Log response
     logger.info('Outgoing response', {
       method: req.method,
-      url: req.originalUrl,
-      statusCode,
-      responseTime: `${responseTime}ms`,
-      userId: req.user?.id,
+      url: req.url,
+      statusCode: res.statusCode,
+      responseTime: Date.now() - req._startTime
     });
 
+    // Restore original send function
+    res.send = originalSend;
+
+    // Call original send function
     return originalSend.call(this, body);
   };
 
-  next();
-};
+  // Add start time to request
+  req._startTime = Date.now();
 
-// Error logging middleware
-export const errorLogger = (error: Error, req: Request, res: Response, next: NextFunction) => {
+  next();
+}
+
+// Error logger middleware
+export function errorLogger(error: Error, req: Request, res: Response, next: NextFunction): void {
   logger.error('Error occurred', {
     error: {
       name: error.name,
       message: error.message,
-      stack: error.stack,
+      stack: error.stack
     },
     request: {
       method: req.method,
-      url: req.originalUrl,
+      url: req.url,
       ip: req.ip,
-      userAgent: req.get('user-agent'),
-      userId: req.user?.id,
-      body: req.method !== 'GET' ? req.body : undefined,
-      query: Object.keys(req.query).length ? req.query : undefined,
-    },
+      user: req.user ? req.user.id : 'anonymous'
+    }
   });
 
   next(error);
-};
+}
 
-// Performance monitoring middleware
-export const performanceLogger = (req: Request, res: Response, next: NextFunction) => {
+// Performance logger middleware
+export function performanceLogger(req: Request, res: Response, next: NextFunction): void {
   const start = process.hrtime();
 
   res.on('finish', () => {
@@ -101,12 +213,11 @@ export const performanceLogger = (req: Request, res: Response, next: NextFunctio
 
     logger.info('Request performance', {
       method: req.method,
-      url: req.originalUrl,
+      url: req.url,
       statusCode: res.statusCode,
-      duration: `${duration.toFixed(2)}ms`,
-      userId: req.user?.id,
+      duration: `${duration.toFixed(2)}ms`
     });
   });
 
   next();
-}; 
+} 

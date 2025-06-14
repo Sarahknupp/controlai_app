@@ -3,44 +3,37 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { rateLimit } from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import compression from 'compression';
-import path from 'path';
+
 import { logger, stream } from './utils/logger';
-import { errorHandler } from './middleware/error';
+
 import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
 import { compressionMiddleware } from './middleware/compression';
-import { applySecurityMiddleware } from './config/security';
-import { protect, authorize } from './middleware/auth.middleware';
-import { UserRole } from './types/user';
-import { IUserDocument } from './models/User';
+import { errorHandler } from './middleware/errorHandler';
+import { rateLimiter } from './middleware/rateLimit';
+import { applySecurityMiddleware } from './middleware/security';
+import { applyCacheMiddleware } from './middleware/cache';
+import { applyMonitoringMiddleware } from './middleware/monitoring';
+import { applyDocsMiddleware } from './middleware/docs';
+
 
 // Import routes
 import authRoutes from './routes/auth.routes';
-import productRoutes from './routes/product.routes';
+import userRoutes from './routes/user.routes';
 import customerRoutes from './routes/customer.routes';
+import productRoutes from './routes/product.routes';
 import saleRoutes from './routes/sale.routes';
-import ocrRoutes from './routes/ocr.routes';
+import reportRoutes from './routes/report.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 import auditRoutes from './routes/audit.routes';
 import metricsRoutes from './routes/metrics.routes';
-import pdfRoutes from './routes/pdf.routes';
-import emailRoutes from './routes/email.routes';
-import receiptRoutes from './routes/receipt.routes';
 import notificationRoutes from './routes/notification.routes';
 import backupRoutes from './routes/backup.routes';
-import reportRoutes from './routes/report.routes';
-import scheduledReportRoutes from './routes/scheduled-report.routes';
 import exportRoutes from './routes/export.routes';
 import importRoutes from './routes/import.routes';
-import syncRoutes from './routes/sync.routes';
 import validationRoutes from './routes/validation.routes';
-import userRoutes from './routes/user.routes';
 
 // Load environment variables
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/controlai_vendas';
-const PORT = process.env.PORT || 5000;
-
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/controlai_vendas';
 
 export const createApp = (): Express => {
   const app = express();
@@ -134,10 +127,26 @@ export const createApp = (): Express => {
       success: false,
       message: 'Route not found'
     });
+
   });
 
   return app;
 };
+
+// Health check
+app.get('/health', (_, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// rota raiz para evitar 404
+app.get('/', (_req, res): void => {
+  res.status(200).json({ message: 'Welcome to ControlAI ERP API' });
+});
+
+export default app; 
 
 // Start server
 if (process.env.NODE_ENV !== 'test') {
@@ -146,3 +155,4 @@ if (process.env.NODE_ENV !== 'test') {
     logger.info(`Server running on port ${PORT}`);
   });
 } 
+

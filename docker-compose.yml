@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   app:
     build: 
       context: ./backend
@@ -20,12 +21,44 @@ services:
       - app-network
     restart: unless-stopped
 
+
   mongodb:
     image: mongo:latest
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
+
+    environment:
+      - MONGO_INITDB_DATABASE=controlai_vendas
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGO_URI=mongodb://mongodb:27017/controlai_vendas
+    depends_on:
+      - mongodb
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3001/api
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
+
     networks:
       - app-network
     restart: unless-stopped
@@ -62,3 +95,4 @@ volumes:
 networks:
   app-network:
     driver: bridge 
+

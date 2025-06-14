@@ -1,4 +1,22 @@
 import { body, query, param } from 'express-validator';
+
+import { PaymentMethod } from '../../models/Sale';
+import Joi from 'joi';
+
+export const createSaleValidation = Joi.object({
+  productId: Joi.string().required(),
+  quantity: Joi.number().required().min(1),
+  customerId: Joi.string().required(),
+  totalAmount: Joi.number().required().min(0)
+});
+
+export const updateSaleValidation = Joi.object({
+  productId: Joi.string(),
+  quantity: Joi.number().min(1),
+  customerId: Joi.string(),
+  totalAmount: Joi.number().min(0)
+});
+
 import { validateRequest } from './validate';
 
 // Validações para criação de venda
@@ -41,6 +59,7 @@ export const createSaleValidation = [
   
   validateRequest
 ];
+
 
 // Validações para listagem de vendas
 export const getSalesValidation = [

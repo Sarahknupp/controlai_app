@@ -14,7 +14,9 @@ router.post(
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
   validate(scheduledReportValidation.scheduleReport),
-  scheduledReportController.scheduleReport.bind(scheduledReportController)
+  (req, res, next): void => {
+    scheduledReportController.scheduleReport.bind(scheduledReportController)(req, res, next);
+  }
 );
 
 // Cancel a scheduled report
@@ -23,7 +25,9 @@ router.delete(
   authenticate,
   authorize(['ADMIN']),
   validate(scheduledReportValidation.cancelScheduledReport),
-  scheduledReportController.cancelScheduledReport.bind(scheduledReportController)
+  (req, res, next): void => {
+    scheduledReportController.cancelScheduledReport.bind(scheduledReportController)(req, res, next);
+  }
 );
 
 // Get all scheduled reports
@@ -32,7 +36,9 @@ router.get(
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
   validate(scheduledReportValidation.getScheduledReports),
-  scheduledReportController.getScheduledReports.bind(scheduledReportController)
+  (req, res, next): void => {
+    scheduledReportController.getScheduledReports.bind(scheduledReportController)(req, res, next);
+  }
 );
 
 export default router; 

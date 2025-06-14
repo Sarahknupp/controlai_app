@@ -15,7 +15,9 @@ router.post(
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
   validateRequest(metricsValidation.collectMetrics),
-  metricsController.collectMetrics.bind(metricsController)
+  (req, res, next): void => {
+    metricsController.collectMetrics(req, res, next);
+  }
 );
 
 // Get metrics status
@@ -23,14 +25,16 @@ router.get(
   '/status',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  metricsController.getMetricsStatus.bind(metricsController)
+  (req, res, next): void => {
+    metricsController.getMetricsStatus(req, res, next);
+  }
 );
 
 // Get system metrics
 router.get(
   '/system',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   metricsController.getSystemMetrics.bind(metricsController)
 );
 
@@ -38,9 +42,11 @@ router.get(
 router.get(
   '/usage',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   validateRequest(metricsValidation.getUsageMetrics),
-  metricsController.getUsageMetrics.bind(metricsController)
+  (req, res, next): void => {
+    metricsController.getUsageMetrics(req, res, next);
+  }
 );
 
 export default router; 

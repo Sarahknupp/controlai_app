@@ -1,16 +1,23 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
+
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { IUser, UserRole } from '../types/user';
 
 export interface IUserDocument extends Omit<IUser, '_id'>, Document {
   password: string;
+
+  role: UserRole;
+  active: boolean;
+  lastLogin: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
+  getResetPasswordToken(): string;
   twoFactorSecret?: string;
   loginAttempts: number;
   lockUntil?: Date;
-  resetPasswordToken?: string;
-  resetPasswordExpire?: Date;
   emailVerificationToken?: string;
   emailVerificationExpire?: Date;
   isEmailVerified: boolean;
@@ -21,6 +28,7 @@ export interface IUserDocument extends Omit<IUser, '_id'>, Document {
   isLocked(): boolean;
   generatePasswordResetToken(): Promise<string>;
   generateEmailVerificationToken(): Promise<string>;
+
 }
 
 const userSchema = new Schema({
@@ -58,7 +66,8 @@ const userSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  twoFactorSecret: {
+
+   twoFactorSecret: {
     type: String,
     select: false
   },
@@ -115,6 +124,7 @@ const userSchema = new Schema({
       }
     }
   }
+
 }, {
   timestamps: true
 });
@@ -219,4 +229,7 @@ userSchema.methods.generateEmailVerificationToken = async function(): Promise<st
   return verificationToken;
 };
 
-export const User = mongoose.model<IUserDocument>('User', userSchema); 
+export const User = mongoose.model<IUser>('User', userSchema);
+
+export { UserRole }; 
+

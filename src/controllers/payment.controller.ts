@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import { Payment } from '../models/Payment';
-import { Sale } from '../models/Sale';
+import { Payment } from '../../backend/src/models/Payment';
+import { Sale } from '../../backend/src/models/Sale';
 import { PaymentStatus, ISale } from '../types/sale';
 import { ReceiptService } from '../services/receipt.service';
 import { EmailService } from '../services/email.service';
-import { ReceiptHistory } from '../models/ReceiptHistory';
+import { ReceiptHistory } from '../../backend/src/models/ReceiptHistory';
 import path from 'path';
 
 // @desc    Processar novo pagamento

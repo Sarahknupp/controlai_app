@@ -14,6 +14,31 @@ import { auditMiddleware } from '../middleware/audit.middleware';
 
 const router = Router();
 
+
+// Validation schemas
+const saleIdSchema = {
+  params: {
+    saleId: { type: 'number' as const, required: true, min: 1 }
+  }
+};
+
+// Protect all routes
+router.use(protect);
+
+
+// Routes accessible by all authenticated users
+router.get('/', validate(getSalesValidation), (req, res, next): void => {
+  getSales(req, res, next);
+});
+
+router.get('/stats', (req, res, next): void => {
+  getSalesStats(req, res, next);
+});
+
+router.get('/:id', (req, res, next): void => {
+  getSale(req, res, next);
+});
+
 // Todas as rotas requerem autenticação
 router.use(protect);
 
@@ -41,6 +66,7 @@ router
     getSales
   );
 
+
 router
   .route('/:id')
   .get(
@@ -65,17 +91,27 @@ router
     cancelSale
   );
 
-router.post(
-  '/:id/payments',
-  authorize(UserRole.ADMIN, UserRole.MANAGER),
-  validateRequest(saleValidations.payment),
-  auditMiddleware({
-    action: 'ADD_PAYMENT',
-    resource: 'sale',
-    includeParams: true,
-    includeBody: true
-  }),
-  addPayment
-);
+router.post('/', validate(createSaleValidation), (req, res, next): void => {
+  createSale(req, res, next);
+});
+
+router.patch('/:id/cancel', validate(cancelSaleValidation), (req, res, next): void => {
+  cancelSale(req, res, next);
+});
+
+router.post('/:id/payments', validate(addPaymentValidation), (req, res, next): void => {
+  addPayment(req, res, next);
+});
+
+// Base routes
+router.get('/', validate({ query: getSalesValidation }), getSales);
+router.get('/stats', getSalesStats);
+router.post('/', validate({ body: createSaleValidation }), createSale);
+
+// Sale-specific routes
+router.get('/:saleId', validate(saleIdSchema), getSale);
+router.patch('/:saleId/cancel', validate({ ...saleIdSchema, body: cancelSaleValidation }), cancelSale);
+router.post('/:saleId/payments', validate({ ...saleIdSchema, body: addPaymentValidation }), addPayment);
+
 
 export default router; 

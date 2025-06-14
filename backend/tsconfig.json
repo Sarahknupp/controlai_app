@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "commonjs", 
-    "lib": ["es2020", "dom"],
-    "types": ["puppeteer"],
+
+    "target": "ES2020",
+    "module": "CommonJS",
+    "lib": ["ES2020"],
+
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -12,6 +13,12 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "resolveJsonModule": true,
+
+    "allowJs": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+
     "sourceMap": true,
     "declaration": true,
     "baseUrl": ".",
@@ -19,7 +26,8 @@
       "@/*": ["src/*"]
     },
     "typeRoots": ["./node_modules/@types", "./src/types"]
+
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist"]
 } 
