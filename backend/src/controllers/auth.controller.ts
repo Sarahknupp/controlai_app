@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { User, UserRole } from '../models/User';
 import { IUser } from '../types/user';
 import jwt from 'jsonwebtoken';
+import { User } from '../models/User';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
 import {
@@ -116,7 +118,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Check for user
-    const user = await User.findOne({ email, active: true });
+    const user = await User.findOne({ email, isActive: true });
     if (!user) {
       res.status(401).json({
         success: false,

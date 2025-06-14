@@ -1,6 +1,10 @@
-import { NotificationService, Notification, NotificationType } from './notification.service';
+import { NotificationService } from './notification.service';
 import { AuditService } from './audit.service';
 import { logger } from '../utils/logger';
+import { Notification } from '../types/notification';
+import { AuditAction, EntityType } from '../types/audit';
+import { QueueConfig } from '../config/queue.config';
+import { NotificationRetryOptions } from '../types/notification';
 
 interface RetryConfig {
   maxAttempts: number;
@@ -17,40 +21,40 @@ interface RetryJob {
 }
 
 export class NotificationRetryService {
-  private retryQueue: Map<string, RetryJob>;
-  private config: RetryConfig;
+  private static instance: NotificationRetryService;
+  private retryQueue: Map<string, NotificationRetryOptions>;
+  private config: QueueConfig;
   private isProcessing: boolean;
   private processingInterval: NodeJS.Timeout | null;
 
-  constructor(
-    private notificationService: NotificationService,
-    private auditService: AuditService,
-    config?: Partial<RetryConfig>
-  ) {
+  private constructor(config: QueueConfig) {
     this.retryQueue = new Map();
-    this.config = {
-      maxAttempts: config?.maxAttempts || 3,
-      initialDelay: config?.initialDelay || 1000, // 1 second
-      maxDelay: config?.maxDelay || 300000, // 5 minutes
-      backoffFactor: config?.backoffFactor || 2
-    };
+    this.config = config;
     this.isProcessing = false;
     this.processingInterval = null;
+    this.startRetryProcessor();
+  }
+
+  public static getInstance(config: QueueConfig): NotificationRetryService {
+    if (!NotificationRetryService.instance) {
+      NotificationRetryService.instance = new NotificationRetryService(config);
+    }
+    return NotificationRetryService.instance;
   }
 
   /**
    * Add a failed notification to the retry queue
    */
-  async addToRetryQueue(notification: Notification, error: Error): Promise<void> {
-    const retryJob: RetryJob = {
+  public async addToRetryQueue(notification: Notification, error: string): Promise<void> {
+    const retryOptions: NotificationRetryOptions = {
       notification,
-      attempts: 1,
-      nextAttempt: this.calculateNextAttempt(1),
-      lastError: error.message
+      error,
+      retryCount: 0,
+      nextRetryAt: new Date(Date.now() + this.config.retryDelay)
     };
 
-    this.retryQueue.set(notification.id, retryJob);
-    await this.logRetryAction(notification.id, 'ADDED', error.message);
+    this.retryQueue.set(notification.id, retryOptions);
+    logger.info(`Added notification ${notification.id} to retry queue`, { retryOptions });
 
     // Start processing if not already running
     if (!this.isProcessing) {
@@ -65,7 +69,7 @@ export class NotificationRetryService {
     if (this.isProcessing) return;
 
     this.isProcessing = true;
-    this.processingInterval = setInterval(() => this.processQueue(), 1000);
+    this.processingInterval = setInterval(() => this.processRetryQueue(), 1000);
   }
 
   /**
@@ -82,16 +86,49 @@ export class NotificationRetryService {
   /**
    * Process the retry queue
    */
-  private async processQueue(): Promise<void> {
+  private async processRetryQueue(): Promise<void> {
     const now = new Date();
-    const jobsToProcess = Array.from(this.retryQueue.entries())
-      .filter(([_, job]) => job.nextAttempt <= now);
+    const retries = Array.from(this.retryQueue.entries());
 
-    for (const [notificationId, job] of jobsToProcess) {
-      try {
-        await this.retryNotification(job);
-      } catch (error) {
-        logger.error(`Failed to process retry job for notification ${notificationId}:`, error);
+    for (const [notificationId, retryOptions] of retries) {
+      if (retryOptions.nextRetryAt <= now) {
+        try {
+          if (retryOptions.retryCount >= this.config.maxRetries) {
+            logger.error(`Max retries exceeded for notification ${notificationId}`, {
+              error: retryOptions.error,
+              retryCount: retryOptions.retryCount
+            });
+            this.retryQueue.delete(notificationId);
+            continue;
+          }
+
+          const notificationService = NotificationService.getInstance();
+          await notificationService.createNotification({
+            type: retryOptions.notification.type,
+            subject: retryOptions.notification.subject,
+            content: retryOptions.notification.content,
+            recipient: retryOptions.notification.recipient,
+            metadata: retryOptions.notification.metadata,
+            priority: retryOptions.notification.priority
+          });
+
+          logger.info(`Successfully retried notification ${notificationId}`, {
+            retryCount: retryOptions.retryCount
+          });
+          this.retryQueue.delete(notificationId);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.error(`Failed to retry notification ${notificationId}`, {
+            error: errorMessage,
+            retryCount: retryOptions.retryCount
+          });
+
+          retryOptions.retryCount++;
+          retryOptions.nextRetryAt = new Date(
+            Date.now() + this.config.retryDelay * Math.pow(2, retryOptions.retryCount)
+          );
+          this.retryQueue.set(notificationId, retryOptions);
+        }
       }
     }
 
@@ -99,88 +136,6 @@ export class NotificationRetryService {
     if (this.retryQueue.size === 0) {
       this.stopProcessing();
     }
-  }
-
-  /**
-   * Retry sending a notification
-   */
-  private async retryNotification(job: RetryJob): Promise<void> {
-    const { notification, attempts } = job;
-
-    try {
-      // Attempt to resend the notification
-      await this.notificationService.sendUserNotification(
-        notification.userId,
-        notification.subject,
-        notification.content,
-        {
-          type: notification.type as NotificationType,
-          priority: notification.priority,
-          metadata: {
-            ...notification.metadata,
-            retryAttempt: attempts
-          }
-        }
-      );
-
-      // Remove from retry queue on success
-      this.retryQueue.delete(notification.id);
-      await this.logRetryAction(notification.id, 'SUCCEEDED');
-
-    } catch (error) {
-      const nextAttempt = this.calculateNextAttempt(attempts + 1);
-      
-      if (attempts + 1 >= this.config.maxAttempts) {
-        // Max attempts reached, remove from queue
-        this.retryQueue.delete(notification.id);
-        await this.logRetryAction(notification.id, 'FAILED', error.message);
-      } else {
-        // Update retry job with new attempt
-        this.retryQueue.set(notification.id, {
-          ...job,
-          attempts: attempts + 1,
-          nextAttempt,
-          lastError: error.message
-        });
-        await this.logRetryAction(notification.id, 'RETRY', error.message);
-      }
-    }
-  }
-
-  /**
-   * Calculate the next attempt time using exponential backoff
-   */
-  private calculateNextAttempt(attempt: number): Date {
-    const delay = Math.min(
-      this.config.initialDelay * Math.pow(this.config.backoffFactor, attempt - 1),
-      this.config.maxDelay
-    );
-    return new Date(Date.now() + delay);
-  }
-
-  /**
-   * Log retry actions to audit service
-   */
-  private async logRetryAction(
-    notificationId: string,
-    action: 'ADDED' | 'RETRY' | 'SUCCEEDED' | 'FAILED',
-    error?: string
-  ): Promise<void> {
-    const details = {
-      action,
-      attempts: this.retryQueue.get(notificationId)?.attempts || 0,
-      nextAttempt: this.retryQueue.get(notificationId)?.nextAttempt,
-      error
-    };
-
-    await this.auditService.logAction({
-      action: 'RETRY',
-      entityType: 'NOTIFICATION',
-      entityId: notificationId,
-      userId: 'system',
-      details: JSON.stringify(details),
-      status: action === 'SUCCEEDED' ? 'success' : 'error'
-    });
   }
 
   /**
@@ -199,9 +154,9 @@ export class NotificationRetryService {
       queueSize: this.retryQueue.size,
       jobs: Array.from(this.retryQueue.entries()).map(([id, job]) => ({
         notificationId: id,
-        attempts: job.attempts,
-        nextAttempt: job.nextAttempt,
-        lastError: job.lastError
+        attempts: job.retryCount,
+        nextAttempt: job.nextRetryAt,
+        lastError: job.error
       }))
     };
   }
@@ -209,14 +164,19 @@ export class NotificationRetryService {
   /**
    * Clear the retry queue
    */
-  async clearQueue(): Promise<void> {
-    const notificationIds = Array.from(this.retryQueue.keys());
-    
-    for (const id of notificationIds) {
-      await this.logRetryAction(id, 'FAILED', 'Queue cleared');
-    }
-    
+  public clearRetryQueue(): void {
     this.retryQueue.clear();
-    this.stopProcessing();
+  }
+
+  private startRetryProcessor(): void {
+    setInterval(() => {
+      this.processRetryQueue().catch(error => {
+        logger.error('Error processing retry queue:', error);
+      });
+    }, 1000); // Check every second
+  }
+
+  public getRetryQueue(): Map<string, NotificationRetryOptions> {
+    return this.retryQueue;
   }
 } 

@@ -1,5 +1,6 @@
 import { body } from 'express-validator';
 import { Product } from '../types/product';
+import { Types } from 'mongoose';
 
 export const createProductValidation = [
   body('name')
@@ -107,4 +108,103 @@ export const validateProduct = (product: Product): ValidationResult => {
     isValid: errors.length === 0,
     errors,
   };
+};
+
+export const productValidations = {
+  id: {
+    id: { type: 'string', required: true, custom: (value: string) => Types.ObjectId.isValid(value) }
+  },
+
+  create: {
+    name: { type: 'string', required: true, minLength: 3, maxLength: 100 },
+    description: { type: 'string', required: true, minLength: 10, maxLength: 1000 },
+    price: { type: 'number', required: true, min: 0 },
+    stock: { type: 'number', required: true, min: 0 },
+    minStock: { type: 'number', min: 0 },
+    categories: { 
+      type: 'array', 
+      required: true, 
+      minLength: 1,
+      items: { type: 'string', custom: (value: string) => Types.ObjectId.isValid(value) }
+    },
+    images: { 
+      type: 'array', 
+      required: true, 
+      minLength: 1,
+      items: { type: 'string', format: 'uri' }
+    },
+    specifications: { type: 'object' },
+    sku: { 
+      type: 'string', 
+      pattern: '^[A-Za-z0-9-_]+$',
+      message: 'SKU can only contain letters, numbers, hyphens and underscores'
+    },
+    code: { type: 'string', required: true },
+    brand: { type: 'string', minLength: 2 }
+  },
+
+  update: {
+    id: { type: 'string', required: true, custom: (value: string) => Types.ObjectId.isValid(value) },
+    name: { type: 'string', minLength: 3, maxLength: 100 },
+    description: { type: 'string', minLength: 10, maxLength: 1000 },
+    price: { type: 'number', min: 0 },
+    stock: { type: 'number', min: 0 },
+    minStock: { type: 'number', min: 0 },
+    categories: { 
+      type: 'array', 
+      minLength: 1,
+      items: { type: 'string', custom: (value: string) => Types.ObjectId.isValid(value) }
+    },
+    images: { 
+      type: 'array', 
+      minLength: 1,
+      items: { type: 'string', format: 'uri' }
+    },
+    specifications: { type: 'object' },
+    sku: { 
+      type: 'string', 
+      pattern: '^[A-Za-z0-9-_]+$',
+      message: 'SKU can only contain letters, numbers, hyphens and underscores'
+    },
+    code: { type: 'string' },
+    brand: { type: 'string', minLength: 2 }
+  },
+
+  filter: {
+    search: { type: 'string', minLength: 3 },
+    minPrice: { type: 'number', min: 0 },
+    maxPrice: { type: 'number', min: 0 },
+    categories: { 
+      type: 'array',
+      items: { type: 'string', custom: (value: string) => Types.ObjectId.isValid(value) }
+    },
+    brand: { type: 'string', minLength: 2 },
+    inStock: { type: 'boolean' },
+    page: { type: 'number', min: 1 },
+    limit: { type: 'number', min: 1, max: 100 },
+    sortBy: { type: 'string', enum: ['name', 'price', 'createdAt', 'stock'] },
+    sortOrder: { type: 'string', enum: ['asc', 'desc'] }
+  },
+
+  stockUpdate: {
+    id: { type: 'string', required: true, custom: (value: string) => Types.ObjectId.isValid(value) },
+    quantity: { type: 'number', required: true },
+    operation: { type: 'string', required: true, enum: ['add', 'subtract'] },
+    reason: { type: 'string', required: true, minLength: 5, maxLength: 200 }
+  },
+
+  images: {
+    id: { type: 'string', required: true, custom: (value: string) => Types.ObjectId.isValid(value) },
+    images: { 
+      type: 'array', 
+      required: true, 
+      minLength: 1,
+      items: { type: 'string', format: 'uri' }
+    }
+  },
+
+  imageId: {
+    id: { type: 'string', required: true, custom: (value: string) => Types.ObjectId.isValid(value) },
+    imageId: { type: 'string', required: true, format: 'uri' }
+  }
 }; 

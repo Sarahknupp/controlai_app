@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Welcome to Our System</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bem-vindo ao Sistema</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,6 +12,8 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .header {
       background-color: #28a745;
@@ -38,36 +42,50 @@
       text-decoration: none;
       border-radius: 5px;
       margin-top: 20px;
+      text-align: center;
+    }
+    @media only screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .header, .content {
+        padding: 15px;
+      }
+      .button {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Welcome to Our System!</h1>
-    <p>We're excited to have you on board</p>
+  <div class="header" role="banner">
+    <h1>Bem-vindo ao Sistema!</h1>
+    <p>Estamos felizes em tê-lo conosco</p>
   </div>
 
-  <div class="content">
-    <p>Hello {{name}},</p>
-    <p>Welcome to our system! We're thrilled to have you join us.</p>
-    <p>Your account has been successfully created and is ready to use.</p>
+  <div class="content" role="main">
+    <p>Olá {{name}},</p>
+    <p>Bem-vindo ao nosso sistema! Estamos muito felizes em tê-lo conosco.</p>
+    <p>Sua conta foi criada com sucesso e está pronta para uso.</p>
 
-    <h2>Getting Started</h2>
-    <p>To begin using the system:</p>
+    <h2>Primeiros Passos</h2>
+    <p>Para começar a usar o sistema:</p>
     <ol>
-      <li>Click the button below to access your account</li>
-      <li>Review your profile information</li>
-      <li>Explore the available features</li>
+      <li>Clique no botão abaixo para acessar sua conta</li>
+      <li>Revise suas informações de perfil</li>
+      <li>Explore os recursos disponíveis</li>
     </ol>
 
-    <a href="{{loginUrl}}" class="button">Access Your Account</a>
+    <a href="{{loginUrl}}" class="button" role="button" aria-label="Acessar Minha Conta">Acessar Minha Conta</a>
 
-    <p>If you have any questions or need assistance, our support team is here to help.</p>
+    <p>Se você tiver alguma dúvida ou precisar de ajuda, nossa equipe de suporte está à disposição.</p>
   </div>
 
-  <div class="footer">
-    <p>This is an automated message. Please do not reply to this email.</p>
-    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  <div class="footer" role="contentinfo">
+    <p>Esta é uma mensagem automática. Por favor, não responda a este e-mail.</p>
+    <p>&copy; {{currentYear}} Controle AI Vendas. Todos os direitos reservados.</p>
   </div>
 </body>
 </html> 

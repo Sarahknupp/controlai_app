@@ -22,112 +22,112 @@ import {
   Compare as CompareIcon,
   Close as CloseIcon
 } from '@mui/icons-material';
-import { templateService } from '../services/template.service';
 import { NotificationTemplate, TemplateVersion } from '../types/template.types';
 import { diffWords } from 'diff';
+import { servicoTemplate, TemplateNotificacao, VersaoTemplate } from '../services/service-template';
 
 interface TemplateVersionHistoryProps {
-  template: NotificationTemplate;
-  onVersionRestored: () => void;
+  template: TemplateNotificacao;
+  aoRestaurarVersao: () => void;
 }
 
-const TemplateVersionHistory: React.FC<TemplateVersionHistoryProps> = ({
+const HistoricoVersaoTemplate: React.FC<TemplateVersionHistoryProps> = ({
   template,
-  onVersionRestored
+  aoRestaurarVersao
 }) => {
-  const [open, setOpen] = useState(false);
-  const [versions, setVersions] = useState<TemplateVersion[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedVersion, setSelectedVersion] = useState<TemplateVersion | null>(null);
-  const [compareVersion, setCompareVersion] = useState<TemplateVersion | null>(null);
-  const [showCompare, setShowCompare] = useState(false);
-  const [restoreReason, setRestoreReason] = useState('');
+  const [aberto, setAberto] = useState(false);
+  const [versoes, setVersoes] = useState<VersaoTemplate[]>([]);
+  const [carregando, setCarregando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [versaoSelecionada, setVersaoSelecionada] = useState<VersaoTemplate | null>(null);
+  const [versaoComparacao, setVersaoComparacao] = useState<VersaoTemplate | null>(null);
+  const [mostrarComparacao, setMostrarComparacao] = useState(false);
+  const [motivoRestauracao, setMotivoRestauracao] = useState('');
 
   useEffect(() => {
-    if (open) {
-      fetchVersions();
+    if (aberto) {
+      buscarVersoes();
     }
-  }, [open, template.id]);
+  }, [aberto, template.id]);
 
-  const fetchVersions = async () => {
+  const buscarVersoes = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const data = await templateService.getTemplateVersions({
-        templateId: template.id,
-        sortBy: 'version',
-        sortOrder: 'desc'
+      setCarregando(true);
+      setErro(null);
+      const dados = await servicoTemplate.obterVersoesTemplate({
+        idTemplate: template.id,
+        ordenarPor: 'versao',
+        ordem: 'desc'
       });
-      setVersions(data);
+      setVersoes(dados);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch versions');
+      setErro(err instanceof Error ? err.message : 'Falha ao buscar versões');
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   };
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedVersion(null);
-    setCompareVersion(null);
-    setShowCompare(false);
-    setRestoreReason('');
+  const handleAbrir = () => setAberto(true);
+  const handleFechar = () => {
+    setAberto(false);
+    setVersaoSelecionada(null);
+    setVersaoComparacao(null);
+    setMostrarComparacao(false);
+    setMotivoRestauracao('');
   };
 
-  const handleVersionSelect = (version: TemplateVersion) => {
-    setSelectedVersion(version);
-    setCompareVersion(null);
-    setShowCompare(false);
+  const handleSelecionarVersao = (versao: VersaoTemplate) => {
+    setVersaoSelecionada(versao);
+    setVersaoComparacao(null);
+    setMostrarComparacao(false);
   };
 
-  const handleCompare = (version: TemplateVersion) => {
-    setCompareVersion(version);
-    setShowCompare(true);
+  const handleComparar = (versao: VersaoTemplate) => {
+    setVersaoComparacao(versao);
+    setMostrarComparacao(true);
   };
 
-  const handleRestore = async () => {
-    if (!selectedVersion || !restoreReason) return;
+  const handleRestaurar = async () => {
+    if (!versaoSelecionada || !motivoRestauracao) return;
 
     try {
-      setLoading(true);
-      setError(null);
-      await templateService.restoreTemplateVersion(template.id, selectedVersion.version, restoreReason);
-      onVersionRestored();
-      handleClose();
+      setCarregando(true);
+      setErro(null);
+      await servicoTemplate.restaurarVersaoTemplate(template.id, versaoSelecionada.versao, motivoRestauracao);
+      aoRestaurarVersao();
+      handleFechar();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to restore version');
+      setErro(err instanceof Error ? err.message : 'Falha ao restaurar versão');
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
   };
 
-  const renderDiff = (oldText: string, newText: string) => {
-    const differences = diffWords(oldText, newText);
-    return differences.map((part, index) => (
+  const renderizarDiferencas = (textoAntigo: string, textoNovo: string) => {
+    const diferencas = diffWords(textoAntigo, textoNovo);
+    return diferencas.map((parte, indice) => (
       <span
-        key={index}
+        key={indice}
         style={{
-          backgroundColor: part.added ? '#a5d6a7' : part.removed ? '#ef9a9a' : 'transparent'
+          backgroundColor: parte.added ? '#a5d6a7' : parte.removed ? '#ef9a9a' : 'transparent'
         }}
       >
-        {part.value}
+        {parte.value}
       </span>
     ));
   };
 
   return (
     <>
-      <IconButton onClick={handleOpen} title="Version History">
+      <IconButton onClick={handleAbrir} title="Histórico de Versões">
         <HistoryIcon />
       </IconButton>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog open={aberto} onClose={handleFechar} maxWidth="md" fullWidth>
         <DialogTitle>
-          Version History
+          Histórico de Versões
           <IconButton
-            onClick={handleClose}
+            onClick={handleFechar}
             sx={{ position: 'absolute', right: 8, top: 8 }}
           >
             <CloseIcon />
@@ -135,33 +135,33 @@ const TemplateVersionHistory: React.FC<TemplateVersionHistoryProps> = ({
         </DialogTitle>
 
         <DialogContent>
-          {error && (
+          {erro && (
             <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
+              {erro}
             </Alert>
           )}
 
-          {loading ? (
+          {carregando ? (
             <Box display="flex" justifyContent="center" p={3}>
               <CircularProgress />
             </Box>
           ) : (
             <Box display="flex" gap={2}>
               <List sx={{ width: '30%', borderRight: 1, borderColor: 'divider' }}>
-                {versions.map((version) => (
+                {versoes.map((versao) => (
                   <ListItem
-                    key={version.id}
+                    key={versao.id}
                     sx={{
-                      bgcolor: selectedVersion?.version === version.version ? 'action.selected' : 'inherit'
+                      bgcolor: versaoSelecionada?.versao === versao.versao ? 'action.selected' : 'inherit'
                     }}
-                    onClick={() => handleVersionSelect(version)}
+                    onClick={() => handleSelecionarVersao(versao)}
                     secondaryAction={
-                      version.version !== template.currentVersion && (
+                      versao.versao !== template.versaoAtual && (
                         <IconButton
                           edge="end"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleCompare(version);
+                            handleComparar(versao);
                           }}
                         >
                           <CompareIcon />
@@ -170,14 +170,14 @@ const TemplateVersionHistory: React.FC<TemplateVersionHistoryProps> = ({
                     }
                   >
                     <ListItemText
-                      primary={`Version ${version.version}`}
+                      primary={`Versão ${versao.versao}`}
                       secondary={
                         <>
                           <Typography variant="caption" display="block">
-                            {new Date(version.createdAt).toLocaleString()}
+                            {new Date(versao.dataCriacao).toLocaleString()}
                           </Typography>
                           <Typography variant="caption" display="block">
-                            {version.changeReason}
+                            {versao.motivoAlteracao}
                           </Typography>
                         </>
                       }
@@ -187,37 +187,37 @@ const TemplateVersionHistory: React.FC<TemplateVersionHistoryProps> = ({
               </List>
 
               <Box sx={{ flex: 1 }}>
-                {selectedVersion && !showCompare ? (
+                {versaoSelecionada && !mostrarComparacao ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Version {selectedVersion.version}
+                      Versão {versaoSelecionada.versao}
                     </Typography>
                     <Typography variant="subtitle2" gutterBottom>
-                      Created: {new Date(selectedVersion.createdAt).toLocaleString()}
+                      Criado em: {new Date(versaoSelecionada.dataCriacao).toLocaleString()}
                     </Typography>
                     <Typography variant="subtitle2" gutterBottom>
-                      Reason: {selectedVersion.changeReason}
+                      Motivo: {versaoSelecionada.motivoAlteracao}
                     </Typography>
                     <Divider sx={{ my: 2 }} />
                     <Typography variant="subtitle1" gutterBottom>
-                      Subject
+                      Assunto
                     </Typography>
                     <Typography variant="body1" paragraph>
-                      {selectedVersion.subject}
+                      {versaoSelecionada.assunto}
                     </Typography>
                     <Typography variant="subtitle1" gutterBottom>
-                      Body
+                      Corpo
                     </Typography>
                     <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {selectedVersion.body}
+                      {versaoSelecionada.corpo}
                     </Typography>
-                    {selectedVersion.version !== template.currentVersion && (
+                    {versaoSelecionada.versao !== template.versaoAtual && (
                       <>
                         <Divider sx={{ my: 2 }} />
                         <TextField
-                          label="Restore Reason"
-                          value={restoreReason}
-                          onChange={(e) => setRestoreReason(e.target.value)}
+                          label="Motivo da Restauração"
+                          value={motivoRestauracao}
+                          onChange={(e) => setMotivoRestauracao(e.target.value)}
                           fullWidth
                           multiline
                           rows={2}
@@ -226,39 +226,39 @@ const TemplateVersionHistory: React.FC<TemplateVersionHistoryProps> = ({
                         <Button
                           variant="contained"
                           startIcon={<RestoreIcon />}
-                          onClick={handleRestore}
-                          disabled={!restoreReason || loading}
+                          onClick={handleRestaurar}
+                          disabled={!motivoRestauracao || carregando}
                         >
-                          Restore This Version
+                          Restaurar Esta Versão
                         </Button>
                       </>
                     )}
                   </>
-                ) : compareVersion ? (
+                ) : versaoComparacao ? (
                   <>
                     <Typography variant="h6" gutterBottom>
-                      Comparing Versions
+                      Comparando Versões
                     </Typography>
                     <Typography variant="subtitle2" gutterBottom>
-                      Current Version vs Version {compareVersion.version}
+                      Versão Atual vs Versão {versaoComparacao.versao}
                     </Typography>
                     <Divider sx={{ my: 2 }} />
                     <Typography variant="subtitle1" gutterBottom>
-                      Subject Changes
+                      Alterações no Assunto
                     </Typography>
                     <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                      {renderDiff(compareVersion.subject, template.subject)}
+                      {renderizarDiferencas(versaoComparacao.assunto, template.assunto)}
                     </Box>
                     <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
-                      Body Changes
+                      Alterações no Corpo
                     </Typography>
                     <Box sx={{ p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                      {renderDiff(compareVersion.body, template.body)}
+                      {renderizarDiferencas(versaoComparacao.corpo, template.corpo)}
                     </Box>
                   </>
                 ) : (
                   <Typography color="text.secondary" align="center">
-                    Select a version to view details
+                    Selecione uma versão para ver detalhes
                   </Typography>
                 )}
               </Box>
@@ -267,11 +267,11 @@ const TemplateVersionHistory: React.FC<TemplateVersionHistoryProps> = ({
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>Close</Button>
+          <Button onClick={handleFechar}>Fechar</Button>
         </DialogActions>
       </Dialog>
     </>
   );
 };
 
-export default TemplateVersionHistory; 
+export default HistoricoVersaoTemplate; 

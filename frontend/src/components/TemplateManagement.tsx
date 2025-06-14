@@ -470,7 +470,7 @@ const TemplateManagement: React.FC = () => {
   return (
     <Box p={3}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Template Management</Typography>
+        <Typography variant="h4">Gerenciamento de Templates</Typography>
         <Box>
           <Button
             variant="contained"
@@ -479,7 +479,7 @@ const TemplateManagement: React.FC = () => {
             sx={{ mr: 2 }}
             disabled={loading.categories}
           >
-            Manage Categories
+            Gerenciar Categorias
           </Button>
           <Button
             variant="contained"
@@ -488,7 +488,7 @@ const TemplateManagement: React.FC = () => {
             sx={{ mr: 2 }}
             disabled={loading.templates}
           >
-            Refresh
+            Atualizar
           </Button>
           <Button
             variant="contained"
@@ -496,7 +496,7 @@ const TemplateManagement: React.FC = () => {
             onClick={() => handleOpenDialog()}
             disabled={loading.templates}
           >
-            Add Template
+            Adicionar Template
           </Button>
         </Box>
       </Box>
@@ -515,7 +515,7 @@ const TemplateManagement: React.FC = () => {
         <Box sx={{ width: { xs: '100%', md: '33.33%' }, flexGrow: 1 }}>
           <TextField
             fullWidth
-            placeholder="Search templates..."
+            placeholder="Buscar templates..."
             value={searchParams.search}
             onChange={handleSearchChange}
             InputProps={{
@@ -529,13 +529,13 @@ const TemplateManagement: React.FC = () => {
         </Box>
         <Box sx={{ width: { xs: '100%', md: '25%' }, flexGrow: 1 }}>
           <FormControl fullWidth>
-            <InputLabel>Category</InputLabel>
+            <InputLabel>Categoria</InputLabel>
             <Select
               value={searchParams.categoryId}
               onChange={(e) => handleCategoryChange(e as React.ChangeEvent<{ value: unknown }>)}
-              label="Category"
+              label="Categoria"
             >
-              <MenuItem value="">All Categories</MenuItem>
+              <MenuItem value="">Todas as Categorias</MenuItem>
               {categories.map((category) => (
                 <MenuItem key={category.id} value={category.id}>
                   {category.name}
@@ -546,18 +546,18 @@ const TemplateManagement: React.FC = () => {
         </Box>
         <Box sx={{ width: { xs: '100%', md: '25%' }, flexGrow: 1 }}>
           <FormControl fullWidth>
-            <InputLabel>Sort By</InputLabel>
+            <InputLabel>Ordenar Por</InputLabel>
             <Select
               value={`${searchParams.sortBy}-${searchParams.sortOrder}`}
               onChange={(e) => handleSortChange(e as React.ChangeEvent<{ value: unknown }>)}
-              label="Sort By"
+              label="Ordenar Por"
             >
-              <MenuItem value="name-asc">Name (A-Z)</MenuItem>
-              <MenuItem value="name-desc">Name (Z-A)</MenuItem>
-              <MenuItem value="createdAt-desc">Newest First</MenuItem>
-              <MenuItem value="createdAt-asc">Oldest First</MenuItem>
-              <MenuItem value="updatedAt-desc">Recently Updated</MenuItem>
-              <MenuItem value="updatedAt-asc">Least Recently Updated</MenuItem>
+              <MenuItem value="name-asc">Nome (A-Z)</MenuItem>
+              <MenuItem value="name-desc">Nome (Z-A)</MenuItem>
+              <MenuItem value="createdAt-desc">Mais Recentes</MenuItem>
+              <MenuItem value="createdAt-asc">Mais Antigos</MenuItem>
+              <MenuItem value="updatedAt-desc">Atualizados Recentemente</MenuItem>
+              <MenuItem value="updatedAt-asc">Menos Recentemente Atualizados</MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -569,7 +569,7 @@ const TemplateManagement: React.FC = () => {
                 onChange={(e) => setSearchParams(prev => ({ ...prev, active: e.target.checked }))}
               />
             }
-            label="Active Only"
+            label="Apenas Ativos"
           />
         </Box>
       </Box>
@@ -580,13 +580,13 @@ const TemplateManagement: React.FC = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Variables</TableCell>
+                  <TableCell>Nome</TableCell>
+                  <TableCell>Descrição</TableCell>
+                  <TableCell>Categoria</TableCell>
+                  <TableCell>Variáveis</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Last Updated</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>Última Atualização</TableCell>
+                  <TableCell align="right">Ações</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -618,7 +618,7 @@ const TemplateManagement: React.FC = () => {
                             color="primary"
                           />
                         }
-                        label={template.active ? 'Active' : 'Inactive'}
+                        label={template.active ? 'Ativo' : 'Inativo'}
                       />
                     </TableCell>
                     <TableCell>
@@ -632,8 +632,13 @@ const TemplateManagement: React.FC = () => {
                         <MoreVertIcon />
                       </IconButton>
                       <TemplateVersionHistory
-                        template={template}
-                        onVersionRestored={fetchTemplates}
+                        template={{
+                          id: template.id,
+                          versaoAtual: template.currentVersion,
+                          assunto: template.subject,
+                          corpo: template.body
+                        }}
+                        aoRestaurarVersao={fetchTemplates}
                       />
                     </TableCell>
                   </TableRow>
@@ -667,7 +672,7 @@ const TemplateManagement: React.FC = () => {
           disabled={loading.templates}
         >
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          Edit
+          Editar
         </MenuItem>
         <MenuItem 
           onClick={() => {
@@ -678,7 +683,7 @@ const TemplateManagement: React.FC = () => {
           disabled={loading.templates}
         >
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
-          Preview
+          Visualizar
         </MenuItem>
         <MenuItem 
           onClick={() => {
@@ -689,26 +694,26 @@ const TemplateManagement: React.FC = () => {
           disabled={loading.delete}
         >
           <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          {loading.delete ? 'Deleting...' : 'Delete'}
+          {loading.delete ? 'Excluindo...' : 'Excluir'}
         </MenuItem>
       </Menu>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <form onSubmit={handleSubmit}>
           <DialogTitle>
-            {selectedTemplate ? 'Edit Template' : 'Add New Template'}
+            {selectedTemplate ? 'Editar Template' : 'Adicionar Novo Template'}
           </DialogTitle>
           <DialogContent>
             <Box display="flex" flexDirection="column" gap={2} mt={1}>
               <TextField
-                label="Name"
+                label="Nome"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
                 fullWidth
               />
               <TextField
-                label="Description"
+                label="Descrição"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 required
@@ -717,11 +722,11 @@ const TemplateManagement: React.FC = () => {
                 rows={2}
               />
               <FormControl fullWidth required>
-                <InputLabel>Category</InputLabel>
+                <InputLabel>Categoria</InputLabel>
                 <Select
                   value={formData.categoryId}
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                  label="Category"
+                  label="Categoria"
                 >
                   {categories.map((category) => (
                     <MenuItem key={category.id} value={category.id}>
@@ -731,14 +736,14 @@ const TemplateManagement: React.FC = () => {
                 </Select>
               </FormControl>
               <TextField
-                label="Subject"
+                label="Assunto"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 required
                 fullWidth
               />
               <TextField
-                label="Body"
+                label="Corpo"
                 value={formData.body}
                 onChange={(e) => setFormData({ ...formData, body: e.target.value })}
                 required
@@ -747,7 +752,7 @@ const TemplateManagement: React.FC = () => {
                 rows={6}
               />
               <TextField
-                label="Variables (comma-separated)"
+                label="Variáveis (separadas por vírgula)"
                 value={formData.variables?.join(', ')}
                 onChange={(e) => setFormData({
                   ...formData,
@@ -755,22 +760,22 @@ const TemplateManagement: React.FC = () => {
                 })}
                 required
                 fullWidth
-                helperText="Enter variable names separated by commas (e.g., name, email, orderNumber)"
+                helperText="Informe os nomes das variáveis separados por vírgula (ex: nome, email, numeroPedido)"
               />
               <TextField
-                label="Change Reason"
+                label="Motivo da Alteração"
                 value={formData.changeReason || ''}
                 onChange={(e) => setFormData({ ...formData, changeReason: e.target.value })}
                 fullWidth
                 multiline
                 rows={2}
-                helperText="Explain why you're making these changes"
+                helperText="Explique o motivo desta alteração"
               />
             </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog} disabled={loading.submit}>
-              Cancel
+              Cancelar
             </Button>
             <Button 
               type="submit" 
@@ -778,7 +783,7 @@ const TemplateManagement: React.FC = () => {
               disabled={loading.submit}
               startIcon={loading.submit ? <CircularProgress size={20} /> : null}
             >
-              {selectedTemplate ? 'Save Changes' : 'Create Template'}
+              {selectedTemplate ? 'Salvar Alterações' : 'Criar Template'}
             </Button>
           </DialogActions>
         </form>
@@ -787,19 +792,19 @@ const TemplateManagement: React.FC = () => {
       <Dialog open={openCategoryDialog} onClose={handleCloseCategoryDialog} maxWidth="sm" fullWidth>
         <form onSubmit={handleCategorySubmit}>
           <DialogTitle>
-            {selectedCategory ? 'Edit Category' : 'Add New Category'}
+            {selectedCategory ? 'Editar Categoria' : 'Adicionar Nova Categoria'}
           </DialogTitle>
           <DialogContent>
             <Box display="flex" flexDirection="column" gap={2} mt={1}>
               <TextField
-                label="Name"
+                label="Nome"
                 value={categoryFormData.name}
                 onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
                 required
                 fullWidth
               />
               <TextField
-                label="Description"
+                label="Descrição"
                 value={categoryFormData.description}
                 onChange={(e) => setCategoryFormData({ ...categoryFormData, description: e.target.value })}
                 required
@@ -810,16 +815,16 @@ const TemplateManagement: React.FC = () => {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleCloseCategoryDialog}>Cancel</Button>
+            <Button onClick={handleCloseCategoryDialog}>Cancelar</Button>
             <Button type="submit" variant="contained">
-              {selectedCategory ? 'Save Changes' : 'Create Category'}
+              {selectedCategory ? 'Salvar Alterações' : 'Criar Categoria'}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
       <Dialog open={openPreviewDialog} onClose={handleClosePreview} maxWidth="md" fullWidth>
-        <DialogTitle>Preview Template</DialogTitle>
+        <DialogTitle>Visualizar Template</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
             {selectedTemplate?.variables.map((variable) => (
@@ -837,9 +842,9 @@ const TemplateManagement: React.FC = () => {
             ))}
             {previewResult && (
               <>
-                <Typography variant="h6" mt={2}>Preview Result</Typography>
+                <Typography variant="h6" mt={2}>Resultado da Visualização</Typography>
                 <Typography variant="subtitle1" fontWeight="bold">
-                  Subject: {previewResult.subject}
+                  Assunto: {previewResult.subject}
                 </Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                   {previewResult.body}
@@ -850,7 +855,7 @@ const TemplateManagement: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClosePreview} disabled={loading.preview}>
-            Close
+            Fechar
           </Button>
           <Button 
             onClick={handlePreview} 
@@ -858,7 +863,7 @@ const TemplateManagement: React.FC = () => {
             disabled={loading.preview}
             startIcon={loading.preview ? <CircularProgress size={20} /> : null}
           >
-            Preview
+            Visualizar
           </Button>
         </DialogActions>
       </Dialog>
@@ -869,15 +874,15 @@ const TemplateManagement: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogTitle>Confirmar Exclusão</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete this template? This action cannot be undone.
+            Tem certeza que deseja excluir este template? Esta ação não pode ser desfeita.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>
-            Cancel
+            Cancelar
           </Button>
           <Button
             onClick={handleDelete}
@@ -886,7 +891,7 @@ const TemplateManagement: React.FC = () => {
             disabled={loading.delete}
             startIcon={loading.delete ? <CircularProgress size={20} /> : null}
           >
-            {loading.delete ? 'Deleting...' : 'Delete'}
+            {loading.delete ? 'Excluindo...' : 'Excluir'}
           </Button>
         </DialogActions>
       </Dialog>

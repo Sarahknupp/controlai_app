@@ -1,16 +1,13 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Building2, Plus, Edit, Trash2, ChevronDown, ChevronRight, FileText, Settings, Upload, Shield, Save, Image, AlertTriangle, MapPin, Phone, Briefcase, CheckCircle, XCircle, Package } from 'lucide-react';
 import { mockCompanies } from '../../data/mockAccountingData';
-import type { Company, TaxParameters } from '../../types/accounting';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
+import type { Company } from '../../types/accounting';
 import { Button } from '../../components/ui/button';
-import { Label } from '../../components/ui/label';
-import { Input } from '../../components/ui/input';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { format, parseISO, isValid, isFuture, formatISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { delay, withTimeout } from '../../utils/promises';
-import { validateImage, validateImageDimensions, validateImageWithTimeout, ImageDimensions, ImageValidationOptions, DEFAULT_VALIDATION_OPTIONS } from '../../utils/imageValidation';
+import { delay } from '../../utils/promises';
+import { validateImage, ImageDimensions, ImageValidationOptions, DEFAULT_VALIDATION_OPTIONS } from '../../utils/imageValidation';
 
 // Interfaces
 /**
@@ -1497,7 +1494,7 @@ const CompanyManagement: React.FC = () => {
                     onKeyPress={(e) => handleCompanyKeyPress(e, company.id)}
                     role="button"
                     tabIndex={0}
-                    aria-expanded={expandedCompany === company.id}
+                    aria-expanded={expandedCompany === company.id ? 'true' : 'false'}
                     aria-controls={`company-details-${company.id}`}
                   >
                     <div className="flex items-center">

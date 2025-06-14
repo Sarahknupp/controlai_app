@@ -19,11 +19,13 @@ import {
   registerValidation,
   loginValidation,
   updateDetailsValidation,
+
   updatePasswordValidation,
   forgotPasswordValidation,
   resetPasswordValidation
 } from '../middleware/validation/auth.validation';
 import { UserRole } from '../models/User';
+
 
 const router = Router();
 

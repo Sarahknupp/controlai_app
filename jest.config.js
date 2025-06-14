@@ -1,18 +1,27 @@
-module.exports = {
+export default {
   preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/backend/src'],
-  testMatch: ['**/__tests__/**/*.test.ts'],
+
+  testEnvironment: 'jsdom',
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/backend/src/$1'
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@components/(.*)$': '<rootDir>/src/components/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
+    '^@types/(.*)$': '<rootDir>/src/types/$1',
+    '^@hooks/(.*)$': '<rootDir>/src/hooks/$1',
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1'
   },
-  setupFilesAfterEnv: ['<rootDir>/backend/src/__tests__/setup.ts'],
-  coverageDirectory: 'coverage',
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest'
+  },
+  testMatch: ['**/__tests__/**/*.ts?(x)', '**/?(*.)+(spec|test).ts?(x)'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   collectCoverageFrom: [
-    'backend/src/**/*.ts',
-    '!backend/src/**/*.d.ts',
-    '!backend/src/**/*.test.ts',
-    '!backend/src/__mocks__/**'
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/index.tsx',
+    '!src/setupTests.ts'
+
   ],
   verbose: true,
   moduleDirectories: ['node_modules', 'backend/src'],

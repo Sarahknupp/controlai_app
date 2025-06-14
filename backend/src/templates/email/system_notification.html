@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{title}}</title>
   <style>
     body {
@@ -10,6 +12,8 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .header {
       background-color: #6c757d;
@@ -54,19 +58,27 @@
       color: #6c757d;
       text-align: center;
     }
+    @media only screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .header, .content {
+        padding: 15px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
+  <div class="header" role="banner">
     <h1>{{title}}</h1>
-    <div class="priority priority-{{priority.toLowerCase}}">{{priority}}</div>
+    <div class="priority priority-{{priority.toLowerCase}}" role="status" aria-label="Prioridade: {{priority}}">{{priority}}</div>
   </div>
 
-  <div class="content">
+  <div class="content" role="main">
     <p>{{message}}</p>
 
     {{#if data}}
-    <h2>Additional Information:</h2>
+    <h2>Informações Adicionais:</h2>
     <ul>
       {{#each data}}
       <li><strong>{{@key}}:</strong> {{this}}</li>
@@ -75,15 +87,15 @@
     {{/if}}
 
     {{#if requireAcknowledgment}}
-    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
-      <p><strong>Note:</strong> This notification requires acknowledgment. Please take appropriate action.</p>
+    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px;" role="alert">
+      <p><strong>Nota:</strong> Esta notificação requer confirmação. Por favor, tome as medidas apropriadas.</p>
     </div>
     {{/if}}
   </div>
 
-  <div class="footer">
-    <p>This is an automated system message. Please do not reply to this email.</p>
-    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  <div class="footer" role="contentinfo">
+    <p>Esta é uma mensagem automática do sistema. Por favor, não responda a este e-mail.</p>
+    <p>&copy; {{currentYear}} Controle AI Vendas. Todos os direitos reservados.</p>
   </div>
 </body>
 </html> 

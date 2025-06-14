@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>System Error Notification</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notificação de Erro do Sistema</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,6 +12,8 @@
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
     .header {
       background-color: #dc3545;
@@ -32,6 +36,7 @@
       font-family: monospace;
       white-space: pre-wrap;
       overflow-x: auto;
+      border: 1px solid #dee2e6;
     }
     .footer {
       margin-top: 20px;
@@ -39,41 +44,53 @@
       color: #6c757d;
       text-align: center;
     }
+    @media only screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .header, .content {
+        padding: 15px;
+      }
+      .error-details {
+        padding: 10px;
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>System Error Notification</h1>
-    <p>An error has occurred in the system</p>
+  <div class="header" role="banner">
+    <h1>Notificação de Erro do Sistema</h1>
+    <p>Ocorreu um erro no sistema</p>
   </div>
 
-  <div class="content">
-    <p>Hello,</p>
-    <p>A system error has been detected and requires your attention.</p>
+  <div class="content" role="main">
+    <p>Olá,</p>
+    <p>Um erro no sistema foi detectado e requer sua atenção.</p>
 
-    <h2>Error Details:</h2>
-    <div class="error-details">
-      <strong>Message:</strong> {{error.message}}
+    <h2>Detalhes do Erro:</h2>
+    <div class="error-details" role="alert">
+      <strong>Mensagem:</strong> {{error.message}}
       <br><br>
-      <strong>Stack Trace:</strong>
+      <strong>Rastreamento:</strong>
       <br>
       {{error.stack}}
       {{#if error.context}}
       <br><br>
-      <strong>Additional Context:</strong>
+      <strong>Contexto Adicional:</strong>
       <br>
       {{error.context}}
       {{/if}}
     </div>
 
-    <p><strong>Timestamp:</strong> {{timestamp}}</p>
+    <p><strong>Data e Hora:</strong> {{timestamp}}</p>
 
-    <p>Please investigate this error and take appropriate action.</p>
+    <p>Por favor, investigue este erro e tome as medidas apropriadas.</p>
   </div>
 
-  <div class="footer">
-    <p>This is an automated message. Please do not reply to this email.</p>
-    <p>&copy; {{currentYear}} Your Company Name. All rights reserved.</p>
+  <div class="footer" role="contentinfo">
+    <p>Esta é uma mensagem automática. Por favor, não responda a este e-mail.</p>
+    <p>&copy; {{currentYear}} Controle AI Vendas. Todos os direitos reservados.</p>
   </div>
 </body>
 </html> 

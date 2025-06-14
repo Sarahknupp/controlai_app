@@ -1,0 +1,8 @@
+# Backup diário do MongoDB (3:00 AM)
+0 3 * * * /app/controleai-vendas/scripts/backup.sh >> /var/log/backup.log 2>&1
+
+# Limpeza de logs antigos (2:00 AM)
+0 2 * * * find /app/controleai-vendas/logs -name "*.log" -mtime +30 -delete
+
+# Verificação de saúde do sistema (a cada 5 minutos)
+*/5 * * * * curl -f http://localhost:3000/health || echo "Serviço indisponível" >> /var/log/health.log 

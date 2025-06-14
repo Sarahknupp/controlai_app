@@ -1,4 +1,5 @@
 import { Express } from 'express';
+
 import helmet from 'helmet';
 import { logger } from './logging';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -22,6 +23,26 @@ interface SecurityOptions {
   xssFilter?: boolean | object;
 }
 
+import rateLimit from 'express-rate-limit';
+
+// Rate limiting configuration
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // limite de 100 requisições por IP
+  message: 'Too many requests from this IP, please try again later'
+});
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['X-Total-Count'],
+  credentials: true,
+  maxAge: 86400, // 24 hours
+};
+
+
 // Default security options
 const defaultOptions: SecurityOptions = {
   contentSecurityPolicy: {
@@ -34,8 +55,16 @@ const defaultOptions: SecurityOptions = {
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
-    }
+
+      frameSrc: ["'none'"],
+      workerSrc: ["'self'"],
+      childSrc: ["'self'"],
+      formAction: ["'self'"],
+      baseUri: ["'self'"],
+      manifestSrc: ["'self'"],
+      prefetchSrc: ["'self'"],
+    },
+
   },
   crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: true,
@@ -62,9 +91,19 @@ const defaultOptions: SecurityOptions = {
   xssFilter: true
 };
 
+
 // Security middleware factory
 export const createSecurityMiddleware = (options: SecurityOptions = {}) => {
   const securityOptions = { ...defaultOptions, ...options };
+
+// Apply security middleware to Express app
+export const applySecurityMiddleware = (app: Express) => {
+  // Apply rate limiting
+  app.use(limiter);
+
+  // Apply Helmet security headers
+  app.use(helmet(helmetOptions));
+
 
   // Log security configuration
   logger.info('Security middleware configured', {
@@ -101,6 +140,7 @@ export const applySecurityMiddleware = (app: Express): void => {
       res.setHeader('X-XSS-Protection', '1; mode=block');
       next();
     });
+
 
     logger.info('Security middleware applied successfully');
   } catch (error) {
@@ -195,4 +235,19 @@ export const securityHelpers = {
 
     return validPolicies.includes(policy);
   }
+
+    // Set cache control
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
+    // Set security headers for API
+    res.setHeader('X-API-Version', process.env.API_VERSION || '1.0.0');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Download-Options', 'noopen');
+    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+
+    next();
+  });
+
 }; 

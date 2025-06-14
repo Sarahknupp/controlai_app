@@ -4,9 +4,15 @@ export interface Product {
   description: string;
   price: number;
   stock: number;
+  quantity: number;
   minStock: number;
   category: string;
+  categories: string[];
   sku: string;
+  code: string;
+  brand: string;
+  images: string[];
+  specifications: Record<string, string>;
   createdAt: Date;
   updatedAt: Date;
 }

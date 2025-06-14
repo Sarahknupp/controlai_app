@@ -2,12 +2,9 @@ import { Request, Response } from 'express';
 import { Sale, ISale, PaymentStatus, IPayment, PaymentMethod } from '../models/Sale';
 import { Product } from '../models/Product';
 import { Customer } from '../models/Customer';
-import { IUser } from '../models/User';
+import { IUserDocument } from '../types/user';
 import mongoose from 'mongoose';
-
-interface AuthRequest<P = {}> extends Request<P> {
-  user?: IUser;
-}
+import { AuthRequest, AuthRequestWithParams } from '../middleware/auth.middleware';
 
 interface SaleQuery {
   startDate?: string;
@@ -94,7 +91,7 @@ export const createSale = async (req: AuthRequest, res: Response) => {
 // @desc    Get all sales
 // @route   GET /api/sales
 // @access  Private
-export const getSales = async (req: Request<{}, {}, {}, SaleQuery>, res: Response) => {
+export const getSales = async (req: AuthRequest, res: Response) => {
   try {
     const {
       startDate,
@@ -105,7 +102,7 @@ export const getSales = async (req: Request<{}, {}, {}, SaleQuery>, res: Respons
       maxAmount,
       page = 1,
       limit = 10
-    } = req.query;
+    } = req.query as SaleQuery;
 
     // Build query
     const query: Record<string, any> = {};
@@ -161,7 +158,7 @@ export const getSales = async (req: Request<{}, {}, {}, SaleQuery>, res: Respons
 // @desc    Get single sale
 // @route   GET /api/sales/:id
 // @access  Private
-export const getSale = async (req: Request, res: Response) => {
+export const getSale = async (req: AuthRequest, res: Response) => {
   try {
     const sale = await Sale.findById(req.params.id)
       .populate('customer', 'name email phone')
@@ -191,7 +188,7 @@ export const getSale = async (req: Request, res: Response) => {
 // @desc    Cancel sale
 // @route   PATCH /api/sales/:id/cancel
 // @access  Private
-export const cancelSale = async (req: AuthRequest<{ id: string }>, res: Response) => {
+export const cancelSale = async (req: AuthRequest, res: Response) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -251,7 +248,7 @@ export const cancelSale = async (req: AuthRequest<{ id: string }>, res: Response
 // @desc    Add payment to sale
 // @route   POST /api/sales/:id/payments
 // @access  Private
-export const addPayment = async (req: Request<{ id: string }, {}, PaymentRequest>, res: Response) => {
+export const addPayment = async (req: AuthRequestWithParams<{ id: string }>, res: Response) => {
   try {
     const { id } = req.params;
     const payment: IPayment = {

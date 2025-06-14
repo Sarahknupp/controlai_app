@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Descriptions, Tag, Typography, Space, Divider, Spin, Alert } from 'antd';
-import { AuditLog } from '../../types/audit';
+import type { AuditLog } from '../../types/audit';
 import { formatDate } from '../../utils/date';
 import { getActionConfig, getEntityTypeLabel, parseAuditDetails } from '../../utils/audit';
 
@@ -27,13 +27,13 @@ const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
   const actionConfig = getActionConfig(log.action);
 
   const renderChanges = () => {
-    if (!details.changes) return null;
+    if (!details['changes']) return null;
 
     return (
       <>
         <Divider orientation="left">Alterações</Divider>
         <Descriptions column={1} size="small">
-          {Object.entries(details.changes).map(([key, value]) => (
+          {Object.entries(details['changes']).map(([key, value]) => (
             <Descriptions.Item key={key} label={key}>
               <Text code>{JSON.stringify(value)}</Text>
             </Descriptions.Item>
@@ -44,13 +44,13 @@ const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
   };
 
   const renderMetadata = () => {
-    if (!details.metadata) return null;
+    if (!details['metadata']) return null;
 
     return (
       <>
         <Divider orientation="left">Metadados</Divider>
         <Descriptions column={1} size="small">
-          {Object.entries(details.metadata).map(([key, value]) => (
+          {Object.entries(details['metadata']).map(([key, value]) => (
             <Descriptions.Item key={key} label={key}>
               <Text code>{JSON.stringify(value)}</Text>
             </Descriptions.Item>
@@ -104,27 +104,31 @@ const AuditLogDetails: React.FC<AuditLogDetailsProps> = ({
           </Descriptions.Item>
         </Descriptions>
 
-        {details.message && (
+        {details['message'] && (
           <>
             <Divider orientation="left">Mensagem</Divider>
-            <Text>{details.message}</Text>
+            <Text>{details['message']}</Text>
           </>
         )}
 
-        {details.reason && (
+        {details['reason'] && (
           <>
             <Divider orientation="left">Motivo</Divider>
-            <Text>{details.reason}</Text>
+            <Text>{details['reason']}</Text>
           </>
         )}
 
         {renderChanges()}
         {renderMetadata()}
 
-        {details.raw && (
+        {details['raw'] && (
           <>
             <Divider orientation="left">Detalhes Brutos</Divider>
-            <Text code>{details.raw}</Text>
+            <Text code>
+              {typeof details['raw'] === 'string' 
+                ? details['raw'] 
+                : JSON.stringify(details['raw'], null, 2)}
+            </Text>
           </>
         )}
       </Space>

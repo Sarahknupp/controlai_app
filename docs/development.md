@@ -7,21 +7,23 @@ Este documento descreve os padrões e práticas de desenvolvimento do sistema.
 
 ### Frontend
 - React 18
-- TypeScript 4.9
+- TypeScript 5.0
 - Material-UI 5
-- React Query
+- React Query 4
 - React Router 6
 - Jest + React Testing Library
 - ESLint + Prettier
+- Tailwind CSS 3
 
 ### Backend
 - Node.js 18
 - Express 4
 - MongoDB 6
 - Mongoose 7
-- JWT Authentication
+- Autenticação JWT
 - Jest + Supertest
 - ESLint + Prettier
+- TypeScript 5.0
 
 ## Estrutura do Projeto
 
@@ -58,45 +60,47 @@ backend/
 ## Padrões de Código
 
 ### Nomenclatura
-- **Arquivos**: kebab-case (ex: `template-service.ts`)
-- **Classes**: PascalCase (ex: `TemplateService`)
+- **Arquivos**: kebab-case (ex: `servico-template.ts`)
+- **Classes**: PascalCase (ex: `ServicoTemplate`)
 - **Interfaces**: PascalCase com prefixo I (ex: `ITemplate`)
-- **Funções**: camelCase (ex: `getTemplateById`)
-- **Variáveis**: camelCase (ex: `templateList`)
-- **Constantes**: UPPER_SNAKE_CASE (ex: `MAX_TEMPLATE_SIZE`)
+- **Funções**: camelCase (ex: `obterTemplatePorId`)
+- **Variáveis**: camelCase (ex: `listaTemplates`)
+- **Constantes**: UPPER_SNAKE_CASE (ex: `TAMANHO_MAXIMO_TEMPLATE`)
+- **Tipos**: PascalCase (ex: `RespostaTemplate`)
+- **Enums**: PascalCase (ex: `StatusTemplate`)
 
 ### Componentes React
 ```typescript
-// Nome do arquivo: TemplateList.tsx
+// Nome do arquivo: ListaTemplates.tsx
 import React from 'react';
 import { useQuery } from 'react-query';
-import { templateService } from '../services/template.service';
-import { ITemplate } from '../types/template.types';
+import { servicoTemplate } from '../servicos/servico-template';
+import { ITemplate } from '../tipos/template.types';
 
-interface TemplateListProps {
-  categoryId?: string;
-  onSelect?: (template: ITemplate) => void;
+interface PropsListaTemplates {
+  idCategoria?: string;
+  aoSelecionar?: (template: ITemplate) => void;
 }
 
-export const TemplateList: React.FC<TemplateListProps> = ({
-  categoryId,
-  onSelect
+export const ListaTemplates: React.FC<PropsListaTemplates> = ({
+  idCategoria,
+  aoSelecionar
 }) => {
-  const { data, isLoading, error } = useQuery(
-    ['templates', categoryId],
-    () => templateService.getTemplates({ categoryId })
+  const { dados, carregando, erro } = useQuery(
+    ['templates', idCategoria],
+    () => servicoTemplate.obterTemplates({ idCategoria })
   );
 
-  if (isLoading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage error={error} />;
+  if (carregando) return <Carregando />;
+  if (erro) return <MensagemErro erro={erro} />;
 
   return (
     <div>
-      {data?.items.map(template => (
-        <TemplateCard
+      {dados?.itens.map(template => (
+        <CartaoTemplate
           key={template.id}
           template={template}
-          onClick={() => onSelect?.(template)}
+          aoClicar={() => aoSelecionar?.(template)}
         />
       ))}
     </div>
@@ -106,83 +110,83 @@ export const TemplateList: React.FC<TemplateListProps> = ({
 
 ### Serviços
 ```typescript
-// Nome do arquivo: template.service.ts
+// Nome do arquivo: servico-template.ts
 import { api } from '../config/api';
-import { ITemplate, ITemplateCreate } from '../types/template.types';
+import { ITemplate, ICriacaoTemplate } from '../tipos/template.types';
 
-export class TemplateService {
-  async getTemplates(params: TemplateSearchParams): Promise<PaginatedResponse<ITemplate>> {
-    const response = await api.get('/templates', { params });
-    return response.data;
+export class ServicoTemplate {
+  async obterTemplates(params: ParametrosBuscaTemplate): Promise<RespostaPaginada<ITemplate>> {
+    const resposta = await api.get('/templates', { params });
+    return resposta.data;
   }
 
-  async getTemplateById(id: string): Promise<ITemplate> {
-    const response = await api.get(`/templates/${id}`);
-    return response.data;
+  async obterTemplatePorId(id: string): Promise<ITemplate> {
+    const resposta = await api.get(`/templates/${id}`);
+    return resposta.data;
   }
 
-  async createTemplate(data: ITemplateCreate): Promise<ITemplate> {
-    const response = await api.post('/templates', data);
-    return response.data;
+  async criarTemplate(dados: ICriacaoTemplate): Promise<ITemplate> {
+    const resposta = await api.post('/templates', dados);
+    return resposta.data;
   }
 
-  async updateTemplate(id: string, data: Partial<ITemplate>): Promise<ITemplate> {
-    const response = await api.patch(`/templates/${id}`, data);
-    return response.data;
+  async atualizarTemplate(id: string, dados: Partial<ITemplate>): Promise<ITemplate> {
+    const resposta = await api.patch(`/templates/${id}`, dados);
+    return resposta.data;
   }
 
-  async deleteTemplate(id: string): Promise<void> {
+  async excluirTemplate(id: string): Promise<void> {
     await api.delete(`/templates/${id}`);
   }
 }
 
-export const templateService = new TemplateService();
+export const servicoTemplate = new ServicoTemplate();
 ```
 
 ### Controladores
 ```typescript
-// Nome do arquivo: template.controller.ts
+// Nome do arquivo: controlador-template.ts
 import { Request, Response } from 'express';
-import { TemplateService } from '../services/template.service';
-import { validateTemplate } from '../validators/template.validator';
+import { ServicoTemplate } from '../servicos/servico-template';
+import { validarTemplate } from '../validadores/validador-template';
 
-export class TemplateController {
-  constructor(private templateService: TemplateService) {}
+export class ControladorTemplate {
+  constructor(private servicoTemplate: ServicoTemplate) {}
 
-  async getTemplates(req: Request, res: Response): Promise<void> {
+  async obterTemplates(req: Request, res: Response): Promise<void> {
     try {
-      const templates = await this.templateService.getTemplates(req.query);
+      const templates = await this.servicoTemplate.obterTemplates(req.query);
       res.json(templates);
-    } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+    } catch (erro) {
+      res.status(500).json({ erro: 'Erro interno do servidor' });
     }
   }
 
-  async getTemplateById(req: Request, res: Response): Promise<void> {
+  async obterTemplatePorId(req: Request, res: Response): Promise<void> {
     try {
-      const template = await this.templateService.getTemplateById(req.params.id);
+      const template = await this.servicoTemplate.obterTemplatePorId(req.params.id);
       if (!template) {
-        res.status(404).json({ error: 'Template not found' });
+        res.status(404).json({ erro: 'Template não encontrado' });
         return;
       }
       res.json(template);
-    } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+    } catch (erro) {
+      res.status(500).json({ erro: 'Erro interno do servidor' });
     }
   }
 
-  async createTemplate(req: Request, res: Response): Promise<void> {
+  async criarTemplate(req: Request, res: Response): Promise<void> {
     try {
-      const validation = validateTemplate(req.body);
-      if (!validation.success) {
-        res.status(400).json({ error: validation.error });
+      const validacao = validarTemplate(req.body);
+      if (!validacao.sucesso) {
+        res.status(400).json({ erro: validacao.erro });
         return;
       }
 
-      const template = await this.templateService.createTemplate(req.body);
+      const template = await this.servicoTemplate.criarTemplate(req.body);
       res.status(201).json(template);
-    } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+    } catch (erro) {
+      res.status(500).json({ erro: 'Erro interno do servidor' });
     }
   }
 }
@@ -192,40 +196,57 @@ export class TemplateController {
 
 ### Testes Unitários
 ```typescript
-// Nome do arquivo: template.service.test.ts
-import { TemplateService } from './template.service';
+// Nome do arquivo: servico-template.test.ts
+import { ServicoTemplate } from './servico-template';
 import { api } from '../config/api';
 
 jest.mock('../config/api');
 
-describe('TemplateService', () => {
-  let service: TemplateService;
+describe('ServicoTemplate', () => {
+  let servico: ServicoTemplate;
 
   beforeEach(() => {
-    service = new TemplateService();
+    servico = new ServicoTemplate();
     jest.clearAllMocks();
   });
 
-  describe('getTemplates', () => {
-    it('should return templates', async () => {
-      const mockTemplates = {
-        items: [
+  describe('obterTemplates', () => {
+    it('deve retornar templates', async () => {
+      const templatesMock = {
+        itens: [
           {
             id: '1',
-            name: 'Template 1'
+            nome: 'Template 1',
+            descricao: 'Descrição 1',
+            assunto: 'Assunto 1',
+            corpo: 'Corpo 1',
+            variaveis: ['var1'],
+            idCategoria: 'cat1',
+            ativo: true,
+            dataCriacao: '2024-01-01T00:00:00Z',
+            dataAtualizacao: '2024-01-01T00:00:00Z',
+            criadoPor: 'user1',
+            versaoAtual: 1
           }
         ],
         total: 1,
-        page: 1,
-        limit: 10
+        pagina: 1,
+        limite: 10
       };
 
-      (api.get as jest.Mock).mockResolvedValue({ data: mockTemplates });
+      (api.get as jest.Mock).mockResolvedValue({ data: templatesMock });
 
-      const result = await service.getTemplates({});
+      const resultado = await servico.obterTemplates({});
 
       expect(api.get).toHaveBeenCalledWith('/templates', { params: {} });
-      expect(result).toEqual(mockTemplates);
+      expect(resultado).toEqual(templatesMock);
+    });
+
+    it('deve tratar erros', async () => {
+      const erro = new Error('Erro de rede');
+      (api.get as jest.Mock).mockRejectedValue(erro);
+
+      await expect(servico.obterTemplates({})).rejects.toThrow('Erro de rede');
     });
   });
 });
@@ -233,63 +254,41 @@ describe('TemplateService', () => {
 
 ### Testes de Integração
 ```typescript
-// Nome do arquivo: template.integration.test.ts
+// Nome do arquivo: template.integracao.test.ts
 import request from 'supertest';
 import { app } from '../app';
-import { connectDB, closeDB } from '../config/database';
+import { conectarBD, fecharBD } from '../config/banco-dados';
+import { criarUsuarioTeste, gerarToken } from '../utils/teste-utils';
+
+let tokenAutenticacao: string;
 
 beforeAll(async () => {
-  await connectDB();
+  await conectarBD();
+  const usuarioTeste = await criarUsuarioTeste();
+  tokenAutenticacao = gerarToken(usuarioTeste);
 });
 
 afterAll(async () => {
-  await closeDB();
+  await fecharBD();
 });
 
-describe('Template API', () => {
+describe('API de Templates', () => {
   describe('GET /api/templates', () => {
-    it('should return templates', async () => {
-      const response = await request(app)
+    it('deve retornar templates quando autenticado', async () => {
+      const resposta = await request(app)
         .get('/api/templates')
-        .set('Authorization', `Bearer ${token}`);
+        .set('Authorization', `Bearer ${tokenAutenticacao}`);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('items');
-      expect(response.body).toHaveProperty('total');
+      expect(resposta.status).toBe(200);
+      expect(resposta.body).toHaveProperty('itens');
+      expect(resposta.body).toHaveProperty('total');
     });
-  });
-});
-```
 
-### Testes de Componentes
-```typescript
-// Nome do arquivo: TemplateList.test.tsx
-import { render, screen, waitFor } from '@testing-library/react';
-import { TemplateList } from './TemplateList';
-import { templateService } from '../services/template.service';
+    it('deve retornar 401 quando não autenticado', async () => {
+      const resposta = await request(app)
+        .get('/api/templates');
 
-jest.mock('../services/template.service');
-
-describe('TemplateList', () => {
-  it('should render templates', async () => {
-    const mockTemplates = {
-      items: [
-        {
-          id: '1',
-          name: 'Template 1'
-        }
-      ],
-      total: 1,
-      page: 1,
-      limit: 10
-    };
-
-    (templateService.getTemplates as jest.Mock).mockResolvedValue(mockTemplates);
-
-    render(<TemplateList />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Template 1')).toBeInTheDocument();
+      expect(resposta.status).toBe(401);
     });
   });
 });
@@ -411,3 +410,156 @@ chore: atualiza dependências
 - Sem erros de lint
 - Documentação atualizada
 - Performance aceitável 
+
+## CI/CD
+
+### Pipeline de Desenvolvimento
+1. Verificação de lint
+2. Compilação TypeScript
+3. Testes unitários
+4. Testes de integração
+5. Build
+6. Deploy para staging
+
+### Ambiente de Produção
+- Deploy automático após aprovação
+- Rollback automático em caso de falha
+- Monitoramento de performance
+- Logs centralizados
+- Alertas configurados
+
+## Segurança
+
+### Boas Práticas
+1. Validação de entrada
+2. Sanitização de dados
+3. Proteção contra XSS
+4. Rate limiting
+5. CORS configurado
+6. Headers de segurança
+7. Autenticação JWT
+8. Autorização baseada em roles
+
+### Auditoria
+- Logs de acesso
+- Logs de erro
+- Logs de auditoria
+- Monitoramento de segurança
+- Análise de vulnerabilidades 
+
+## Desenvolvimento de Templates de E-mail
+
+### Estrutura de Diretórios
+```
+backend/
+├── src/
+│   ├── templates/
+│   │   └── email/          # Templates de e-mail
+│   │       ├── default_notification.html
+│   │       ├── alert_notification.html
+│   │       ├── password_reset.html
+│   │       ├── welcome.html
+│   │       ├── error_notification.html
+│   │       ├── report_notification.html
+│   │       ├── system_notification.html
+│   │       └── user_notification.html
+│   └── services/
+│       └── email/          # Serviços de e-mail
+```
+
+### Padrões de Template
+1. **Estrutura HTML**
+   - DOCTYPE e meta tags
+   - Atributo lang="pt-BR"
+   - Estrutura semântica
+   - Atributos ARIA
+
+2. **Estilos CSS**
+   - Estilos inline para compatibilidade
+   - Media queries para responsividade
+   - Cores consistentes
+   - Tipografia legível
+
+3. **Variáveis**
+   - Sintaxe Handlebars
+   - Validação de variáveis
+   - Valores padrão
+   - Documentação clara
+
+4. **Acessibilidade**
+   - Roles ARIA apropriados
+   - Contraste adequado
+   - Textos alternativos
+   - Estrutura semântica
+
+### Boas Práticas
+
+1. **Design**
+   - Layout responsivo
+   - Compatibilidade com clientes
+   - Imagens otimizadas
+   - Cores consistentes
+
+2. **Código**
+   - HTML válido
+   - CSS otimizado
+   - Variáveis documentadas
+   - Comentários explicativos
+
+3. **Testes**
+   - Renderização em diferentes clientes
+   - Validação de variáveis
+   - Testes de acessibilidade
+   - Testes de responsividade
+
+4. **Performance**
+   - Imagens otimizadas
+   - CSS minificado
+   - Código limpo
+   - Carregamento rápido
+
+### Ferramentas de Desenvolvimento
+
+1. **Editores**
+   - VS Code com extensões
+   - Prettier para formatação
+   - ESLint para linting
+   - Emmet para snippets
+
+2. **Testes**
+   - Litmus para compatibilidade
+   - WAVE para acessibilidade
+   - BrowserStack para responsividade
+   - Jest para testes unitários
+
+3. **Otimização**
+   - TinyPNG para imagens
+   - HTML Minifier
+   - CSS Minifier
+   - Validadores online
+
+### Processo de Desenvolvimento
+
+1. **Criação**
+   - Copiar template base
+   - Adaptar estrutura
+   - Adicionar estilos
+   - Documentar variáveis
+
+2. **Testes**
+   - Validar HTML
+   - Testar responsividade
+   - Verificar acessibilidade
+   - Testar variáveis
+
+3. **Revisão**
+   - Code review
+   - Testes de compatibilidade
+   - Validação de acessibilidade
+   - Performance check
+
+4. **Deploy**
+   - Versionamento
+   - Backup
+   - Documentação
+   - Monitoramento 

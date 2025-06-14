@@ -1,177 +1,185 @@
 import { NotificationRetryService } from '../../services/notification-retry.service';
-import { NotificationService, Notification, NotificationType, NotificationPriority } from '../../services/notification.service';
-import { AuditService } from '../../services/audit.service';
+import { NotificationService } from '../../services/notification.service';
+import { NotificationType, NotificationPriority, Notification } from '../../types/notification';
+import { QueueConfig } from '../../config/queue.config';
 
 // Mock dependencies
 jest.mock('../../services/notification.service');
-jest.mock('../../services/audit.service');
 
 describe('NotificationRetryService', () => {
   let retryService: NotificationRetryService;
   let notificationService: jest.Mocked<NotificationService>;
-  let auditService: jest.Mocked<AuditService>;
-
-  const mockNotification: Notification = {
-    id: 'notification123',
-    userId: 'user123',
-    type: NotificationType.EMAIL,
-    priority: NotificationPriority.MEDIUM,
-    subject: 'Test Subject',
-    content: 'Test Content',
-    read: false,
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+  let mockConfig: QueueConfig;
 
   beforeEach(() => {
     // Clear all mocks
     jest.clearAllMocks();
 
-    // Initialize mocked services
-    notificationService = new NotificationService(
-      {} as any,
-      {} as any,
-      {} as any,
-      {} as any
-    ) as jest.Mocked<NotificationService>;
-    auditService = new AuditService() as jest.Mocked<AuditService>;
+    // Mock config
+    mockConfig = {
+      redis: {
+        host: 'localhost',
+        port: 6379,
+        password: 'password',
+        db: 0
+      },
+      queueName: 'notifications',
+      maxRetries: 3,
+      retryDelay: 1000,
+      concurrency: 5
+    };
 
-    // Initialize retry service with test config
-    retryService = new NotificationRetryService(notificationService, auditService, {
-      maxAttempts: 3,
-      initialDelay: 100,
-      maxDelay: 1000,
-      backoffFactor: 2
-    });
+    // Initialize service
+    retryService = NotificationRetryService.getInstance(mockConfig);
+
+    // Get mocked instances
+    notificationService = NotificationService.prototype as jest.Mocked<NotificationService>;
   });
 
   describe('addToRetryQueue', () => {
     it('should add notification to retry queue', async () => {
-      const error = new Error('Send failed');
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      await retryService.addToRetryQueue(mockNotification, error);
+      await retryService.addToRetryQueue(notification, 'Test error');
 
-      const stats = retryService.getRetryStats();
-      expect(stats.queueSize).toBe(1);
-      expect(stats.jobs[0].notificationId).toBe(mockNotification.id);
-      expect(stats.jobs[0].attempts).toBe(1);
-      expect(stats.jobs[0].lastError).toBe(error.message);
-    });
-
-    it('should log retry action when adding to queue', async () => {
-      const error = new Error('Send failed');
-
-      await retryService.addToRetryQueue(mockNotification, error);
-
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'RETRY',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'error'
-      });
+      const queue = retryService.getRetryQueue();
+      expect(queue.has(notification.id)).toBe(true);
+      expect(queue.get(notification.id)?.retryCount).toBe(0);
     });
   });
 
-  describe('retry processing', () => {
-    it('should retry notification successfully', async () => {
-      const error = new Error('Send failed');
-      await retryService.addToRetryQueue(mockNotification, error);
+  describe('processRetryQueue', () => {
+    it('should process notification successfully', async () => {
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      // Mock successful retry
-      notificationService.sendUserNotification.mockResolvedValueOnce(mockNotification);
+      await retryService.addToRetryQueue(notification, 'Test error');
+      notificationService.createNotification.mockResolvedValueOnce();
 
-      // Wait for retry processing
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for processing
+      await new Promise(resolve => setTimeout(resolve, 1100));
 
-      const stats = retryService.getRetryStats();
-      expect(stats.queueSize).toBe(0);
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'RETRY',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'success'
+      const queue = retryService.getRetryQueue();
+      expect(queue.has(notification.id)).toBe(false);
+      expect(notificationService.createNotification).toHaveBeenCalledWith({
+        type: notification.type,
+        subject: notification.subject,
+        content: notification.content,
+        recipient: notification.recipient,
+        priority: notification.priority
       });
     });
 
-    it('should retry with exponential backoff', async () => {
-      const error = new Error('Send failed');
-      await retryService.addToRetryQueue(mockNotification, error);
+    it('should handle processing failure and increment retry count', async () => {
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      // Mock failed retry
-      notificationService.sendUserNotification.mockRejectedValueOnce(error);
+      await retryService.addToRetryQueue(notification, 'Test error');
+      notificationService.createNotification.mockRejectedValueOnce(new Error('Failed to send'));
 
-      // Wait for first retry
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for processing
+      await new Promise(resolve => setTimeout(resolve, 1100));
 
-      const stats = retryService.getRetryStats();
-      expect(stats.queueSize).toBe(1);
-      expect(stats.jobs[0].attempts).toBe(2);
-      expect(stats.jobs[0].nextAttempt.getTime()).toBeGreaterThan(Date.now() + 150);
+      const queue = retryService.getRetryQueue();
+      expect(queue.has(notification.id)).toBe(true);
+      expect(queue.get(notification.id)?.retryCount).toBe(1);
     });
 
-    it('should remove notification after max attempts', async () => {
-      const error = new Error('Send failed');
-      await retryService.addToRetryQueue(mockNotification, error);
+    it('should remove notification after max retries', async () => {
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      // Mock failed retries
-      notificationService.sendUserNotification
-        .mockRejectedValueOnce(error)
-        .mockRejectedValueOnce(error)
-        .mockRejectedValueOnce(error);
+      await retryService.addToRetryQueue(notification, 'Test error');
+      notificationService.createNotification.mockRejectedValue(new Error('Failed to send'));
 
-      // Wait for all retries
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Process max retries
+      for (let i = 0; i < mockConfig.maxRetries; i++) {
+        await new Promise(resolve => setTimeout(resolve, 1100));
+      }
 
-      const stats = retryService.getRetryStats();
-      expect(stats.queueSize).toBe(0);
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'RETRY',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'error'
-      });
+      const queue = retryService.getRetryQueue();
+      expect(queue.has(notification.id)).toBe(false);
     });
   });
 
-  describe('queue management', () => {
+  describe('clearRetryQueue', () => {
     it('should clear retry queue', async () => {
-      const error = new Error('Send failed');
-      await retryService.addToRetryQueue(mockNotification, error);
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      await retryService.clearQueue();
+      await retryService.addToRetryQueue(notification, 'Test error');
+      retryService.clearRetryQueue();
 
-      const stats = retryService.getRetryStats();
-      expect(stats.queueSize).toBe(0);
-      expect(auditService.logAction).toHaveBeenCalledWith({
-        action: 'RETRY',
-        entityType: 'NOTIFICATION',
-        entityId: mockNotification.id,
-        userId: 'system',
-        details: expect.any(String),
-        status: 'error'
-      });
+      const queue = retryService.getRetryQueue();
+      expect(queue.size).toBe(0);
     });
+  });
 
-    it('should get retry statistics', async () => {
-      const error = new Error('Send failed');
-      await retryService.addToRetryQueue(mockNotification, error);
+  describe('getRetryQueue', () => {
+    it('should return retry queue', async () => {
+      const notification: Notification = {
+        id: 'test-id',
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Test',
+        content: 'Test content',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL,
+        read: false,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
 
-      const stats = retryService.getRetryStats();
-      expect(stats).toEqual({
-        queueSize: 1,
-        jobs: [{
-          notificationId: mockNotification.id,
-          attempts: 1,
-          nextAttempt: expect.any(Date),
-          lastError: error.message
-        }]
-      });
+      await retryService.addToRetryQueue(notification, 'Test error');
+
+      const queue = retryService.getRetryQueue();
+      expect(queue).toBeInstanceOf(Map);
+      expect(queue.has(notification.id)).toBe(true);
     });
   });
 }); 

@@ -1,114 +1,62 @@
-import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../utils/logger';
+import { User, IUserDocument } from '../models/User';
+import { CreateUserDto, UpdateUserDto, UserFilters, UserResult, UserRole } from '../types/user';
 import { AuditService } from './audit.service';
 import { AuditAction, EntityType } from '../types/audit';
 import { NotificationService } from './notification.service';
-import { SettingsService } from './settings.service';
-
-export type UserRole = 'ADMIN' | 'MANAGER' | 'OPERATOR' | 'VIEWER';
-export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'PENDING';
-
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  status: UserStatus;
-  passwordHash: string;
-  lastLogin?: Date;
-  failedLoginAttempts: number;
-  passwordResetToken?: string;
-  passwordResetExpires?: Date;
-  preferences?: Record<string, any>;
-  metadata?: Record<string, any>;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CreateUserDto {
-  email: string;
-  name: string;
-  password: string;
-  role: UserRole;
-  preferences?: Record<string, any>;
-  metadata?: Record<string, any>;
-}
-
-export interface UpdateUserDto {
-  name?: string;
-  email?: string;
-  role?: UserRole;
-  status?: UserStatus;
-  preferences?: Record<string, any>;
-  metadata?: Record<string, any>;
-}
+import { EmailService } from './email.service';
+import { SecurityMonitorService } from './security-monitor.service';
+import { logger } from '../utils/logger';
+import { UnauthorizedError, NotFoundError } from '../utils/errors';
+import bcrypt from 'bcryptjs';
 
 export class UserService {
-  private users: Map<string, User>;
   private auditService: AuditService;
   private notificationService: NotificationService;
-  private settingsService: SettingsService;
+  private emailService: EmailService;
+  private securityMonitor: SecurityMonitorService;
 
   constructor() {
-    this.users = new Map();
     this.auditService = new AuditService();
     this.notificationService = new NotificationService();
-    this.settingsService = new SettingsService();
+    this.emailService = new EmailService({
+      host: process.env.EMAIL_HOST || '',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: {
+        user: process.env.EMAIL_USER || '',
+        pass: process.env.EMAIL_PASS || ''
+      },
+      from: process.env.EMAIL_FROM || ''
+    });
+    this.securityMonitor = SecurityMonitorService.getInstance();
   }
 
-  async createUser(dto: CreateUserDto): Promise<User> {
+  async createUser(dto: CreateUserDto): Promise<IUserDocument> {
     try {
-      // Validate email uniqueness
-      const existingUser = Array.from(this.users.values()).find(u => u.email === dto.email);
+      // Check if user already exists
+      const existingUser = await User.findOne({ email: dto.email });
       if (existingUser) {
         throw new Error(`User with email ${dto.email} already exists`);
       }
 
-      const user: User = {
-        id: uuidv4(),
-        email: dto.email,
-        name: dto.name,
-        role: dto.role,
-        status: 'PENDING',
-        passwordHash: await this.hashPassword(dto.password),
-        failedLoginAttempts: 0,
-        preferences: dto.preferences,
-        metadata: dto.metadata,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      this.users.set(user.id, user);
-
-      // Create user preferences
-      await this.settingsService.createUserPreferences(user.id, {
-        language: 'pt-BR',
-        timezone: 'America/Sao_Paulo',
-        theme: 'LIGHT',
-        currency: 'BRL',
-        dateFormat: 'DD/MM/YYYY',
-        timeFormat: '24h'
+      // Create user
+      const user = await User.create({
+        ...dto,
+        isEmailVerified: false
       });
+
+      // Generate verification token and send email
+      const verificationToken = await user.generateEmailVerificationToken();
+      await this.emailService.sendEmailVerification(user.email, verificationToken);
 
       // Log the creation
       await this.auditService.logAction({
         action: AuditAction.CREATE,
         entityType: EntityType.USER,
-        entityId: user.id,
+        entityId: user._id.toString(),
         userId: 'system',
         details: `Created user: ${user.email}`,
         status: 'success'
-      });
-
-      // Send welcome notification
-      await this.notificationService.createNotification({
-        type: 'EMAIL',
-        title: 'Bem-vindo ao ControlAI Vendas',
-        message: `Olá ${user.name}, bem-vindo ao ControlAI Vendas! Sua conta foi criada com sucesso.`,
-        recipient: user.email,
-        metadata: {
-          userId: user.id
-        }
       });
 
       return user;
@@ -118,32 +66,22 @@ export class UserService {
     }
   }
 
-  async updateUser(id: string, dto: UpdateUserDto, updatedBy: string): Promise<User> {
+  async updateUser(id: string, dto: UpdateUserDto, updatedBy: string): Promise<IUserDocument> {
     try {
-      const user = this.users.get(id);
+      const user = await User.findById(id);
       if (!user) {
-        throw new Error(`User not found: ${id}`);
+        throw new NotFoundError(`User not found: ${id}`);
       }
 
-      const previousState = { ...user };
-
       // Update user fields
-      if (dto.name) user.name = dto.name;
-      if (dto.email) user.email = dto.email;
-      if (dto.role) user.role = dto.role;
-      if (dto.status) user.status = dto.status;
-      if (dto.preferences) user.preferences = { ...user.preferences, ...dto.preferences };
-      if (dto.metadata) user.metadata = { ...user.metadata, ...dto.metadata };
-
-      user.updatedAt = new Date();
-
-      this.users.set(id, user);
+      Object.assign(user, dto);
+      await user.save();
 
       // Log the update
       await this.auditService.logAction({
         action: AuditAction.UPDATE,
         entityType: EntityType.USER,
-        entityId: user.id,
+        entityId: user._id.toString(),
         userId: updatedBy,
         details: `Updated user: ${user.email}`,
         status: 'success'
@@ -158,15 +96,12 @@ export class UserService {
 
   async deleteUser(id: string, deletedBy: string): Promise<void> {
     try {
-      const user = this.users.get(id);
+      const user = await User.findById(id);
       if (!user) {
-        throw new Error(`User not found: ${id}`);
+        throw new NotFoundError(`User not found: ${id}`);
       }
 
-      this.users.delete(id);
-
-      // Delete user preferences
-      await this.settingsService.deleteUserPreferences(id);
+      await user.deleteOne();
 
       // Log the deletion
       await this.auditService.logAction({
@@ -183,84 +118,78 @@ export class UserService {
     }
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(u => u.email === email);
-  }
-
-  async getUsers(
-    role?: UserRole,
-    status?: UserStatus,
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{ users: User[]; total: number }> {
-    let filteredUsers = Array.from(this.users.values());
-
-    if (role) {
-      filteredUsers = filteredUsers.filter(u => u.role === role);
-    }
-
-    if (status) {
-      filteredUsers = filteredUsers.filter(u => u.status === status);
-    }
-
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    const paginatedUsers = filteredUsers.slice(start, end);
-
-    return {
-      users: paginatedUsers,
-      total: filteredUsers.length
-    };
-  }
-
-  async authenticateUser(email: string, password: string): Promise<User> {
+  async getUsers(filters: UserFilters): Promise<UserResult> {
     try {
-      const user = await this.getUserByEmail(email);
+      const query: any = {};
+
+      if (filters.search) {
+        query.$or = [
+          { name: { $regex: filters.search, $options: 'i' } },
+          { email: { $regex: filters.search, $options: 'i' } }
+        ];
+      }
+
+      if (filters.role) query.role = filters.role;
+      if (filters.isActive !== undefined) query.isActive = filters.isActive;
+      if (filters.isEmailVerified !== undefined) query.isEmailVerified = filters.isEmailVerified;
+
+      const page = filters.page || 1;
+      const limit = filters.limit || 10;
+      const skip = (page - 1) * limit;
+
+      const sort: any = {};
+      if (filters.sortBy) {
+        sort[filters.sortBy] = filters.sortOrder === 'desc' ? -1 : 1;
+      }
+
+      const [users, total] = await Promise.all([
+        User.find(query)
+          .sort(sort)
+          .skip(skip)
+          .limit(limit),
+        User.countDocuments(query)
+      ]);
+
+      return {
+        users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      logger.error('Error getting users:', error);
+      throw error;
+    }
+  }
+
+  async authenticateUser(email: string, password: string): Promise<IUserDocument> {
+    try {
+      const user = await User.findOne({ email }).select('+password');
       if (!user) {
-        throw new Error('Invalid credentials');
+        this.securityMonitor.logLoginAttempt({ email } as any, false);
+        throw new UnauthorizedError('Invalid credentials');
       }
 
-      if (user.status !== 'ACTIVE') {
-        throw new Error(`User account is ${user.status.toLowerCase()}`);
+      if (!user.isActive) {
+        this.securityMonitor.logSecurityEvent('INACTIVE_USER', { userId: user._id });
+        throw new UnauthorizedError('User account is inactive');
       }
 
-      const isValidPassword = await this.verifyPassword(password, user.passwordHash);
-      if (!isValidPassword) {
-        user.failedLoginAttempts += 1;
-        if (user.failedLoginAttempts >= 5) {
-          user.status = 'SUSPENDED';
-          await this.notificationService.createNotification({
-            type: 'EMAIL',
-            title: 'Conta Suspensa',
-            message: 'Sua conta foi suspensa devido a múltiplas tentativas de login inválidas.',
-            recipient: user.email,
-            metadata: {
-              userId: user.id
-            }
-          });
-        }
-        this.users.set(user.id, user);
-        throw new Error('Invalid credentials');
+      if (user.isLocked()) {
+        this.securityMonitor.logSecurityEvent('LOCKED_ACCOUNT', { userId: user._id });
+        throw new UnauthorizedError('Account is locked. Please try again later.');
       }
 
-      // Reset failed login attempts on successful login
-      user.failedLoginAttempts = 0;
-      user.lastLogin = new Date();
-      this.users.set(user.id, user);
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        await user.incrementLoginAttempts();
+        this.securityMonitor.logLoginAttempt({ email } as any, false, user);
+        throw new UnauthorizedError('Invalid credentials');
+      }
 
-      // Log the login
-      await this.auditService.logAction({
-        action: AuditAction.LOGIN,
-        entityType: EntityType.USER,
-        entityId: user.id,
-        userId: user.id,
-        details: `User logged in: ${user.email}`,
-        status: 'success'
-      });
+      await user.resetLoginAttempts();
+      this.securityMonitor.logLoginAttempt({ email } as any, true, user);
 
       return user;
     } catch (error) {
@@ -269,45 +198,29 @@ export class UserService {
     }
   }
 
-  async changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string
-  ): Promise<void> {
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     try {
-      const user = await this.getUser(userId);
+      const user = await User.findById(userId).select('+password');
       if (!user) {
-        throw new Error(`User not found: ${userId}`);
+        throw new NotFoundError('User not found');
       }
 
-      const isValidPassword = await this.verifyPassword(currentPassword, user.passwordHash);
-      if (!isValidPassword) {
-        throw new Error('Current password is incorrect');
+      const isMatch = await user.comparePassword(currentPassword);
+      if (!isMatch) {
+        throw new UnauthorizedError('Current password is incorrect');
       }
 
-      user.passwordHash = await this.hashPassword(newPassword);
-      user.updatedAt = new Date();
-      this.users.set(userId, user);
+      user.password = newPassword;
+      await user.save();
 
-      // Log the password change
+      this.securityMonitor.logPasswordChange(user);
       await this.auditService.logAction({
         action: AuditAction.UPDATE,
         entityType: EntityType.USER,
-        entityId: userId,
-        userId,
+        entityId: user._id.toString(),
+        userId: user._id.toString(),
         details: 'Password changed',
         status: 'success'
-      });
-
-      // Send password changed notification
-      await this.notificationService.createNotification({
-        type: 'EMAIL',
-        title: 'Senha Alterada',
-        message: 'Sua senha foi alterada com sucesso.',
-        recipient: user.email,
-        metadata: {
-          userId: user.id
-        }
       });
     } catch (error) {
       logger.error('Error changing password:', error);
@@ -317,29 +230,23 @@ export class UserService {
 
   async requestPasswordReset(email: string): Promise<void> {
     try {
-      const user = await this.getUserByEmail(email);
+      const user = await User.findOne({ email });
       if (!user) {
-        throw new Error(`User not found: ${email}`);
+        // Don't reveal that the user doesn't exist
+        return;
       }
 
-      const resetToken = uuidv4();
-      const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+      const resetToken = await user.generatePasswordResetToken();
+      await this.emailService.sendPasswordReset(email, resetToken);
 
-      user.passwordResetToken = resetToken;
-      user.passwordResetExpires = resetExpires;
-      this.users.set(user.id, user);
-
-      // Send password reset notification
-      await this.notificationService.createNotification({
-        type: 'EMAIL',
-        title: 'Redefinição de Senha',
-        message: `Para redefinir sua senha, use o token: ${resetToken}`,
-        recipient: user.email,
-        metadata: {
-          userId: user.id,
-          resetToken,
-          resetExpires
-        }
+      this.securityMonitor.logPasswordReset(user, true);
+      await this.auditService.logAction({
+        action: AuditAction.UPDATE,
+        entityType: EntityType.USER,
+        entityId: user._id.toString(),
+        userId: user._id.toString(),
+        details: 'Password reset requested',
+        status: 'success'
       });
     } catch (error) {
       logger.error('Error requesting password reset:', error);
@@ -349,39 +256,28 @@ export class UserService {
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
-      const user = Array.from(this.users.values()).find(
-        u => u.passwordResetToken === token && u.passwordResetExpires && u.passwordResetExpires > new Date()
-      );
+      const user = await User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpire: { $gt: Date.now() }
+      });
 
       if (!user) {
-        throw new Error('Invalid or expired password reset token');
+        throw new UnauthorizedError('Invalid or expired reset token');
       }
 
-      user.passwordHash = await this.hashPassword(newPassword);
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      user.updatedAt = new Date();
-      this.users.set(user.id, user);
+      user.password = newPassword;
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save();
 
-      // Log the password reset
+      this.securityMonitor.logPasswordReset(user, true);
       await this.auditService.logAction({
         action: AuditAction.UPDATE,
         entityType: EntityType.USER,
-        entityId: user.id,
-        userId: user.id,
-        details: 'Password reset',
+        entityId: user._id.toString(),
+        userId: user._id.toString(),
+        details: 'Password reset completed',
         status: 'success'
-      });
-
-      // Send password reset complete notification
-      await this.notificationService.createNotification({
-        type: 'EMAIL',
-        title: 'Senha Redefinida',
-        message: 'Sua senha foi redefinida com sucesso.',
-        recipient: user.email,
-        metadata: {
-          userId: user.id
-        }
       });
     } catch (error) {
       logger.error('Error resetting password:', error);
@@ -389,13 +285,34 @@ export class UserService {
     }
   }
 
-  private async hashPassword(password: string): Promise<string> {
-    // TODO: Implement proper password hashing
-    return password;
-  }
+  async verifyEmail(token: string): Promise<void> {
+    try {
+      const user = await User.findOne({
+        emailVerificationToken: token,
+        emailVerificationExpire: { $gt: Date.now() }
+      });
 
-  private async verifyPassword(password: string, hash: string): Promise<boolean> {
-    // TODO: Implement proper password verification
-    return password === hash;
+      if (!user) {
+        throw new UnauthorizedError('Invalid or expired verification token');
+      }
+
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpire = undefined;
+      await user.save();
+
+      this.securityMonitor.logEmailVerification(user, true);
+      await this.auditService.logAction({
+        action: AuditAction.UPDATE,
+        entityType: EntityType.USER,
+        entityId: user._id.toString(),
+        userId: user._id.toString(),
+        details: 'Email verified',
+        status: 'success'
+      });
+    } catch (error) {
+      logger.error('Error verifying email:', error);
+      throw error;
+    }
   }
 } 

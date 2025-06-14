@@ -3,7 +3,7 @@ import { useDropzone } from 'react-dropzone';
 import { Card, ProgressBar, Alert, Table } from 'react-bootstrap';
 import { FaCloudUploadAlt, FaCheck, FaTimes } from 'react-icons/fa';
 import { useProductImport } from '../hooks/useProductImport';
-import { ProductImportResult } from '../services/ocr.service';
+import { type ProductImportResult } from '../services/ocr.service';
 
 interface ProductImportOCRProps {
   onImportComplete?: (result: ProductImportResult) => void;
@@ -22,13 +22,15 @@ export const ProductImportOCR: React.FC<ProductImportOCRProps> = ({ onImportComp
     async (acceptedFiles: File[]) => {
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
-        await importProducts(file);
-        if (result && onImportComplete) {
-          onImportComplete(result);
+        if (file) {
+          const importResult = await importProducts(file);
+          if (onImportComplete && importResult) {
+            onImportComplete(importResult);
+          }
         }
       }
     },
-    [importProducts, result, onImportComplete]
+    [importProducts, onImportComplete]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

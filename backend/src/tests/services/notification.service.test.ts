@@ -1,295 +1,224 @@
-import { NotificationService, NotificationType, NotificationPriority } from '../../services/notification.service';
+import { NotificationService } from '../../services/notification.service';
+import { NotificationType, NotificationPriority } from '../../types/notification';
 import { EmailService } from '../../services/email.service';
 import { SMSService } from '../../services/sms.service';
 import { PushNotificationService } from '../../services/push-notification.service';
-import { NotificationQueueService } from '../../services/notification-queue.service';
 import { AuditService } from '../../services/audit.service';
+import { NotificationQueueService } from '../../services/notification-queue.service';
+import { NotificationRetryService } from '../../services/notification-retry.service';
+import { I18nService } from '../../services/i18n.service';
 
 // Mock dependencies
 jest.mock('../../services/email.service');
 jest.mock('../../services/sms.service');
 jest.mock('../../services/push-notification.service');
-jest.mock('../../services/notification-queue.service');
 jest.mock('../../services/audit.service');
+jest.mock('../../services/notification-queue.service');
+jest.mock('../../services/notification-retry.service');
+jest.mock('../../services/i18n.service');
 
 describe('NotificationService', () => {
   let notificationService: NotificationService;
   let emailService: jest.Mocked<EmailService>;
   let smsService: jest.Mocked<SMSService>;
   let pushService: jest.Mocked<PushNotificationService>;
-  let queueService: jest.Mocked<NotificationQueueService>;
   let auditService: jest.Mocked<AuditService>;
-
-  const mockConfig = {
-    email: {
-      host: 'smtp.example.com',
-      port: 587,
-      secure: true,
-      auth: {
-        user: 'test@example.com',
-        pass: 'password'
-      }
-    },
-    sms: {
-      accountSid: 'test-sid',
-      authToken: 'test-token',
-      fromNumber: '+1234567890'
-    },
-    push: {
-      projectId: 'test-project',
-      privateKey: 'test-key',
-      clientEmail: 'test@example.com'
-    },
-    queue: {
-      redis: {
-        host: 'localhost',
-        port: 6379
-      }
-    }
-  };
+  let queueService: jest.Mocked<NotificationQueueService>;
+  let retryService: jest.Mocked<NotificationRetryService>;
+  let i18nService: jest.Mocked<I18nService>;
 
   beforeEach(() => {
     // Clear all mocks
     jest.clearAllMocks();
 
-    // Initialize services with mocked dependencies
-    emailService = new EmailService(mockConfig.email) as jest.Mocked<EmailService>;
-    smsService = new SMSService(mockConfig.sms) as jest.Mocked<SMSService>;
-    pushService = new PushNotificationService(mockConfig.push) as jest.Mocked<PushNotificationService>;
-    queueService = new NotificationQueueService(mockConfig.queue, {} as NotificationService) as jest.Mocked<NotificationQueueService>;
-    auditService = new AuditService() as jest.Mocked<AuditService>;
+    // Initialize service
+    notificationService = NotificationService.getInstance();
 
-    notificationService = new NotificationService(
-      mockConfig.email,
-      mockConfig.sms,
-      mockConfig.push,
-      mockConfig.queue
-    );
+    // Get mocked instances
+    emailService = EmailService.prototype as jest.Mocked<EmailService>;
+    smsService = SMSService.prototype as jest.Mocked<SMSService>;
+    pushService = PushNotificationService.prototype as jest.Mocked<PushNotificationService>;
+    auditService = AuditService.prototype as jest.Mocked<AuditService>;
+    queueService = NotificationQueueService.prototype as jest.Mocked<NotificationQueueService>;
+    retryService = NotificationRetryService.prototype as jest.Mocked<NotificationRetryService>;
+    i18nService = I18nService.prototype as jest.Mocked<I18nService>;
   });
 
-  describe('sendUserNotification', () => {
-    it('should send an email notification successfully', async () => {
-      const userId = 'user123';
-      const subject = 'Test Email';
-      const content = 'Test content';
+  describe('createNotification', () => {
+    it('should create and send an email notification', async () => {
       const options = {
-        type: NotificationType.EMAIL,
-        priority: NotificationPriority.MEDIUM
+        type: NotificationType.WELCOME,
+        subject: 'Welcome',
+        content: 'Welcome to our platform',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL
       };
 
-      emailService.sendEmail.mockResolvedValueOnce();
+      await notificationService.createNotification(options);
 
-      const notification = await notificationService.sendUserNotification(
-        userId,
-        subject,
-        content,
-        options
-      );
-
-      expect(notification).toBeDefined();
-      expect(notification.type).toBe(NotificationType.EMAIL);
-      expect(notification.priority).toBe(NotificationPriority.MEDIUM);
       expect(emailService.sendEmail).toHaveBeenCalledWith({
-        to: userId,
-        subject,
-        html: content
+        to: options.recipient,
+        subject: options.subject,
+        html: options.content
       });
     });
 
-    it('should send an SMS notification successfully', async () => {
-      const userId = 'user123';
-      const subject = 'Test SMS';
-      const content = 'Test content';
+    it('should create and send a push notification', async () => {
       const options = {
-        type: NotificationType.SMS,
+        type: NotificationType.SECURITY_ALERT,
+        subject: 'Security Alert',
+        content: 'Your account has been locked',
+        recipient: 'user@example.com',
         priority: NotificationPriority.HIGH
       };
 
-      smsService.sendSMS.mockResolvedValueOnce();
+      await notificationService.createNotification(options);
 
-      const notification = await notificationService.sendUserNotification(
-        userId,
-        subject,
-        content,
-        options
-      );
-
-      expect(notification).toBeDefined();
-      expect(notification.type).toBe(NotificationType.SMS);
-      expect(notification.priority).toBe(NotificationPriority.HIGH);
-      expect(smsService.sendSMS).toHaveBeenCalledWith({
-        to: userId,
-        message: content
-      });
-    });
-
-    it('should send a push notification successfully', async () => {
-      const userId = 'user123';
-      const subject = 'Test Push';
-      const content = 'Test content';
-      const options = {
-        type: NotificationType.PUSH,
-        priority: NotificationPriority.URGENT
-      };
-
-      pushService.sendNotification.mockResolvedValueOnce({ success: true });
-
-      const notification = await notificationService.sendUserNotification(
-        userId,
-        subject,
-        content,
-        options
-      );
-
-      expect(notification).toBeDefined();
-      expect(notification.type).toBe(NotificationType.PUSH);
-      expect(notification.priority).toBe(NotificationPriority.URGENT);
       expect(pushService.sendNotification).toHaveBeenCalledWith({
-        token: userId,
-        title: subject,
-        body: content,
-        priority: 'high'
+        to: options.recipient,
+        title: options.subject,
+        body: options.content,
+        data: undefined
       });
     });
 
-    it('should send a notification through queue when useQueue is true', async () => {
-      const userId = 'user123';
-      const subject = 'Test Queue';
-      const content = 'Test content';
+    it('should store in-app notification', async () => {
       const options = {
-        type: NotificationType.EMAIL,
-        priority: NotificationPriority.MEDIUM,
-        useQueue: true
+        type: NotificationType.IN_APP,
+        subject: 'In-App Notification',
+        content: 'This is an in-app notification',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL
       };
 
-      queueService.addToQueue.mockResolvedValueOnce({} as any);
+      await notificationService.createNotification(options);
 
-      const notification = await notificationService.sendUserNotification(
-        userId,
-        subject,
-        content,
-        options
-      );
-
-      expect(notification).toBeDefined();
-      expect(queueService.addToQueue).toHaveBeenCalled();
-      expect(emailService.sendEmail).not.toHaveBeenCalled();
+      const notifications = await notificationService.getNotifications({});
+      expect(notifications.notifications).toHaveLength(1);
+      expect(notifications.notifications[0].type).toBe(NotificationType.IN_APP);
     });
 
-    it('should handle notification sending errors', async () => {
-      const userId = 'user123';
-      const subject = 'Test Error';
-      const content = 'Test content';
+    it('should handle notification failure and add to retry queue', async () => {
       const options = {
-        type: NotificationType.EMAIL
+        type: NotificationType.EMAIL_VERIFICATION,
+        subject: 'Verify Email',
+        content: 'Please verify your email',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.NORMAL
       };
 
-      emailService.sendEmail.mockRejectedValueOnce(new Error('Send failed'));
+      emailService.sendEmail.mockRejectedValueOnce(new Error('Failed to send email'));
 
-      await expect(
-        notificationService.sendUserNotification(userId, subject, content, options)
-      ).rejects.toThrow('Failed to send notification: Send failed');
-    });
-  });
-
-  describe('sendTemplateNotification', () => {
-    it('should send a template notification successfully', async () => {
-      const userId = 'user123';
-      const templateId = 'payment_success';
-      const variables = {
-        amount: '100',
-        currency: 'USD'
-      };
-
-      emailService.sendEmail.mockResolvedValueOnce();
-
-      const notification = await notificationService.sendTemplateNotification(
-        userId,
-        templateId,
-        variables
-      );
-
-      expect(notification).toBeDefined();
-      expect(notification.type).toBe(NotificationType.EMAIL);
-      expect(notification.content).toContain('100');
-      expect(notification.content).toContain('USD');
-    });
-
-    it('should throw error for missing template', async () => {
-      const userId = 'user123';
-      const templateId = 'non_existent_template';
-      const variables = {};
-
-      await expect(
-        notificationService.sendTemplateNotification(userId, templateId, variables)
-      ).rejects.toThrow('Notification template not found: non_existent_template');
-    });
-
-    it('should throw error for missing required variables', async () => {
-      const userId = 'user123';
-      const templateId = 'payment_success';
-      const variables = {
-        amount: '100'
-        // Missing currency
-      };
-
-      await expect(
-        notificationService.sendTemplateNotification(userId, templateId, variables)
-      ).rejects.toThrow('Missing required variables: currency');
+      await expect(notificationService.createNotification(options)).rejects.toThrow('Failed to send email');
+      expect(retryService.addToRetryQueue).toHaveBeenCalled();
     });
   });
 
   describe('getNotifications', () => {
-    it('should return filtered notifications', async () => {
-      const userId = 'user123';
-      const filters = {
-        userId,
-        type: NotificationType.EMAIL,
-        read: false
-      };
+    it('should filter notifications by type', async () => {
+      // Add test notifications
+      await notificationService.createNotification({
+        type: NotificationType.WELCOME,
+        subject: 'Welcome',
+        content: 'Welcome',
+        recipient: 'user@example.com'
+      });
 
-      const result = await notificationService.getNotifications(filters);
+      await notificationService.createNotification({
+        type: NotificationType.SECURITY_ALERT,
+        subject: 'Alert',
+        content: 'Alert',
+        recipient: 'user@example.com'
+      });
 
-      expect(result).toBeDefined();
-      expect(result.notifications).toBeInstanceOf(Array);
-      expect(result.total).toBeGreaterThanOrEqual(0);
+      const result = await notificationService.getNotifications({
+        type: NotificationType.WELCOME
+      });
+
+      expect(result.notifications).toHaveLength(1);
+      expect(result.notifications[0].type).toBe(NotificationType.WELCOME);
+    });
+
+    it('should filter notifications by priority', async () => {
+      await notificationService.createNotification({
+        type: NotificationType.SYSTEM_ALERT,
+        subject: 'High Priority',
+        content: 'High Priority Alert',
+        recipient: 'user@example.com',
+        priority: NotificationPriority.HIGH
+      });
+
+      const result = await notificationService.getNotifications({
+        priority: NotificationPriority.HIGH
+      });
+
+      expect(result.notifications).toHaveLength(1);
+      expect(result.notifications[0].priority).toBe(NotificationPriority.HIGH);
     });
   });
 
   describe('markAsRead', () => {
     it('should mark notification as read', async () => {
-      const notificationId = 'notification123';
+      const options = {
+        type: NotificationType.IN_APP,
+        subject: 'Test',
+        content: 'Test',
+        recipient: 'user@example.com'
+      };
 
-      const notification = await notificationService.markAsRead(notificationId);
+      await notificationService.createNotification(options);
+      const notifications = await notificationService.getNotifications({});
+      const notificationId = notifications.notifications[0].id;
 
-      expect(notification).toBeDefined();
-      expect(notification.read).toBe(true);
-    });
+      await notificationService.markAsRead(notificationId);
 
-    it('should throw error for non-existent notification', async () => {
-      const notificationId = 'non_existent_notification';
-
-      await expect(
-        notificationService.markAsRead(notificationId)
-      ).rejects.toThrow(`Notification not found: ${notificationId}`);
+      const updatedNotifications = await notificationService.getNotifications({});
+      expect(updatedNotifications.notifications[0].read).toBe(true);
     });
   });
 
   describe('deleteNotification', () => {
     it('should delete notification', async () => {
-      const notificationId = 'notification123';
+      const options = {
+        type: NotificationType.IN_APP,
+        subject: 'Test',
+        content: 'Test',
+        recipient: 'user@example.com'
+      };
 
-      await expect(
-        notificationService.deleteNotification(notificationId)
-      ).resolves.not.toThrow();
+      await notificationService.createNotification(options);
+      const notifications = await notificationService.getNotifications({});
+      const notificationId = notifications.notifications[0].id;
+
+      await notificationService.deleteNotification(notificationId);
+
+      const updatedNotifications = await notificationService.getNotifications({});
+      expect(updatedNotifications.notifications).toHaveLength(0);
+    });
+  });
+
+  describe('templates', () => {
+    it('should get template by id', async () => {
+      const template = await notificationService.getTemplate('welcome');
+      expect(template).toBeDefined();
+      expect(template?.id).toBe('welcome');
     });
 
-    it('should throw error for non-existent notification', async () => {
-      const notificationId = 'non_existent_notification';
+    it('should process template with variables', async () => {
+      const variables = {
+        userName: 'John',
+        verificationUrl: 'http://example.com/verify'
+      };
 
+      const content = await notificationService.processTemplate('welcome', variables);
+      expect(content).toContain('John');
+      expect(content).toContain('http://example.com/verify');
+    });
+
+    it('should throw error for non-existent template', async () => {
       await expect(
-        notificationService.deleteNotification(notificationId)
-      ).rejects.toThrow(`Notification not found: ${notificationId}`);
+        notificationService.processTemplate('non-existent', {})
+      ).rejects.toThrow('Template not found: non-existent');
     });
   });
 }); 

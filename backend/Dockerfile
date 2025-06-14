@@ -1,3 +1,4 @@
+
 FROM node:18-alpine
 
 WORKDIR /app
@@ -23,3 +24,4 @@ EXPOSE 3001
 
 # Start the application
 CMD ["npx", "ts-node", "src/server.ts"] 
+
