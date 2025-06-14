@@ -47,29 +47,25 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
 
 1. Clone o repositório:
 
-   ```bash
+   bash
    git clone https://github.com/seu-usuario/app_controlaivendas.git
    cd app_controlaivendas
-   ```
 
 2. Crie um novo diretório para o backend:
 
    ```bash
    mkdir backend
    cd backend
-   ```
 
 3. Inicialize um novo projeto Node.js:
 
    ```bash
    npm init -y
-   ```
 
 4. Instale as dependências necessárias:
 
    ```bash
    npm install express mongoose dotenv cors bcryptjs jsonwebtoken
-   ```
 
 5. Crie a estrutura de diretórios:
 
@@ -80,15 +76,12 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
    mkdir src/routes
    mkdir src/middleware
    mkdir src/config
-   ```
 
 6. Configure o arquivo .env:
 
-   ```
    PORT=5000
    MONGODB_URI=sua_uri_do_mongodb
    JWT_SECRET=seu_jwt_secret
-   ```
 
 7. Inicie o servidor de desenvolvimento:
 
@@ -103,7 +96,6 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
    ```bash
    mkdir frontend
    cd frontend
-   ```
 
 2. Instale as dependências do projeto:
 
@@ -114,10 +106,7 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
 
 3. Configure o arquivo .env na raiz do frontend:
 
-   ```
    VITE_API_URL=http://localhost:5000/api
-   ```
-
 4. Configure a integração com o backend no arquivo src/api/config.ts:
 
    ```typescript
