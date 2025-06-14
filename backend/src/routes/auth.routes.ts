@@ -13,8 +13,16 @@ import {
   resetPassword
 } from '../controllers/auth.controller';
 import { protect, authorize } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validate.middleware';
-import Joi from 'joi';
+
+import { validate } from '../middleware/validation/validate';
+import {
+  registerValidation,
+  loginValidation,
+  updateDetailsValidation,
+  updatePasswordValidation,
+  forgotPasswordValidation,
+  resetPasswordValidation
+} from '../middleware/validation/auth.validation';
 import { UserRole } from '../models/User';
 
 const router = Router();
@@ -52,19 +60,22 @@ const resetPasswordSchema = Joi.object({
 });
 
 // Public routes
-router.post('/login', validateRequest(loginSchema), login);
-router.post('/forgotpassword', validateRequest(forgotPasswordSchema), forgotPassword);
-router.put('/resetpassword/:resettoken', validateRequest(resetPasswordSchema), resetPassword);
+router.post('/register', validate(registerValidation), register);
+router.post('/login', validate(loginValidation), login);
+router.post('/forgot-password', validate(forgotPasswordValidation), forgotPassword);
+router.post('/reset-password', validate(resetPasswordValidation), resetPassword);
 
 // Protected routes
-router.get('/me', protect, getMe);
-router.put('/updatedetails', protect, validateRequest(updateDetailsSchema), updateDetails);
-router.put('/updatepassword', protect, validateRequest(updatePasswordSchema), updatePassword);
+router.use(protect);
+
+router.get('/me', getMe);
+router.put('/updatedetails', validate(updateDetailsValidation), updateDetails);
+router.patch('/update-password', validate(updatePasswordValidation), updatePassword);
+
 
 // Admin only routes
 router.use(protect);
 router.use(authorize(UserRole.ADMIN));
-router.post('/register', validateRequest(registerSchema), register);
 router.get('/users', getUsers);
 router.route('/users/:id')
   .get(getUser)

@@ -34,17 +34,15 @@ router.get(
 router.get(
   '/system',
   authenticate,
-  authorize(['admin']),
-  (req, res, next): void => {
-    metricsController.getSystemMetrics(req, res, next);
-  }
+  authorize([UserRole.ADMIN]),
+  metricsController.getSystemMetrics.bind(metricsController)
 );
 
 // Get usage metrics
 router.get(
   '/usage',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   validateRequest(metricsValidation.getUsageMetrics),
   (req, res, next): void => {
     metricsController.getUsageMetrics(req, res, next);

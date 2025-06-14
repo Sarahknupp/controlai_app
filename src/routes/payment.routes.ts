@@ -1,20 +1,26 @@
-import express from 'express';
-import { processPayment, getSalePayments, cancelPayment } from '../controllers/payment.controller';
-import { protect, authorize } from '../middleware/auth';
+import { Router } from 'express';
 import { 
-  validateProcessPayment, 
-  validateCancelPayment, 
-  validateGetSalePayments 
-} from '../middleware/validatePayment';
+  createPayment,
+  getPayments,
+  getPayment,
+  updatePayment,
+  cancelPayment
+} from '../controllers/payment.controller';
+import { authenticate, authorize } from '../middleware/auth';
+import { validatePayment, validateCancelPayment } from '../middleware/validation/payment.validation';
 
-const router = express.Router();
+const router = Router();
 
-// Todas as rotas requerem autenticação
-router.use(protect);
+// Public routes
+router.get('/verify/:paymentId', verifyPayment);
 
-// Rotas de pagamento com validação
-router.post('/', validateProcessPayment, processPayment);
-router.get('/sale/:saleId', validateGetSalePayments, getSalePayments);
-router.patch('/:id/cancel', authorize('admin', 'manager'), validateCancelPayment, cancelPayment);
+// Protected routes
+router.use(authenticate);
+
+router.get('/', getPayments);
+router.get('/:paymentId', getPayment);
+router.post('/', validatePayment, createPayment);
+router.put('/:paymentId', validatePayment, updatePayment);
+router.patch('/:paymentId/cancel', authorize('admin', 'manager'), validateCancelPayment, cancelPayment);
 
 export default router; 

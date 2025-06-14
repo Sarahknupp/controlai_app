@@ -1,23 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
-import { ValidationChain, validationResult } from 'express-validator';
+import Joi from 'joi';
 
-export const validate = (validations: ValidationChain[]) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    // Execute all validations
-    await Promise.all(validations.map(validation => validation.run(req)));
-
-    // Check for validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        errors: errors.array().map(err => ({
-          field: err.type === 'field' ? err.path : err.type,
-          message: err.msg
-        }))
-      });
-    }
-
-    next();
-  };
+export const validate = (schema: Joi.ObjectSchema) => (req: Request, res: Response, next: NextFunction) => {
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ success: false, message: error.details[0].message });
+  }
+  next();
 }; 

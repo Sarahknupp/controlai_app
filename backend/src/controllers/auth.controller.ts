@@ -1,22 +1,35 @@
 import { Request, Response } from 'express';
-import { User, UserRole, IUser } from '../models/User';
-import jwt, { Secret, SignOptions } from 'jsonwebtoken';
+import { User, UserRole } from '../models/User';
+import { IUser } from '../types/user';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { UnauthorizedError, BadRequestError, NotFoundError } from '../utils/errors';
-import { asyncHandler } from '../utils/asyncHandler';
-import crypto from 'crypto';
+
+import {
+  register,
+  login,
+  getMe,
+  updateDetails,
+  updatePassword,
+  getUsers,
+  getUser,
+  updateUser,
+  deleteUser,
+  forgotPassword,
+  resetPassword
+} from '../controllers/auth.controller';
+
 
 // Extend Request type to include user
 interface AuthRequest extends Request {
   user?: IUser;
 }
 
-const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET: string = process.env.JWT_SECRET || 'your-secret-key';
 
 // Helper function to generate JWT token
-const generateToken = (user: IUser) => {
+const generateToken = (user: { id: string, role: string }) => {
   return jwt.sign(
-    { id: user._id, role: user.role },
+    { id: user.id, role: user.role },
     JWT_SECRET,
     { expiresIn: '24h' }
   );
@@ -25,13 +38,44 @@ const generateToken = (user: IUser) => {
 // @desc    Register new user
 // @route   POST /api/auth/register
 // @access  Private/Admin
-export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email } = req.body;
 
-  // Check if user already exists
-  const userExists = await User.findOne({ email });
-  if (userExists) {
-    throw new BadRequestError('User already exists');
+export const register = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      res.status(400).json({
+        success: false,
+        message: 'User already exists'
+      });
+      return;
+    }
+
+    // Create user
+    const user = await User.create(req.body);
+
+    // Generate token
+    const token = generateToken({ id: user.id, role: user.role });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        token
+      }
+    });
+  } catch (error: any) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 
   // Create user
@@ -57,19 +101,46 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-export const login = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password } = req.body;
 
-  // Validate email & password
-  if (!email || !password) {
-    throw new BadRequestError('Please provide email and password');
-  }
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
 
-  // Check for user
-  const user = await User.findOne({ email, active: true });
-  if (!user) {
-    throw new UnauthorizedError('Invalid credentials');
-  }
+    // Validate email & password
+    if (!email || !password) {
+      res.status(400).json({
+        success: false,
+        message: 'Please provide email and password'
+      });
+      return;
+    }
+
+    // Check for user
+    const user = await User.findOne({ email, active: true });
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+      return;
+    }
+
+    // Check if password matches
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+      return;
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate token
+    const token = generateToken({ id: user.id, role: user.role });
 
   // Check if password matches
   const isMatch = await user.comparePassword(password);
@@ -101,10 +172,18 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
 // @access  Private
-export const getMe = asyncHandler(async (req: AuthRequest, res: Response) => {
-  if (!req.user?._id) {
-    throw new UnauthorizedError('Not authorized');
-  }
+
+export const getMe = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({
+        success: false,
+        message: 'Not authorized'
+      });
+      return;
+    }
+
+    const user = await User.findById(req.user.id).select('-password');
 
   const foundUser = await User.findById(req.user._id).select('-password');
   if (!foundUser) {
@@ -120,24 +199,30 @@ export const getMe = asyncHandler(async (req: AuthRequest, res: Response) => {
 // @desc    Update user details
 // @route   PUT /api/auth/updatedetails
 // @access  Private
-export const updateDetails = asyncHandler(async (req: AuthRequest, res: Response) => {
-  if (!req.user?._id) {
-    throw new UnauthorizedError('Not authorized');
-  }
 
-  const fieldsToUpdate = {
-    name: req.body.name,
-    email: req.body.email
-  };
-
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user._id,
-    fieldsToUpdate,
-    {
-      new: true,
-      runValidators: true
+export const updateDetails = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({
+        success: false,
+        message: 'Not authorized'
+      });
+      return;
     }
-  ).select('-password');
+
+    const fieldsToUpdate = {
+      name: req.body.name,
+      email: req.body.email
+    };
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      fieldsToUpdate,
+      {
+        new: true,
+        runValidators: true
+      }
+    ).select('-password');
 
   if (!updatedUser) {
     throw new NotFoundError('User not found');
@@ -152,27 +237,42 @@ export const updateDetails = asyncHandler(async (req: AuthRequest, res: Response
 // @desc    Update password
 // @route   PUT /api/auth/updatepassword
 // @access  Private
-export const updatePassword = asyncHandler(async (req: AuthRequest, res: Response) => {
-  if (!req.user?._id) {
-    throw new UnauthorizedError('Not authorized');
-  }
 
-  const foundUser = await User.findById(req.user._id);
-  if (!foundUser) {
-    throw new NotFoundError('User not found');
-  }
+export const updatePassword = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({
+        success: false,
+        message: 'Not authorized'
+      });
+      return;
+    }
 
-  // Check current password
-  const isMatch = await foundUser.comparePassword(req.body.currentPassword);
-  if (!isMatch) {
-    throw new UnauthorizedError('Current password is incorrect');
-  }
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+      return;
+    }
+
+    // Check current password
+    const isMatch = await user.comparePassword(req.body.currentPassword);
+    if (!isMatch) {
+      res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+      return;
+    }
 
   foundUser.password = req.body.newPassword;
   await foundUser.save();
 
-  // Generate new token
-  const token = generateToken(foundUser);
+    // Generate new token
+    const token = generateToken({ id: user.id, role: user.role });
+
 
   res.json({
     success: true,
@@ -203,10 +303,11 @@ export const getUser = async (req: Request, res: Response) => {
     const user = await User.findById(req.params.id).select('-password');
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({
@@ -236,10 +337,11 @@ export const updateUser = async (req: Request, res: Response) => {
     ).select('-password');
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({
@@ -266,10 +368,11 @@ export const deleteUser = async (req: Request, res: Response) => {
     );
 
     if (!user) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'User not found'
       });
+      return;
     }
 
     res.json({

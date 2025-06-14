@@ -3,39 +3,35 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { rateLimit } from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import compression from 'compression';
-import path from 'path';
 import { logger, stream } from './utils/logger';
-import { errorHandler } from './middleware/error';
+
 import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
 import { compressionMiddleware } from './middleware/compression';
+import { errorHandler } from './middleware/errorHandler';
+import { rateLimiter } from './middleware/rateLimit';
+import { applySecurityMiddleware } from './middleware/security';
+import { applyCacheMiddleware } from './middleware/cache';
+import { applyMonitoringMiddleware } from './middleware/monitoring';
+import { applyDocsMiddleware } from './middleware/docs';
 
 // Import routes
 import authRoutes from './routes/auth.routes';
-import productRoutes from './routes/product.routes';
+import userRoutes from './routes/user.routes';
 import customerRoutes from './routes/customer.routes';
+import productRoutes from './routes/product.routes';
 import saleRoutes from './routes/sale.routes';
-import ocrRoutes from './routes/ocr.routes';
+import reportRoutes from './routes/report.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 import auditRoutes from './routes/audit.routes';
 import metricsRoutes from './routes/metrics.routes';
-import pdfRoutes from './routes/pdf.routes';
-import emailRoutes from './routes/email.routes';
-import receiptRoutes from './routes/receipt.routes';
 import notificationRoutes from './routes/notification.routes';
 import backupRoutes from './routes/backup.routes';
-import reportRoutes from './routes/report.routes';
-import scheduledReportRoutes from './routes/scheduled-report.routes';
 import exportRoutes from './routes/export.routes';
 import importRoutes from './routes/import.routes';
-import syncRoutes from './routes/sync.routes';
 import validationRoutes from './routes/validation.routes';
-import userRoutes from './routes/user.routes';
 
 // Load environment variables
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/controlai_vendas';
-const PORT = process.env.PORT || 5000;
 
 // Create Express app
 const app = express();
@@ -52,43 +48,37 @@ mongoose.connect(MONGODB_URI)
     }
   });
 
-// Security middleware
+// Apply middleware
 app.use(helmet());
 app.use(cors());
-app.use(mongoSanitize());
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.',
-});
-app.use('/api/', limiter);
-
-// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Compression middleware
-app.use(compressionMiddleware);
-
-// Logging middleware
 app.use(morgan('combined', { stream }));
+app.use(compressionMiddleware);
+app.use(rateLimiter);
 app.use(requestLogger);
-app.use(errorLogger);
 app.use(performanceLogger);
 
-// Serve static files
-app.use('/reports', express.static(path.join(process.cwd(), 'reports')));
-app.use('/exports', express.static(path.join(process.cwd(), 'exports')));
+// Apply security middleware
+applySecurityMiddleware(app);
 
-// API routes
+// Apply cache middleware
+applyCacheMiddleware(app);
+
+// Apply monitoring middleware
+applyMonitoringMiddleware(app);
+
+// Apply documentation middleware
+applyDocsMiddleware(app);
+
+// Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/export', exportRoutes);
@@ -97,28 +87,24 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/metrics', metricsRoutes);
 app.use('/api/import', importRoutes);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
-});
-
-// Error handling middleware
+// Error handling
+app.use(errorLogger);
 app.use(errorHandler);
 
 // 404 handler
-app.use((req, res) => {
-  logger.warn(`Route not found: ${req.method} ${req.url}`);
+app.use((_, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
   });
 });
 
-// Start server
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
+// Health check
+app.get('/health', (_, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
   });
-}
+});
 
 export default app; 

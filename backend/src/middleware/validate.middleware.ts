@@ -10,9 +10,33 @@ export const validateRequest = (schema: Schema) => {
       stripUnknown: true
     });
 
-    if (error) {
-      const errorMessage = error.details.map(detail => detail.message).join(', ');
-      throw new BadRequestError(errorMessage);
+export const validate = (schema: ValidationSchema) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (schema.body) {
+        const { error } = schema.body.validate(req.body);
+        if (error) {
+          throw new BadRequestError(error.details[0].message);
+        }
+      }
+
+      if (schema.query) {
+        const { error } = schema.query.validate(req.query);
+        if (error) {
+          throw new BadRequestError(error.details[0].message);
+        }
+      }
+
+      if (schema.params) {
+        const { error } = schema.params.validate(req.params);
+        if (error) {
+          throw new BadRequestError(error.details[0].message);
+        }
+      }
+
+      return next();
+    } catch (error) {
+      return next(error);
     }
 
     next();

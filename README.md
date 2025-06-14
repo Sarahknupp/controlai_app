@@ -162,6 +162,73 @@ src/
 - `npm run build`: Compila TypeScript
 - `npm run test`: Executa testes
 
+## Deploy no Replit
+
+### Passos para rodar no Replit
+
+1. **Importe o projeto para o Replit**  
+   - Clique em "Create Repl" e selecione "Import from GitHub".
+   - Cole a URL do repositório:  
+     `https://github.com/seu-usuario/app_controlaivendas.git`
+
+2. **Configuração das variáveis de ambiente**  
+   - No painel esquerdo, clique em "Secrets" (ícone de cadeado).
+   - Adicione as variáveis necessárias, por exemplo:
+     - `PORT=5000`
+     - `MONGODB_URI=sua_uri_do_mongodb`
+     - `JWT_SECRET=seu_jwt_secret`
+     - `VITE_API_URL=http://localhost:5000/api` (para o frontend)
+
+3. **Instale as dependências**  
+   - No shell do Replit, execute:
+     ```bash
+     cd backend
+     npm install
+     cd ../frontend
+     npm install
+     ```
+
+4. **Build do Frontend**  
+   - Ainda na pasta `frontend`, execute:
+     ```bash
+     npm run build
+     ```
+   - Isso irá gerar a pasta `dist` com os arquivos de produção.
+
+5. **Rodando o Backend**  
+   - Volte para a pasta `backend`:
+     ```bash
+     cd ../backend
+     npm run start
+     ```
+   - Certifique-se de que o backend está configurado para servir os arquivos estáticos do frontend (pasta `dist`).
+
+6. **Acesse a aplicação**  
+   - O Replit irá fornecer uma URL pública para acessar sua aplicação.
+
+### Dicas Importantes para Deploy no Replit
+
+- **Porta:**  
+  Use a variável de ambiente `PORT` fornecida pelo Replit (geralmente já está disponível como `process.env.PORT`).
+- **Banco de Dados:**  
+  Use um MongoDB Atlas ou outro serviço externo, pois o Replit não suporta MongoDB local.
+- **Servir o Frontend pelo Backend:**  
+  Configure o backend para servir os arquivos estáticos do frontend (pasta `dist`).  
+  Exemplo em Express:
+  ```js
+  const express = require('express');
+  const path = require('path');
+  const app = express();
+
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  });
+  ```
+- **Scripts no Replit:**  
+  Você pode criar um script no arquivo `.replit` para rodar ambos (build e start) automaticamente.
+
 ## Contribuindo
 1. Faça um Fork do projeto
 2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
@@ -176,3 +243,89 @@ Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE.md](L
 Seu Nome - [@seutwitter](https://twitter.com/seutwitter) - email@example.com
 
 Link do Projeto: [https://github.com/seu-usuario/app_controlaivendas](https://github.com/seu-usuario/app_controlaivendas)# controlai_app
+
+## Deploy
+
+### Pré-requisitos
+
+1. Instale o Vercel CLI:
+```bash
+npm install -g vercel
+```
+
+2. Faça login no Vercel:
+```bash
+vercel login
+```
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+# Banco de Dados
+MONGODB_URI=sua_uri_mongodb
+REDIS_URL=sua_url_redis
+
+# Autenticação
+JWT_SECRET=seu_secret_jwt
+JWT_EXPIRES_IN=7d
+
+# Email
+SMTP_HOST=seu_host_smtp
+SMTP_PORT=587
+SMTP_USER=seu_usuario_smtp
+SMTP_PASS=sua_senha_smtp
+
+# Outros
+NODE_ENV=production
+PORT=3000
+```
+
+### Comandos de Deploy
+
+1. Deploy em Produção:
+```bash
+npm run deploy
+```
+
+2. Deploy em Staging:
+```bash
+npm run deploy:staging
+```
+
+3. Deploy Preview:
+```bash
+npm run deploy:preview
+```
+
+### Estrutura do Deploy
+
+- Frontend: `/build`
+- Backend: `/backend/src/server.ts`
+- API Routes: `/api/*`
+
+### Monitoramento
+
+Após o deploy, você pode monitorar sua aplicação no dashboard do Vercel:
+- Logs
+- Métricas de Performance
+- Erros
+- Deployments
+
+### Troubleshooting
+
+1. Se o build falhar:
+   - Verifique se todas as dependências estão instaladas
+   - Verifique se todas as variáveis de ambiente estão configuradas
+   - Verifique os logs de build no dashboard do Vercel
+
+2. Se a aplicação não iniciar:
+   - Verifique os logs de runtime no dashboard do Vercel
+   - Verifique se as variáveis de ambiente estão corretas
+   - Verifique se as portas estão configuradas corretamente
+
+3. Se houver problemas com o banco de dados:
+   - Verifique se a URI do MongoDB está correta
+   - Verifique se o banco está acessível
+   - Verifique se as credenciais estão corretas
