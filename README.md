@@ -1,9 +1,11 @@
 # Sistema de Gestão Empresarial (PDV)
 
 ## Sobre o Projeto
+
 Sistema completo para gestão empresarial com módulos de vendas, produção, estoque, contabilidade e muito mais. Desenvolvido com React, TypeScript e uma arquitetura moderna para oferecer uma experiência robusta e escalável.
 
 ### Principais Funcionalidades
+
 - **PDV (Ponto de Venda)**: Interface intuitiva para vendas
 - **Gestão de Estoque**: Controle completo de produtos e inventário
 - **Contabilidade**: Gestão fiscal e contábil integrada
@@ -14,6 +16,7 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
 - **Documentos Fiscais**: Emissão e gestão de NF-e, NFC-e, etc.
 
 ## Tecnologias Utilizadas
+
 - **Frontend**:
   - React 18+
   - TypeScript
@@ -32,6 +35,7 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
   - TypeScript
 
 ## Pré-requisitos
+
 - Node.js 18+
 - NPM ou Yarn
 - MongoDB
@@ -40,29 +44,35 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
 ## Instalação
 
 ### Backend
+
 1. Clone o repositório:
+
    ```bash
    git clone https://github.com/seu-usuario/app_controlaivendas.git
    cd app_controlaivendas
    ```
 
 2. Crie um novo diretório para o backend:
+
    ```bash
    mkdir backend
    cd backend
    ```
 
 3. Inicialize um novo projeto Node.js:
+
    ```bash
    npm init -y
    ```
 
 4. Instale as dependências necessárias:
+
    ```bash
    npm install express mongoose dotenv cors bcryptjs jsonwebtoken
    ```
 
 5. Crie a estrutura de diretórios:
+
    ```bash
    mkdir src
    mkdir src/controllers
@@ -73,6 +83,7 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
    ```
 
 6. Configure o arquivo .env:
+
    ```
    PORT=5000
    MONGODB_URI=sua_uri_do_mongodb
@@ -80,29 +91,35 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
    ```
 
 7. Inicie o servidor de desenvolvimento:
+
    ```bash
    npm run dev
    ```
 
 ### Frontend
+
 1. Na pasta raiz do projeto, crie um novo diretório para o frontend:
+
    ```bash
    mkdir frontend
    cd frontend
    ```
 
 2. Instale as dependências do projeto:
+
    ```bash
    npm install react react-dom react-router-dom @tanstack/react-query axios
    npm install -D typescript @types/react @types/react-dom
    ```
 
 3. Configure o arquivo .env na raiz do frontend:
+
    ```
    VITE_API_URL=http://localhost:5000/api
    ```
 
 4. Configure a integração com o backend no arquivo src/api/config.ts:
+
    ```typescript
    import axios from 'axios';
 
@@ -115,39 +132,44 @@ Sistema completo para gestão empresarial com módulos de vendas, produção, es
    ```
 
 5. Inicie o servidor de desenvolvimento:
+
    ```bash
    npm run dev
    ```
 
-O frontend estará disponível em http://localhost:5173 e se comunicará com o backend na porta 5000.
+O frontend estará disponível em <http://localhost:5173> e se comunicará com o backend na porta 5000.
 
 ## Como Executar com Docker Compose
 
 Para executar o projeto usando Docker Compose, siga estes passos:
 
 1. Certifique-se de ter o Docker e Docker Compose instalados:
+
    ```bash
    docker --version
    docker-compose --version
    ```
 
 2. Na raiz do projeto, execute:
+
    ```bash
    docker-compose up --build
    ```
 
 3. Os serviços estarão disponíveis em:
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:3001/api
-   - Health Check: http://localhost:3001/health
+   - Frontend: <http://localhost:5173>
+   - Backend API: <http://localhost:3001/api>
+   - Health Check: <http://localhost:3001/health>
    - MongoDB: mongodb://localhost:27017
 
 4. Para parar os containers:
+
    ```bash
    docker-compose down
    ```
 
 5. Para ver os logs:
+
    ```bash
    # Logs de todos os serviços
    docker-compose logs -f
@@ -161,6 +183,7 @@ Para executar o projeto usando Docker Compose, siga estes passos:
 ### Variáveis de Ambiente no Docker
 
 O Docker Compose configura automaticamente:
+
 - MongoDB:
   - Porta: 27017
   - Banco de dados: controlai_vendas
@@ -173,11 +196,13 @@ O Docker Compose configura automaticamente:
 
 - Frontend:
   - Porta: 5173
-  - VITE_BACKEND_URL: http://localhost:3001/api
+  - VITE_BACKEND_URL: <http://localhost:3001/api>
 
 Para sobrescrever estas variáveis, você pode:
+
 1. Criar um arquivo `.env` na raiz do projeto
 2. Ou passar as variáveis diretamente no comando:
+
    ```bash
    NODE_ENV=development docker-compose up
    ```
@@ -185,6 +210,7 @@ Para sobrescrever estas variáveis, você pode:
 ## Estrutura do Projeto
 
 ### Frontend
+
 ```
 src/
 ├── components/     # Componentes reutilizáveis
@@ -198,6 +224,7 @@ src/
 ```
 
 ### Backend
+
 ```
 src/
 ├── controllers/   # Controladores da API
@@ -211,6 +238,7 @@ src/
 ## Scripts Disponíveis
 
 ### Frontend
+
 - `npm run dev`: Inicia o servidor de desenvolvimento
 - `npm run build`: Gera build de produção
 - `npm run preview`: Visualiza build de produção
@@ -218,6 +246,7 @@ src/
 - `npm run test`: Executa testes
 
 ### Backend
+
 - `npm run dev`: Inicia o servidor em modo desenvolvimento
 - `npm run start`: Inicia o servidor em produção
 - `npm run build`: Compila TypeScript
@@ -242,6 +271,7 @@ src/
 
 3. **Instale as dependências**  
    - No shell do Replit, execute:
+
      ```bash
      cd backend
      npm install
@@ -251,17 +281,21 @@ src/
 
 4. **Build do Frontend**  
    - Ainda na pasta `frontend`, execute:
+
      ```bash
      npm run build
      ```
+
    - Isso irá gerar a pasta `dist` com os arquivos de produção.
 
 5. **Rodando o Backend**  
    - Volte para a pasta `backend`:
+
      ```bash
      cd ../backend
      npm run start
      ```
+
    - Certifique-se de que o backend está configurado para servir os arquivos estáticos do frontend (pasta `dist`).
 
 6. **Acesse a aplicação**  
@@ -276,6 +310,7 @@ src/
 - **Servir o Frontend pelo Backend:**  
   Configure o backend para servir os arquivos estáticos do frontend (pasta `dist`).  
   Exemplo em Express:
+
   ```js
   const express = require('express');
   const path = require('path');
@@ -287,10 +322,12 @@ src/
     res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
   });
   ```
+
 - **Scripts no Replit:**  
   Você pode criar um script no arquivo `.replit` para rodar ambos (build e start) automaticamente.
 
 ## Contribuindo
+
 1. Faça um Fork do projeto
 2. Crie uma Branch para sua Feature (`git checkout -b feature/AmazingFeature`)
 3. Faça commit das suas alterações (`git commit -m 'Add some AmazingFeature'`)
@@ -298,10 +335,12 @@ src/
 5. Abra um Pull Request
 
 ## Licença
+
 Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE.md](LICENSE.md) para detalhes.
 
 ## Contato
-Seu Nome - [@seutwitter](https://twitter.com/seutwitter) - email@example.com
+
+Seu Nome - [@seutwitter](https://twitter.com/seutwitter) - <email@example.com>
 
 Link do Projeto: [https://github.com/seu-usuario/app_controlaivendas](https://github.com/seu-usuario/app_controlaivendas)# controlai_app
 
@@ -310,11 +349,13 @@ Link do Projeto: [https://github.com/seu-usuario/app_controlaivendas](https://gi
 ### Pré-requisitos
 
 1. Instale o Vercel CLI:
+
 ```bash
 npm install -g vercel
 ```
 
 2. Faça login no Vercel:
+
 ```bash
 vercel login
 ```
@@ -346,16 +387,19 @@ PORT=3000
 ### Comandos de Deploy
 
 1. Deploy em Produção:
+
 ```bash
 npm run deploy
 ```
 
 2. Deploy em Staging:
+
 ```bash
 npm run deploy:staging
 ```
 
 3. Deploy Preview:
+
 ```bash
 npm run deploy:preview
 ```
@@ -369,6 +413,7 @@ npm run deploy:preview
 ### Monitoramento
 
 Após o deploy, você pode monitorar sua aplicação no dashboard do Vercel:
+
 - Logs
 - Métricas de Performance
 - Erros
