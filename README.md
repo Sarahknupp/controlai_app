@@ -3,6 +3,21 @@
 
 Este repositório contém o sistema ERP "ControlAI Vendas", com frontend em React + Vite e backend em Node.js + Express + TypeScript. A seguir, as instruções para instalação, configuração e deploy.
 
+## 🚀 Quick Start
+
+```bash
+git clone <repo>
+cd controlai_app
+npm install
+npm run dev
+```
+
+Ou utilize Docker Compose:
+
+```bash
+docker-compose up --build
+```
+
 ---
 
 ## 📁 Estrutura do Projeto
