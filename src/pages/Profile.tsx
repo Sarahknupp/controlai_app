@@ -134,11 +134,11 @@ const Profile: React.FC = () => {
                 </Button>
               </Form.Item>
             </Form>
-          </Card>
-        </div>
-      </div>
+          </TabPane>
+        </Tabs>
+      </Card>
     </div>
   );
 };
 
-export default Profile; 
+export default Profile;
