@@ -322,9 +322,11 @@ A documentação da API está disponível em `/api-docs` quando o servidor está
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
 
-## 📝 Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE.md](LICENSE.md) para detalhes.
+## Licença
 
-Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/seu-usuario/app-controlaivendas)# controlai_app
+Este projeto está licenciado sob a licença ISC - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+
+Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/Sarahknupp/controlai_app)# controlai_app
 
