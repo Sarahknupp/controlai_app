@@ -133,7 +133,6 @@ Workflow configurado em `.github/workflows/ci.yml`:
 4. Crie Pull Request
 
 ---
-=======
 # ControleAI Vendas
 
 Sistema de controle de vendas com recursos avançados de segurança e monitoramento.
@@ -311,15 +310,9 @@ A documentação da API está disponível em `/api-docs` quando o servidor está
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
 
-## Licença
-
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-
 ## 📝 Licença
 
-
-Este projeto está licenciado sob MIT. Veja \[LICENSE.md].
+Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE.md](LICENSE.md) para detalhes.
 
 Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/seu-usuario/app-controlaivendas)# controlai_app
 
