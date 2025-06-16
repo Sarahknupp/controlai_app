@@ -330,3 +330,29 @@ Este projeto está licenciado sob a licença ISC - veja o arquivo [LICENSE](LICE
 
 Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/Sarahknupp/controlai_app)# controlai_app
 
+
+## Deploy em Nuvem (Replit e Compose Cursor)
+
+Siga estas etapas para publicar a aplicação utilizando os agentes disponíveis:
+
+1. **Fork do Repositório**
+   - Faça um fork deste projeto na sua conta do GitHub e clone no ambiente de desenvolvimento desejado.
+2. **Configuração Local**
+   - Copie os arquivos `.env.example` do backend e do frontend para `.env` e ajuste as variáveis de ambiente.
+   - Execute `npm install` na raiz para baixar todas as dependências.
+3. **Testes Locais**
+   - Utilize o agente local (Cursor ou Replit AI) para rodar `npm run dev` e validar se o frontend (porta 5173) e o backend (porta 3001) estão funcionando.
+4. **Deploy via Replit**
+   - No Replit, importe o repositório e defina as variáveis de ambiente em "Secrets".
+   - Execute `npm run dev` ou configure um script de inicialização para rodar `docker-compose up -d` se preferir usar Docker.
+   - A aplicação será exposta pelo próprio Replit, permitindo testes rápidos em nuvem.
+5. **Deploy via Compose Cursor (Vercel/Render)**
+   - Utilize a função de deploy do Compose Cursor para criar uma build de produção.
+   - Rode `npm run build` no frontend e `npm run build` no backend.
+   - Em seguida, faça o upload para a plataforma de hospedagem (por exemplo, Vercel ou Render) configurando as variáveis de ambiente.
+6. **Banco de Dados em Nuvem**
+   - Para usar MongoDB Atlas, configure a variável `MONGODB_URI` apontando para a sua instância na nuvem.
+7. **Manutenção**
+   - Sempre que fizer alterações, abra um Pull Request com uma descrição clara das mudanças para facilitar a revisão pelos agentes.
+
+Essas etapas garantem um fluxo de publicação simplificado em ambientes como Replit ou serviços integrados ao Compose Cursor.
