@@ -1,19 +1,16 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import cors from 'cors';
-import helmet from 'helmet';
+import path from 'path';
 import morgan from 'morgan';
 
 import { logger, stream } from './utils/logger';
 
 import { requestLogger, errorLogger, performanceLogger } from './middleware/logging';
 import { compressionMiddleware } from './middleware/compression';
-import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimit';
 import { applySecurityMiddleware } from './middleware/security';
-import { applyCacheMiddleware } from './middleware/cache';
-import { applyMonitoringMiddleware } from './middleware/monitoring';
-import { applyDocsMiddleware } from './middleware/docs';
+import { protect, authorize } from './middleware/auth.middleware';
+import { UserRole } from './types/user';
 
 
 // Import routes
@@ -33,7 +30,7 @@ import importRoutes from './routes/import.routes';
 import validationRoutes from './routes/validation.routes';
 
 // Load environment variables
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/controlai_vendas';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/controlai_vendas';
 
 export const createApp = (): Express => {
   const app = express();
@@ -57,12 +54,7 @@ export const createApp = (): Express => {
   app.use(express.json());
 
   // Rate limiting
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.',
-  });
-  app.use('/api/', limiter);
+  app.use('/api/', rateLimiter);
 
   // Body parsing middleware
   app.use(express.urlencoded({ extended: true }));
@@ -133,26 +125,6 @@ export const createApp = (): Express => {
   return app;
 };
 
-// Health check
-app.get('/health', (_, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// rota raiz para evitar 404
-app.get('/', (_req, res): void => {
-  res.status(200).json({ message: 'Welcome to ControlAI ERP API' });
-});
-
-export default app; 
-
-// Start server
-if (process.env.NODE_ENV !== 'test') {
-  const app = createApp();
-  app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-  });
-} 
+const app = createApp();
+export default app;
 
