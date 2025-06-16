@@ -29,9 +29,13 @@ controlai-vendas/
 
 ## ⚙️ Configuração de Variáveis de Ambiente
 
-Na raiz de cada serviço (backend e frontend), crie um arquivo `.env` com as chaves abaixo.
+Cada serviço possui um arquivo `.env.example` com todas as chaves necessárias. Copie-o para `.env` e ajuste os valores conforme seu ambiente.
 
 ### Backend (`backend/.env`)
+
+```bash
+cp backend/.env.example backend/.env
+```
 
 env
 PORT=3001
@@ -41,6 +45,10 @@ REDIS_URL=<sua_url_redis>  # ex: redis://localhost:6379
 NODE_ENV=development
 
 ### Frontend (`frontend/.env`)
+
+```bash
+cp frontend/.env.example frontend/.env
+```
 
 env
 VITE_API_URL=<http://localhost:3001/api>
@@ -133,7 +141,6 @@ Workflow configurado em `.github/workflows/ci.yml`:
 4. Crie Pull Request
 
 ---
-=======
 # ControleAI Vendas
 
 Sistema de controle de vendas com recursos avançados de segurança e monitoramento.
@@ -221,10 +228,12 @@ git clone https://github.com/seu-usuario/controleai-vendas.git
 cd controleai-vendas
 
 
-2. Configure as variáveis de ambiente:
-bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
+2. Configure as variáveis de ambiente de cada serviço:
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+# Edite os arquivos `.env` com suas configurações
 
 
 3. Inicie os containers:
@@ -245,10 +254,12 @@ bash
 npm install
 
 
-3. Configure as variáveis de ambiente:
-bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
+3. Configure as variáveis de ambiente de cada serviço:
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+# Edite os arquivos `.env` com suas configurações
 
 
 4. Inicie o servidor:
@@ -311,15 +322,11 @@ A documentação da API está disponível em `/api-docs` quando o servidor está
 4. Push para a branch (`git push origin feature/nova-feature`)
 5. Abra um Pull Request
 
+
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+Este projeto está licenciado sob a licença ISC - veja o arquivo [LICENSE](LICENSE) para detalhes.
 
 
-## 📝 Licença
-
-
-Este projeto está licenciado sob MIT. Veja \[LICENSE.md].
-
-Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/seu-usuario/app-controlaivendas)# controlai_app
+Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/Sarahknupp/controlai_app)# controlai_app
 
