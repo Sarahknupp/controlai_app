@@ -148,6 +148,22 @@ Workflow configurado em `.github/workflows/ci.yml`:
 
 ---
 
+## 🧪 Executar Testes Localmente
+
+Instale as dependências com o comando recomendado e rode a suíte de testes:
+
+```bash
+npm ci --legacy-peer-deps
+npm test
+```
+
+Se necessário, crie um arquivo `.env.test` contendo variáveis como `SMTP_HOST`,
+`SMTP_USER`, `TWILIO_ACCOUNT_SID`, `FIREBASE_PROJECT_ID`, `REDIS_HOST` etc.,
+utilizadas nos testes do backend. Valores padrão são definidos em
+`backend/src/tests/setup.ts`.
+
+---
+
 ## Contribuição
 
 1. Fork deste repositório
