@@ -227,6 +227,7 @@ Se necessário, crie `.env.test` com variáveis como `SMTP_HOST`, `SMTP_USER`, `
 - `npm start` – executa o servidor compilado
 - `npm test` – executa a suíte de testes
 - `npm run lint` – roda o ESLint
+- `npm run type-check` – verifica os tipos TypeScript sem gerar arquivos
 
 ## ✅ CI/CD
 
