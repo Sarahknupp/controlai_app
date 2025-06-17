@@ -21,7 +21,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Conexão com MongoDB
-const MONGODB_URI = 'mongodb+srv://sarahjenniferalvesknupp:Brocolis3388@controlai.vj9ztrr.mongodb.net/controlai_vendas?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI ||
+  'mongodb://localhost:27017/controlai_vendas';
 
 async function connectDB() {
   try {
