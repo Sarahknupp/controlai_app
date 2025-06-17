@@ -148,6 +148,23 @@ Workflow configurado em `.github/workflows/ci.yml`:
 
 ---
 
+## Executando Testes
+
+Para rodar a suíte de testes localmente:
+
+```bash
+# Instale as dependências
+npm ci --legacy-peer-deps
+
+# Execute os testes
+npm test
+```
+
+Alguns testes exigem variáveis de ambiente definidas conforme os exemplos em
+`backend/.env.example` e `frontend/.env.example`.
+
+---
+
 ## Contribuição
 
 1. Fork deste repositório
