@@ -50,3 +50,9 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+replitapp
+coverage/
+
+
+coverage/

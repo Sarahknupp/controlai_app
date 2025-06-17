@@ -77,7 +77,7 @@ A robust sales management system backend built with Node.js, Express, TypeScript
    ```env
    NODE_ENV=development
    PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/controlai_vendas
+   MONGODB_URI=mongodb://localhost:27017/controlai_vendas  # or your MongoDB URI
    JWT_SECRET=your-secret-key
    JWT_EXPIRE=24h
    ```
@@ -323,4 +323,4 @@ npm run deploy:preview # Deploy em preview
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes. 
+Este projeto está sob a licença ISC. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.

@@ -1,127 +1,88 @@
+# ControlAI Vendas ERP
 
-# ControlAI Vendas - Sistema ERP Completo
+ControlAI Vendas is a full stack ERP system with a React + Vite frontend and a Node.js + Express backend written in TypeScript.
 
-Este repositório contém o sistema ERP "ControlAI Vendas", com frontend em React + Vite e backend em Node.js + Express + TypeScript. A seguir, as instruções para instalação, configuração e deploy.
+## Quick Start
 
----
-
-## 📁 Estrutura do Projeto
-
-controlai-vendas/
-├── backend/             # API Express (TypeScript)
-│   ├── src/
-│   ├── package.json
-│   └── tsconfig.json
-├── frontend/            # App React + Vite (TypeScript)
-│   ├── src/
-│   ├── package.json
-│   └── tsconfig.json
-├── docker-compose.yml   # Orquestração Docker (frontend, backend, mongodb)
-└── README.md            # Este arquivo
-
-## 🔧 Pré-requisitos
-
-* [Node.js 18+ e npm](https://nodejs.org/)
-* [Docker & Docker Compose](https://docs.docker.com/compose/)
-* Conta MongoDB Atlas (para produção) ou MongoDB local
-
----
-
-## ⚙️ Configuração de Variáveis de Ambiente
-
-Na raiz de cada serviço (backend e frontend), crie um arquivo `.env` com as chaves abaixo.
-
-### Backend (`backend/.env`)
-
-env
-PORT=3001
-MONGODB_URI=<sua_uri_mongodb>
-JWT_SECRET=<seu_jwt_secret>
-REDIS_URL=<sua_url_redis>  # ex: redis://localhost:6379
-NODE_ENV=development
-
-### Frontend (`frontend/.env`)
-
-env
-VITE_API_URL=<http://localhost:3001/api>
-
-> **Importante:** nunca commite credenciais reais no repositório. Utilize variáveis de ambiente.
-
----
-
-## 🚀 Desenvolvimento Local
-
-### Backend
 
 bash
-cd backend
-dotenv -e .env npm install
-npm run dev  # usa ts-node-dev
+git clone <repo>
+cd controlai_app
+npm install
+npm run dev
 
-A API estará em `http://localhost:3001/api` e health-check em `/health`.
 
-### Frontend
-
-bash
-cd frontend
-dotenv -e .env npm install
-npm run dev  # usa Vite
-
-O app ficará disponível em `http://localhost:5173`.
-
----
-
-## 🐳 Docker Compose
-
-Tudo em um comando (na raiz):
+Or run everything with Docker Compose:
 
 bash
 docker-compose up --build
 
-* Frontend: [http://localhost:5173](http://localhost:5173)
-* Backend API: [http://localhost:3001/api](http://localhost:3001/api)
-* Health: [http://localhost:3001/health](http://localhost:3001/health)
-* MongoDB: mongodb://mongodb:27017/controlai\_vendas
 
-Para parar e remover containers:
+## Installation
+
+1. Install **Node.js 18+** and **Docker Compose**.
+2. Copy environment configuration files:
+## 📁 Estrutura do Projeto
+
+controlai_app/
+├── backend/    # API Express
+├── frontend/   # Aplicação React + Vite
+└── docs/       # Documentação
+
+
+## 🔧 Pré-requisitos
+
+- Node.js 18+
+- Docker e Docker Compose (opcional)
+- Instância do MongoDB (local ou Atlas)
+
+## ⚙️ Configuração de Ambiente
+
+Cada serviço possui um `.env.example`. Copie para `.env` e ajuste conforme o seu ambiente:
+
 
 bash
-docker-compose down
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 
----
 
-## ✅ CI/CD (GitHub Actions)
+3. Edit the `.env` files with your settings.
+4. Start the development servers:
+bash
+cd backend && npm run dev
+cd ../frontend && npm run dev
 
-Workflow configurado em `.github/workflows/ci.yml`:
 
-1. `npm ci`
-2. `npm run lint`
-3. `npm test`
-4. Build & push Docker
-5. Deploy via SSH (docker-compose pull && up -d)
+## Contributing
 
-> **Segredos** configurados no GitHub (`Settings > Secrets`):
->
-> * `MONGODB_URI`, `JWT_SECRET`, `REDIS_URL`, `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `SSH_HOST`, `SSH_USERNAME`, `SSH_KEY`
+1. Fork this repository.
+2. Create a feature branch: `git checkout -b feature/my-feature`.
+3. Commit your changes and push the branch.
+4. Open a Pull Request.
 
----
+## Documentation
 
-## 📚 Scripts Disponíveis
+Additional documentation is available in the [`docs/`](docs) folder. A Portuguese version of this README can be found in [README_pt.md](README_pt.md).
 
-### Backend (`package.json`)
+## License
 
-* `npm run dev`: inicia em modo desenvolvimento
-* `npm start`: inicia em produção
-* `npm run build`: compila TypeScript
-* `npm test`: executa testes via Jest
+This project is licensed under the ISC license. See [LICENSE](LICENSE) for details.
 
-### Frontend (`package.json`)
+**Importante:** nunca versionar credenciais reais.
 
-* `npm run dev`: inicia Vite
-* `npm run build`: gera build de produção
-* `npm run preview`: serve build de produção
-* `npm run lint`: ESLint
-* `npm test`: testes (Jest + Testing Library)
+## 🧪 Executar Testes Localmente
+
+Instale as dependências com o comando recomendado e rode a suíte de testes:
+
+bash
+npm ci --legacy-peer-deps
+npm test
+
+
+Se necessário, crie um arquivo `.env.test` contendo variáveis como `SMTP_HOST`,
+`SMTP_USER`, `TWILIO_ACCOUNT_SID`, `FIREBASE_PROJECT_ID`, `REDIS_HOST` etc.,
+utilizadas nos testes do backend. Valores padrão são definidos em
+`backend/src/tests/setup.ts`.
 
 ---
 
@@ -133,7 +94,6 @@ Workflow configurado em `.github/workflows/ci.yml`:
 4. Crie Pull Request
 
 ---
-=======
 # ControleAI Vendas
 
 Sistema de controle de vendas com recursos avançados de segurança e monitoramento.
@@ -211,115 +171,91 @@ app-controlaivendas/
 - Redis 6+
 - Docker e Docker Compose (opcional)
 
-## Instalação
 
-### Usando Docker (Recomendado)
-
-1. Clone o repositório:
+### Backend
 bash
-git clone https://github.com/seu-usuario/controleai-vendas.git
-cd controleai-vendas
-
-
-2. Configure as variáveis de ambiente:
-bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
-
-
-3. Inicie os containers:
-bash
-docker-compose up -d
-
-
-### Instalação Manual
-
-1. Clone o repositório:
-bash
-git clone https://github.com/seu-usuario/controleai-vendas.git
-cd controleai-vendas
-
-
-2. Instale as dependências:
-bash
+cd backend
 npm install
-
-
-3. Configure as variáveis de ambiente:
-bash
-cp .env.example .env
-# Edite o arquivo .env com suas configurações
-
-
-4. Inicie o servidor:
-bash
 npm run dev
 
 
-## Desenvolvimento
+A API estará em `http://localhost:3001/api`.
 
-### Scripts Disponíveis
+### Frontend
 
-- `npm run dev`: Inicia o servidor em modo desenvolvimento
-- `npm run build`: Compila o TypeScript
-- `npm start`: Inicia o servidor em modo produção
-- `npm test`: Executa os testes
-- `npm run lint`: Executa o linter
-- `npm run format`: Formata o código
-
-### Estrutura do Projeto
+bash
+cd frontend
+npm install
+npm run dev
 
 
-backend/
-  ├── src/
-  │   ├── config/         # Configurações
-  │   ├── middleware/     # Middlewares
-  │   ├── models/         # Modelos do MongoDB
-  │   ├── routes/         # Rotas da API
-  │   ├── services/       # Serviços
-  │   ├── types/          # Tipos TypeScript
-  │   └── utils/          # Utilitários
-  ├── tests/              # Testes
-  └── Dockerfile          # Configuração do Docker
+Abra `http://localhost:5173` no navegador.
+
+## 🐳 Docker Compose
+
+Execute na raiz do projeto:
+
+bash
+docker-compose up --build
 
 
-## Segurança
+- Frontend: <http://localhost:5173>
+- Backend: <http://localhost:3001/api>
+- Health: <http://localhost:3001/health>
 
-- Autenticação JWT com refresh tokens
-- Proteção contra ataques de força bruta
-- Validação de entrada de dados
-- Sanitização de dados
-- Headers de segurança
-- Logs de auditoria
+Para parar:
 
-## Monitoramento
+bash
+docker-compose down
 
-- Métricas de performance
-- Logs de erros
-- Monitoramento de recursos
-- Alertas automáticos
 
-## API Documentation
+## 🧪 Executar Testes Localmente
 
-A documentação da API está disponível em `/api-docs` quando o servidor está rodando.
+Instale as dependências e rode os testes:
+
+bash
+npm ci --legacy-peer-deps
+npm test
+
+
+Se necessário, crie `.env.test` com variáveis como `SMTP_HOST`, `SMTP_USER`, `TWILIO_ACCOUNT_SID`, `FIREBASE_PROJECT_ID`, `REDIS_HOST` etc. Valores padrão encontram-se em `backend/src/tests/setup.ts`. Alguns testes também utilizam as chaves exemplificadas em `backend/.env.example` e `frontend/.env.example`.
+
+## 📚 Scripts Úteis
+
+- `npm run dev` – inicia modo desenvolvimento
+- `npm run build` – gera build de produção
+- `npm start` – executa o servidor compilado
+- `npm test` – executa a suíte de testes
+- `npm run lint` – roda o ESLint
+- `npm run type-check` – verifica os tipos TypeScript sem gerar arquivos
+
+## ✅ CI/CD
+
+O workflow do GitHub Actions realiza lint, testes e build das imagens Docker, além do deploy via SSH.
+
+## Sobre o Projeto
+
+Plataforma de gestão empresarial com módulos de vendas, estoque, produção e contabilidade. Inclui recursos de segurança, monitoramento e emissão de documentos fiscais.
+
+### Principais Funcionalidades
+
+- **PDV (Ponto de Venda)**
+- **Gestão de Estoque**
+- **Contabilidade Integrada**
+- **Produção**
+- **Relatórios e Insights**
+- **Gestão de Usuários**
+- **Certificados Digitais**
+- **Documentos Fiscais (NF-e, NFC-e, etc.)**
 
 ## Contribuição
 
-1. Fork o projeto
-2. Crie sua branch de feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+1. Faça um fork deste repositório.
+2. Crie uma branch: `git checkout -b feature/minha-feature`.
+3. Commit suas alterações.
+4. Abra um Pull Request.
 
 ## Licença
 
-Este projeto está licenciado sob a licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-
-## 📝 Licença
-
-
-Este projeto está licenciado sob MIT. Veja \[LICENSE.md].
-
-Link do Projeto: [https://github.com/seu-usuario/app-controlaivendas](https://github.com/seu-usuario/app-controlaivendas)# controlai_app
+Distribuído sob a licença ISC. Consulte o arquivo [LICENSE](LICENSE) para detalhes.
 
