@@ -8,6 +8,7 @@ import { UserService } from '../services/user.service';
 import { rateLimit } from 'express-rate-limit';
 import { SecurityMonitorService } from '../services/security-monitor.service';
 import { logger } from '../config/logger';
+import { asyncHandler } from '../utils/asyncHandler';
 
 // Extend Request type to include user
 export interface AuthRequest extends Request {
@@ -84,29 +85,6 @@ export const protect = asyncHandler(async (req: AuthRequest, res: Response, next
   }
 });
 
-// Middleware para autenticação
-export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ success: false, message: 'No authorization header' });
-  }
-  const [bearer, token] = authHeader.split(' ');
-  if (bearer !== 'Bearer' || !token) {
-    return res.status(401).json({ success: false, message: 'Invalid authorization header format' });
-  }
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role
-    };
-    next();
-  } catch (error) {
-    return res.status(401).json({ success: false, message: 'Invalid token' });
-
-  }
-};
 
 // Middleware para autorização por role
 export const authorize = (...roles: UserRole[]) => {
@@ -118,8 +96,7 @@ export const authorize = (...roles: UserRole[]) => {
       });
     }
     next();
-  });
-
+  };
 };
 
 // Require email verification
@@ -142,28 +119,6 @@ export const requireEmailVerification = (
 // Validate ObjectId middleware
 export const validateObjectId = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   if (!req.params.id?.match(/^[0-9a-fA-F]{24}$/)) {
-
-    throw new UnauthorizedError('Invalid ID format');
-  }
-  next();
-});
-
-
-// Export default para facilitar mocks
-export default {
-  authenticate,
-  authorize
-};
-
-// Export authenticateToken function
-export function authenticateToken(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.sendStatus(401);
-  // validação do token (JWT.verify, etc.)
-  next();
-} 
-
     securityMonitor.logSecurityEvent('INVALID_OBJECT_ID', {
       path: req.path,
       id: req.params.id
@@ -174,7 +129,16 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     });
   }
   next();
-};
+});
+
+// Export authenticateToken function
+export function authenticateToken(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+  // validação do token (JWT.verify, etc.)
+  next();
+}
 
 export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   try {
