@@ -3,7 +3,7 @@ import { QueueMonitorService } from '../services/queue-monitor.service';
 import { AuthGuard } from '../guards/auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { UserRole } from '../types/user.types';
+import { UserRole } from '../types/user';
 
 @Controller('queue-monitor')
 @UseGuards(AuthGuard, RolesGuard)
