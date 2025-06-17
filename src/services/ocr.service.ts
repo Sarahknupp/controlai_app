@@ -1,7 +1,6 @@
-import { BaseService } from './base.service';
+import BaseService from './base.service';
 import { handleError } from '../utils/error';
 import { auditService } from './audit.service';
-import { EntityType, AuditAction } from '../types/audit';
 import { Product } from '../types/product';
 
 export interface OCRResult {
@@ -70,7 +69,7 @@ class OCRService extends BaseService {
   };
 
   constructor() {
-    super('ocr');
+    super();
   }
 
   async scanImage(file: File): Promise<OCRResult[]> {
@@ -113,7 +112,7 @@ class OCRService extends BaseService {
       formData.append('config', JSON.stringify(this.config));
       formData.append('rules', JSON.stringify(this.rules));
 
-      const response = await this.post<ProductImportResult>('/import', formData, {
+      const response = await this.post('/import', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -180,7 +179,7 @@ class OCRService extends BaseService {
 
   async getStats(): Promise<OCRStats> {
     try {
-      const response = await this.get<OCRStats>('/stats');
+      const response = await this.get('/stats');
       return response;
     } catch (error) {
       handleError(error);

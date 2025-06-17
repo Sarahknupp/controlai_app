@@ -88,7 +88,7 @@ const addReportFooter = (
   const pageWidth = doc.internal.pageSize.width;
   const pageHeight = doc.internal.pageSize.height;
   
-  const totalPages = doc.internal.getNumberOfPages();
+  const totalPages = (doc as any).internal.getNumberOfPages();
   
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -895,7 +895,7 @@ export const generateTrialBalance = (
   doc.autoTable({
     startY: startY + 5,
     head: [tableColumns.map(col => col.header)],
-    body: tableData.map(row => [row.code, row.name, row.debit, row.credit]),
+    body: tableData.map((row: any) => [row.code, row.name, row.debit, row.credit]),
     theme: 'grid',
     headStyles: {
       fillColor: [245, 158, 11], // amber-600
@@ -913,7 +913,7 @@ export const generateTrialBalance = (
       fontSize: 9,
       cellPadding: 3
     },
-    didParseCell: (data) => {
+    didParseCell: (data: any) => {
       const rowIndex = data.row.index;
       const account = tableData[rowIndex];
       
