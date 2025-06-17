@@ -1,30 +1,34 @@
-# ControlAI Vendas
+# ControlAI Vendas ERP
 
-Sistema ERP completo composto por backend Node.js/Express com TypeScript e frontend React com Vite.
+ControlAI Vendas is a full stack ERP system with a React + Vite frontend and a Node.js + Express backend written in TypeScript.
 
-## 🚀 Quick Start
+## Quick Start
 
-```bash
+
+bash
 git clone <repo>
 cd controlai_app
 npm install
 npm run dev
-```
 
-Ou utilize Docker Compose:
 
-```bash
+Or run everything with Docker Compose:
+
+bash
 docker-compose up --build
-```
 
+
+## Installation
+
+1. Install **Node.js 18+** and **Docker Compose**.
+2. Copy environment configuration files:
 ## 📁 Estrutura do Projeto
 
-```
 controlai_app/
 ├── backend/    # API Express
 ├── frontend/   # Aplicação React + Vite
 └── docs/       # Documentação
-```
+
 
 ## 🔧 Pré-requisitos
 
@@ -36,32 +40,54 @@ controlai_app/
 
 Cada serviço possui um `.env.example`. Copie para `.env` e ajuste conforme o seu ambiente:
 
-```bash
+
+bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
-```
 
-> **Importante:** nunca versionar credenciais reais.
+
+3. Edit the `.env` files with your settings.
+4. Start the development servers:
+bash
+cd backend && npm run dev
+cd ../frontend && npm run dev
+
+
+## Contributing
+
+1. Fork this repository.
+2. Create a feature branch: `git checkout -b feature/my-feature`.
+3. Commit your changes and push the branch.
+4. Open a Pull Request.
+
+## Documentation
+
+Additional documentation is available in the [`docs/`](docs) folder. A Portuguese version of this README can be found in [README_pt.md](README_pt.md).
+
+## License
+
+This project is licensed under the ISC license. See [LICENSE](LICENSE) for details.
+
+**Importante:** nunca versionar credenciais reais.
 
 ## Desenvolvimento Local
 
 ### Backend
-
-```bash
+bash
 cd backend
 npm install
 npm run dev
-```
+
 
 A API estará em `http://localhost:3001/api`.
 
 ### Frontend
 
-```bash
+bash
 cd frontend
 npm install
 npm run dev
-```
+
 
 Abra `http://localhost:5173` no navegador.
 
@@ -69,9 +95,9 @@ Abra `http://localhost:5173` no navegador.
 
 Execute na raiz do projeto:
 
-```bash
+bash
 docker-compose up --build
-```
+
 
 - Frontend: <http://localhost:5173>
 - Backend: <http://localhost:3001/api>
@@ -79,18 +105,18 @@ docker-compose up --build
 
 Para parar:
 
-```bash
+bash
 docker-compose down
-```
+
 
 ## 🧪 Executar Testes Localmente
 
 Instale as dependências e rode os testes:
 
-```bash
+bash
 npm ci --legacy-peer-deps
 npm test
-```
+
 
 Se necessário, crie `.env.test` com variáveis como `SMTP_HOST`, `SMTP_USER`, `TWILIO_ACCOUNT_SID`, `FIREBASE_PROJECT_ID`, `REDIS_HOST` etc. Valores padrão encontram-se em `backend/src/tests/setup.ts`. Alguns testes também utilizam as chaves exemplificadas em `backend/.env.example` e `frontend/.env.example`.
 
@@ -131,3 +157,4 @@ Plataforma de gestão empresarial com módulos de vendas, estoque, produção e 
 ## Licença
 
 Distribuído sob a licença ISC. Consulte o arquivo [LICENSE](LICENSE) para detalhes.
+
