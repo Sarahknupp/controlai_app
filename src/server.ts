@@ -21,8 +21,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Conexão com MongoDB
-const MONGODB_URI = process.env.MONGODB_URI ??
-  'mongodb://localhost:27017/controlai_vendas';
+const { MONGODB_URI = 'mongodb://localhost:27017/controlai_vendas' } = process.env;
 
 async function connectDB() {
   try {
@@ -44,10 +43,10 @@ app.use('/api/payments', paymentRoutes);
 
 // Rota de status/health check
 app.get('/', (req: Request, res: Response) => {
-  res.json({ 
+  res.json({
     message: 'API ControlAI Vendas',
     status: 'online',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -57,8 +56,8 @@ app.get('/health', (req: Request, res: Response) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     services: {
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    }
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    },
   });
 });
 
@@ -71,12 +70,14 @@ const PORT = parseInt(process.env.PORT, 10) || 3001;
 async function startServer() {
   try {
     await connectDB();
-    app.listen(PORT, () => {
-      console.log(`✅ Backend iniciado na porta ${PORT}`);
-    }).on('error', err => {
-      console.error(`❌ Erro ao iniciar servidor: ${err.message}`);
-      process.exit(1);
-    });
+    app
+      .listen(PORT, () => {
+        console.log(`✅ Backend iniciado na porta ${PORT}`);
+      })
+      .on('error', err => {
+        console.error(`❌ Erro ao iniciar servidor: ${err.message}`);
+        process.exit(1);
+      });
   } catch (error) {
     console.error('❌ Erro ao iniciar o servidor:', error);
     process.exit(1);
@@ -84,7 +85,7 @@ async function startServer() {
 }
 
 // Tratamento de erros não capturados
-process.on('unhandledRejection', (error) => {
+process.on('unhandledRejection', error => {
   console.error('🔥 Erro não tratado:', error);
   process.exit(1);
 });
@@ -95,4 +96,4 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-startServer(); 
+startServer();

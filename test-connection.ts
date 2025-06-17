@@ -6,7 +6,7 @@ dotenv.config();
 // Configuração para evitar warnings do Mongoose
 mongoose.set('strictQuery', true);
 
-const MONGODB_URI = process.env.MONGODB_URI ?? 'mongodb://localhost:27017/controlai_vendas';
+const { MONGODB_URI = 'mongodb://localhost:27017/controlai_vendas' } = process.env;
 
 async function testConnection() {
   try {
@@ -15,13 +15,16 @@ async function testConnection() {
     console.log('✅ Conectado ao MongoDB com sucesso!');
     console.log(`📦 Database: ${mongoose.connection.name}`);
     console.log(`🌐 Host: ${mongoose.connection.host}`);
-    
+
     // Testar se podemos listar as coleções
     if (mongoose.connection.db) {
       const collections = await mongoose.connection.db.listCollections().toArray();
-      console.log('📋 Coleções disponíveis:', collections.map(c => c.name));
+      console.log(
+        '📋 Coleções disponíveis:',
+        collections.map(c => c.name)
+      );
     }
-    
+
     await mongoose.connection.close();
     console.log('🔒 Conexão fechada');
   } catch (error) {
@@ -34,4 +37,4 @@ async function testConnection() {
   }
 }
 
-testConnection(); 
+testConnection();
