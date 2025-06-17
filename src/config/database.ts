@@ -2,7 +2,9 @@ import mongoose from 'mongoose';
 import { logger } from '../utils/logger';
 
 // Configurações do MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://sarahjenniferalvesknupp:<db_password>@controlai.vj9ztrr.mongodb.net/controlai_vendas?retryWrites=true&w=majority';
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  'mongodb://localhost:27017/controlai_vendas';
 
 // Opções de conexão otimizadas para Atlas
 const MONGODB_OPTIONS = {
