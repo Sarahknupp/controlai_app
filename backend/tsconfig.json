@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-
     "target": "ES2020",
     "module": "CommonJS",
     "lib": ["ES2020"],
@@ -17,7 +16,7 @@
     "allowJs": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
 
     "sourceMap": true,
     "declaration": true,
@@ -26,8 +25,7 @@
       "@/*": ["src/*"]
     },
     "typeRoots": ["./node_modules/@types", "./src/types"]
-
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
-} 
+}
