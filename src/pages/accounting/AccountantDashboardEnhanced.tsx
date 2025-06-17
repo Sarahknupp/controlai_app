@@ -504,6 +504,7 @@ export const AccountantDashboardEnhanced: React.FC = () => {
                         {report.status === 'generated' && report.filePath && (
                           <button
                             className="text-blue-600 hover:text-blue-800"
+                            title="Download Report"
                           >
                             <Download className="h-4 w-4" />
                           </button>
