@@ -3,7 +3,7 @@ import { NotificationMetricsService, AlertThresholds } from '../services/notific
 import { AuthGuard } from '../guards/auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { UserRole } from '../types/user.types';
+import { UserRole } from '../types/user';
 
 @Controller('notification-metrics')
 @UseGuards(AuthGuard, RolesGuard)
