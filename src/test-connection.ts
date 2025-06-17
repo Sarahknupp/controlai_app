@@ -6,7 +6,7 @@ dotenv.config();
 // Configuração para evitar warnings do Mongoose
 mongoose.set('strictQuery', true);
 
-const MONGODB_URI = process.env.MONGODB_URI ||
+const MONGODB_URI = process.env.MONGODB_URI ??
   'mongodb://localhost:27017/controlai_vendas';
 
 async function testConnection() {
