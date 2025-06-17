@@ -1,4 +1,4 @@
-import { IPayment } from '../../backend/src/models/Payment';
+import { IPayment } from '../types/sale';
 import { ISale } from '../types/sale';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

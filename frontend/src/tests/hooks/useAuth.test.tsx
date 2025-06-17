@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '../../hooks/useAuth';
 import '@testing-library/jest-dom';
 
 // Mock fetch
+const originalFetch = global.fetch;
 global.fetch = jest.fn();
 
 // Test component that uses the auth hook
@@ -153,4 +154,7 @@ describe('useAuth', () => {
 
     console.error = consoleError;
   });
-}); 
+  afterAll(() => {
+    global.fetch = originalFetch;
+  });
+});
