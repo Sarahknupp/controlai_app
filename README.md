@@ -70,7 +70,107 @@ This project is licensed under the ISC license. See [LICENSE](LICENSE) for detai
 
 **Importante:** nunca versionar credenciais reais.
 
-## Desenvolvimento Local
+## 🧪 Executar Testes Localmente
+
+Instale as dependências com o comando recomendado e rode a suíte de testes:
+
+bash
+npm ci --legacy-peer-deps
+npm test
+
+
+Se necessário, crie um arquivo `.env.test` contendo variáveis como `SMTP_HOST`,
+`SMTP_USER`, `TWILIO_ACCOUNT_SID`, `FIREBASE_PROJECT_ID`, `REDIS_HOST` etc.,
+utilizadas nos testes do backend. Valores padrão são definidos em
+`backend/src/tests/setup.ts`.
+
+---
+
+## Contribuição
+
+1. Fork deste repositório
+2. Crie uma branch: `git checkout -b feature/nova-feature`
+3. Faça commits claros
+4. Crie Pull Request
+
+---
+# ControleAI Vendas
+
+Sistema de controle de vendas com recursos avançados de segurança e monitoramento.
+
+## Sobre o Projeto
+Sistema completo para gestão empresarial com módulos de vendas, produção, estoque, contabilidade e muito mais. Desenvolvido com React, TypeScript e uma arquitetura moderna para oferecer uma experiência robusta e escalável.
+
+### Principais Funcionalidades
+- **PDV (Ponto de Venda)**: Interface intuitiva para vendas
+- **Gestão de Estoque**: Controle completo de produtos e inventário
+- **Contabilidade**: Gestão fiscal e contábil integrada
+- **Produção**: Controle de processos produtivos
+- **Relatórios**: Análises e insights detalhados
+- **Gestão de Usuários**: Controle de acesso e permissões
+- **Certificados Digitais**: Gerenciamento de certificados A1/A3
+- **Documentos Fiscais**: Emissão e gestão de NF-e, NFC-e, etc.
+
+## Estrutura do Projeto
+
+app-controlaivendas/
+├── frontend/               # Aplicação React
+│   ├── src/
+│   │   ├── components/    # Componentes React
+│   │   ├── services/      # Serviços e APIs
+│   │   ├── types/         # Definições de tipos TypeScript
+│   │   ├── hooks/         # Custom hooks
+│   │   └── routes/        # Configuração de rotas
+│   └── public/            # Arquivos estáticos
+│
+├── backend/               # API Node.js/Express
+│   ├── src/
+│   │   ├── controllers/  # Controladores
+│   │   ├── services/     # Serviços
+│   │   ├── models/       # Modelos do banco de dados
+│   │   ├── routes/       # Rotas da API
+│   │   ├── middleware/   # Middlewares
+│   │   ├── utils/        # Utilitários
+│   │   └── templates/    # Templates de e-mail
+│   └── tests/            # Testes
+│
+└── docs/                 # Documentação
+
+
+## Tecnologias Principais
+
+- **Frontend**:
+  - React 18
+  - TypeScript
+  - Material-UI
+  - Axios
+  - React Router
+
+- **Backend**:
+  - Node.js
+  - Express
+  - TypeScript
+  - MongoDB
+  - JWT Authentication
+
+## Funcionalidades
+
+- Autenticação com 2FA (Two-Factor Authentication)
+- Monitoramento de desempenho em tempo real
+- Compressão de respostas para otimização
+- Rate limiting para proteção contra ataques
+- Cache inteligente para melhor performance
+- Documentação Swagger/OpenAPI
+- Testes automatizados
+- Containerização com Docker
+
+## Requisitos
+
+- Node.js 18+
+- MongoDB 4.4+
+- Redis 6+
+- Docker e Docker Compose (opcional)
+
 
 ### Backend
 bash
