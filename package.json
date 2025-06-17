@@ -95,7 +95,7 @@
     "@types/react-dropzone": "^5.1.0",
     "@types/supertest": "^6.0.2",
     "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.6",
+    "@types/swagger-ui-express": "^4.1.8",
     "@types/tesseract.js": "^2.0.0",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
@@ -110,17 +110,16 @@
     "husky": "^9.0.11",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
-    "lint-staged": "^15.2.2",
+
     "mongodb-memory-server": "^9.1.6",
-    "normalize-path": "^3.0.0",
-    "pkg-dir": "^9.0.0",
-    "prettier": "^3.2.5",
     "supertest": "^6.3.4",
     "ts-jest": "^29.1.2",
     "ts-node-dev": "^2.0.0",
+    "typescript": "^5.3.3",
 
-    "typescript": "^5.8.3"
+    "jest-environment-jsdom": "^29.7.0",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5"
 
   },
   "lint-staged": {
