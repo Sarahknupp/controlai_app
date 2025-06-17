@@ -25,11 +25,7 @@ export default {
   ],
   verbose: true,
   moduleDirectories: ['node_modules', 'backend/src'],
-  moduleFileExtensions: ['ts', 'js', 'json'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-  transform: {
-    '^.+\\.ts$': 'ts-jest'
-  },
   globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.json'
