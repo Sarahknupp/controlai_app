@@ -1,0 +1,63 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Backend (ts-node-dev)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "ts-node-dev",
+        "--respawn",
+        "--transpile-only",
+        "${input:backendEntry}"
+      ],
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/backend/.env"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Frontend (Vite)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "${workspaceFolder}/frontend"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Root Server (ts-node-dev)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "ts-node-dev",
+        "--respawn",
+        "--transpile-only",
+        "${input:rootServerEntry}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "backendEntry",
+      "type": "pickString",
+      "description": "Select the backend entry point to debug",
+      "options": [
+        "src/app.ts",
+        "src/server.ts"
+      ]
+    },
+    {
+      "id": "rootServerEntry",
+      "type": "pickString",
+      "description": "Select the root server entry point to debug",
+      "options": [
+        "src/server.ts"
+      ]
+    }
+  ]
+}
