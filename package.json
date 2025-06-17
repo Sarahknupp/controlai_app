@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "cross-env PORT=3001 ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
