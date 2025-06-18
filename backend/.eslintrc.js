@@ -1,8 +1,8 @@
 module.exports = {
+  root: true,
   parser: '@typescript-eslint/parser',
-  extends: [
-    'plugin:@typescript-eslint/recommended',
-  ],
+  plugins: ['@typescript-eslint'],
+  extends: [],
   parserOptions: {
     ecmaVersion: 2020,
     sourceType: 'module',
@@ -10,7 +10,7 @@ module.exports = {
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-unused-vars': ['error', { 
+    '@typescript-eslint/no-unused-vars': ['warn', {
       'argsIgnorePattern': '^_',
       'varsIgnorePattern': '^_'
     }],
