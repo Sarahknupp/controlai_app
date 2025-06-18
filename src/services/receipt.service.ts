@@ -59,8 +59,8 @@ export class ReceiptService {
   private async generateQRCode(payment: IPayment, receiptNumber: string): Promise<string> {
     const verificationData = {
       receiptNumber,
-      paymentId: payment._id.toString(),
-      saleId: payment.sale.toString(),
+      paymentId: payment._id?.toString() || '',
+      saleId: (payment.sale as any)?.toString() || '',
       amount: payment.amount,
       date: payment.transactionDate,
       verificationUrl: `https://controlai.com/verify/${receiptNumber}`
@@ -74,7 +74,7 @@ export class ReceiptService {
     }
   }
 
-  private generateReceiptNumber(payment: IPayment): string {
+  private generateReceiptNumber(): string {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -120,7 +120,7 @@ export class ReceiptService {
 
   public async generateReceiptData(payment: IPayment, sale: ISale): Promise<ReceiptData> {
     // Garantir que os relacionamentos estão populados
-    await payment.populate([
+    await (payment as any).populate([
       { path: 'processedBy', select: 'name' },
       { 
         path: 'sale',
@@ -131,7 +131,7 @@ export class ReceiptService {
       }
     ]);
 
-    const receiptNumber = this.generateReceiptNumber(payment);
+    const receiptNumber = this.generateReceiptNumber();
     const qrCodeData = await this.generateQRCode(payment, receiptNumber);
 
     // Registrar no histórico
@@ -156,9 +156,9 @@ export class ReceiptService {
       paymentDetails: {
         method: this.formatPaymentMethod(payment.method),
         amount: payment.amount,
-        reference: payment.reference,
+        ...(payment.reference ? { reference: payment.reference } : {}),
         date: format(payment.transactionDate, 'dd/MM/yyyy HH:mm', { locale: ptBR }),
-        processedBy: (payment.processedBy as any).name
+        processedBy: (payment.processedBy as any).name,
       },
       company: this.company,
       qrCodeData
@@ -345,7 +345,7 @@ export class ReceiptService {
     emailSentTo?: string
   ): Promise<string> {
     const pdf = await this.generatePDFReceipt(payment, sale);
-    const receiptNumber = this.generateReceiptNumber(payment);
+    const receiptNumber = this.generateReceiptNumber();
     const fileName = `recibo_${receiptNumber}.pdf`;
     const filePath = path.join(outputDir, fileName);
     

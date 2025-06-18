@@ -234,20 +234,5 @@ export const securityHelpers = {
     ];
 
     return validPolicies.includes(policy);
-  }
-
-    // Set cache control
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-
-    // Set security headers for API
-    res.setHeader('X-API-Version', process.env.API_VERSION || '1.0.0');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Download-Options', 'noopen');
-    res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
-
-    next();
-  });
-
-}; 
+  },
+};

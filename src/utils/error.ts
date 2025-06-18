@@ -59,7 +59,7 @@ export const logError = (error: unknown, context?: string) => {
   };
 
   // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env['NODE_ENV'] === 'development') {
     console.error('Error:', errorDetails);
   }
 
