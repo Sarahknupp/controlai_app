@@ -6,7 +6,7 @@
 
 import { ICustomer } from './customer';
 import { IProduct } from './product';
-import { IUser } from './user';
+import type { User } from './user';
 
 export enum PaymentStatus {
   PENDING = 'PENDING',
@@ -24,10 +24,13 @@ export enum PaymentMethod {
 }
 
 export interface IPayment {
+  _id?: string;
+  sale?: string | ISale;
   method: PaymentMethod;
   amount: number;
   reference?: string;
-  date: Date;
+  transactionDate: Date;
+  processedBy?: string | User;
 }
 
 export interface ISaleItem {
@@ -40,7 +43,7 @@ export interface ISaleItem {
 export interface ISale {
   _id: string;
   customer: string | ICustomer;
-  seller: string | IUser;
+  seller: string | User;
   items: ISaleItem[];
   payments: IPayment[];
   subtotal: number;
@@ -49,7 +52,7 @@ export interface ISale {
   total: number;
   status: PaymentStatus;
   cancelledAt?: Date;
-  cancelledBy?: string | IUser;
+  cancelledBy?: string | User;
   cancellationReason?: string;
   createdAt: Date;
   updatedAt: Date;

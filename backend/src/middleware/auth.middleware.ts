@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User, IUserDocument } from '../models/User';
-import { UserRole } from '../types/user.types';
-import { UnauthorizedError, ForbiddenError } from '../errors/unauthorized.error';
-import { ForbiddenError as ForbiddenErrorType } from '../errors/forbidden.error';
+import { UserRole } from '../types/user';
+import { UnauthorizedError } from '../errors/unauthorized.error';
+import { ForbiddenError } from '../errors/forbidden.error';
 import { UserService } from '../services/user.service';
 import { rateLimit } from 'express-rate-limit';
 import { SecurityMonitorService } from '../services/security-monitor.service';
@@ -111,7 +111,7 @@ export const requireEmailVerification = (
       path: req.path,
       userId: authReq.user._id
     });
-    throw new ForbiddenErrorType('Email verification required');
+    throw new ForbiddenError('Email verification required');
   }
   next();
 };
@@ -315,7 +315,7 @@ export const validateCors = (req: Request, res: Response, next: NextFunction) =>
         method: req.method
       });
 
-      throw new ForbiddenErrorType('CORS not allowed');
+      throw new ForbiddenError('CORS not allowed');
     }
 
     next();

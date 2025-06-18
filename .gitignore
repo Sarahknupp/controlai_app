@@ -1,14 +1,13 @@
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 
 # testing
-/coverage
+coverage/
 
 # production
-/build
-/dist
+build/
 
 # misc
 .DS_Store
@@ -24,7 +23,6 @@ yarn-error.log*
 
 # IDE
 .idea/
-.vscode/
 *.swp
 *.swo
 
@@ -35,24 +33,17 @@ yarn-error.log*
 logs
 *.log
 
-dist
+dist/
 dist-ssr
 *.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-.env
 
 replitapp
-coverage/
-
-
-coverage/
