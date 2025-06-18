@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ValidationController } from '../controllers/validation.controller';
 import { validateRequest } from '../middleware/validation';
 import { validationValidation } from '../validations/validation.validation';
@@ -15,7 +15,7 @@ router.post(
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
   validateRequest(validationValidation.validateData),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     validationController.validateData.bind(validationController)(req, res, next);
   }
 );
@@ -25,7 +25,7 @@ router.get(
   '/status',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     validationController.getValidationStatus.bind(validationController)(req, res, next);
   }
 );
