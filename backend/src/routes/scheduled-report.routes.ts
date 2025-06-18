@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ScheduledReportController } from '../controllers/scheduled-report.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/authorize.middleware';
@@ -14,7 +14,7 @@ router.post(
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
   validate(scheduledReportValidation.scheduleReport),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     scheduledReportController.scheduleReport.bind(scheduledReportController)(req, res, next);
   }
 );
@@ -25,7 +25,7 @@ router.delete(
   authenticate,
   authorize(['ADMIN']),
   validate(scheduledReportValidation.cancelScheduledReport),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     scheduledReportController.cancelScheduledReport.bind(scheduledReportController)(req, res, next);
   }
 );
@@ -36,7 +36,7 @@ router.get(
   authenticate,
   authorize(['ADMIN', 'MANAGER']),
   validate(scheduledReportValidation.getScheduledReports),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     scheduledReportController.getScheduledReports.bind(scheduledReportController)(req, res, next);
   }
 );

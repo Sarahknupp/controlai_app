@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { protect, authorize } from '../middleware/auth.middleware';
 import { UserRole } from '../models/User';
 import { validate } from '../middleware/validation/validate';
@@ -15,22 +15,22 @@ const router = express.Router();
 router.use(protect);
 
 // Get dashboard statistics
-router.get('/stats', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req, res, next): Promise<void> => {
+router.get('/stats', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getDashboardStats(req, res, next);
 });
 
 // Get sales overview
-router.get('/sales-overview', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req, res, next): Promise<void> => {
+router.get('/sales-overview', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getSalesOverview(req, res, next);
 });
 
 // Get top products
-router.get('/top-products', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req, res, next): Promise<void> => {
+router.get('/top-products', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getTopProducts(req, res, next);
 });
 
 // Get recent sales
-router.get('/recent-sales', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req, res, next): Promise<void> => {
+router.get('/recent-sales', authorize([UserRole.ADMIN, UserRole.MANAGER]), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getRecentSales(req, res, next);
 });
 
