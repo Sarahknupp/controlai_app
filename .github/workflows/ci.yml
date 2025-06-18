@@ -68,6 +68,19 @@ jobs:
           # Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN with appropriate values
           # If DOCKERHUB_USERNAME is missing, add it as a new secret with your Docker Hub username.
           # If DOCKERHUB_TOKEN is missing, add it as a new secret with your Docker Hub access token.
+
+      # Example frontend build steps (uncomment and adjust as needed)
+      # - name: Install dependencies
+      #   run: npm ci
+      #   working-directory: ./frontend
+
+      # - name: Lint code
+      #   run: npx eslint .
+      #   working-directory: ./frontend
+
+      # - name: Install ESLint globally
+      #   run: npm install -g eslint
+
       - uses: docker/build-push-action@v4
         with:
           context: ./backend
