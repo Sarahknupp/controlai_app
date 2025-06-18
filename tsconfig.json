@@ -45,10 +45,9 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true
+    "exactOptionalPropertyTypes": true
   },
-  "include": ["src", "vite.config.mjs", "jest.config.ts"],
+  "include": ["src", "backend/src", "vite.config.mjs", "jest.config.ts"],
   "exclude": ["node_modules", "dist", "coverage"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
