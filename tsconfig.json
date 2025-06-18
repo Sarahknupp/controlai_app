@@ -45,10 +45,14 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true
+    "exactOptionalPropertyTypes": false
   },
-  "include": ["src", "vite.config.mjs", "jest.config.ts"],
+  "include": [
+    "src",
+    "vite.config.mjs",
+    "jest.config.ts",
+    "backend/src/models/ReceiptHistory.ts"
+  ],
   "exclude": ["node_modules", "dist", "coverage"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

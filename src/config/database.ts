@@ -25,7 +25,7 @@ const MONGODB_OPTIONS = {
 
 // Configurações do Mongoose
 mongoose.set('strictQuery', true);
-mongoose.set('debug', process.env.NODE_ENV === 'development');
+mongoose.set('debug', process.env['NODE_ENV'] === 'development');
 
 // Eventos de conexão
 mongoose.connection.on('connected', () => {
