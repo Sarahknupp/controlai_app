@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { protect, authorize } from '../middleware/auth.middleware';
 import { UserRole } from '../types/user';
 import {
@@ -27,15 +27,15 @@ router.use(protect);
 
 
 // Routes accessible by all authenticated users
-router.get('/', validate(getSalesValidation), (req, res, next): void => {
+router.get('/', validate(getSalesValidation), (req: Request, res: Response, next: NextFunction): void => {
   getSales(req, res, next);
 });
 
-router.get('/stats', (req, res, next): void => {
+router.get('/stats', (req: Request, res: Response, next: NextFunction): void => {
   getSalesStats(req, res, next);
 });
 
-router.get('/:id', (req, res, next): void => {
+router.get('/:id', (req: Request, res: Response, next: NextFunction): void => {
   getSale(req, res, next);
 });
 
@@ -91,15 +91,15 @@ router
     cancelSale
   );
 
-router.post('/', validate(createSaleValidation), (req, res, next): void => {
+router.post('/', validate(createSaleValidation), (req: Request, res: Response, next: NextFunction): void => {
   createSale(req, res, next);
 });
 
-router.patch('/:id/cancel', validate(cancelSaleValidation), (req, res, next): void => {
+router.patch('/:id/cancel', validate(cancelSaleValidation), (req: Request, res: Response, next: NextFunction): void => {
   cancelSale(req, res, next);
 });
 
-router.post('/:id/payments', validate(addPaymentValidation), (req, res, next): void => {
+router.post('/:id/payments', validate(addPaymentValidation), (req: Request, res: Response, next: NextFunction): void => {
   addPayment(req, res, next);
 });
 
