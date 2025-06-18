@@ -68,12 +68,6 @@ jobs:
           # Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN with appropriate values
           # If DOCKERHUB_USERNAME is missing, add it as a new secret with your Docker Hub username.
           # If DOCKERHUB_TOKEN is missing, add it as a new secret with your Docker Hub access token.
-          # 
-          # To fix the error, go to your repository on GitHub:
-          # 1. Click on "Settings" > "Secrets and variables" > "Actions".
-          # 2. Click "New repository secret".
-          # 3. Add a secret named DOCKERHUB_USERNAME with your Docker Hub username as the value.
-          # 4. Add a secret named DOCKERHUB_TOKEN with your Docker Hub access token as the value.
       - uses: docker/build-push-action@v4
         with:
           context: ./backend
