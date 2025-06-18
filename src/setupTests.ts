@@ -1,5 +1,13 @@
 import '@testing-library/jest-dom';
 
+// Polyfill TextEncoder/Decoder for testing environment
+import { TextEncoder, TextDecoder } from 'util';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).TextEncoder = TextEncoder;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).TextDecoder = TextDecoder;
+
 // Mock localStorage
 const localStorageMock = {
   getItem: jest.fn(),
