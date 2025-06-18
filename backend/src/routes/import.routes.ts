@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ImportController } from '../controllers/import.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/authorize.middleware';
@@ -39,15 +39,15 @@ const upload = multer({
 });
 
 // Import routes
-router.post('/', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), upload.single('file'), (req, res, next): void => {
+router.post('/', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), upload.single('file'), (req: Request, res: Response, next: NextFunction): void => {
   importController.importData(req, res, next);
 });
 
-router.get('/:importId/status', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+router.get('/:importId/status', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
   importController.getImportStatus(req, res, next);
 });
 
-router.delete('/:importId', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req, res, next): void => {
+router.delete('/:importId', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
   importController.deleteImport(req, res, next);
 });
 

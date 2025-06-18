@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ReportController } from '../controllers/report.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/authorize.middleware';
@@ -20,7 +20,7 @@ router.post(
   '/',
   authenticate,
   validate(reportValidation.generateReport),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     reportController.generateReport(req, res, next);
   }
 );
@@ -30,7 +30,7 @@ router.get(
   '/',
   authenticate,
   validate(reportValidation.getReports),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     reportController.getReports(req, res, next);
   }
 );
