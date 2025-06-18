@@ -39,7 +39,7 @@ jobs:
       working-directory: ./backend
     
     - name: Run linting
-      run: npm run lint
+      run: eslint .
       working-directory: ./backend
     
     - name: Run tests

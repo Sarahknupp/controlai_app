@@ -53,6 +53,7 @@
     "jest.config.ts",
     "backend/src/models/ReceiptHistory.ts"
   ],
+
   "exclude": ["node_modules", "dist", "coverage"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
