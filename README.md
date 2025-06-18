@@ -17,6 +17,8 @@ Or run everything with Docker Compose:
 bash
 docker-compose up --build
 
+Once running, administrators can access a simplified dashboard at `/dashboard` for easy navigation.
+
 
 ## Installation
 

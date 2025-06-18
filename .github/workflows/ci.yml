@@ -1,7 +1,5 @@
 name: CI/CD
 
-name: CI/CD
-
 on:
   push:
     branches: [main]
@@ -65,8 +63,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          # Ensure DOCKERHUB_USERNAME and DOCKERHUB_TOKEN are set in repository secrets:
+          # Go to your GitHub repository > Settings > Secrets and variables > Actions > New repository secret
+          # Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN with appropriate values
+          # If DOCKERHUB_USERNAME is missing, add it as a new secret with your Docker Hub username.
+          # If DOCKERHUB_TOKEN is missing, add it as a new secret with your Docker Hub access token.
       - uses: docker/build-push-action@v4
         with:
           context: ./backend
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/controleai-vendas:latest
+          tags: ${{ github.repository_owner }}/controleai-vendas:latest

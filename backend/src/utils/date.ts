@@ -1,12 +1,14 @@
 import { format, parseISO, isToday as dateFnsIsToday, isYesterday as dateFnsIsYesterday, isThisMonth as dateFnsIsThisMonth, isThisYear as dateFnsIsThisYear, differenceInYears, startOfDay, endOfDay, subDays, isSameDay, isSameWeek, isSameMonth, isSameYear, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { isToday as _isToday, isYesterday as _isYesterday, isThisMonth as _isThisMonth, isThisYear as _isThisYear } from 'date-fns';
 
-export const formatDate = (date: Date): string => {
-  return format(date, 'yyyy-MM-dd');
+export const formatDate = (date: Date | string): string => {
+  const d = typeof date === 'string' ? parseISO(date) : date;
+  return format(d, 'dd/MM/yyyy');
 };
 
-export const formatDateTime = (date: Date): string => {
-  return format(date, "yyyy-MM-dd'T'HH:mm:ss.SSSxxx");
+export const formatDateTime = (date: Date | string): string => {
+  const d = typeof date === 'string' ? parseISO(date) : date;
+  return format(d, 'dd/MM/yyyy HH:mm:ss');
 };
 
 export const formatTime = (date: string | Date): string => {
@@ -58,7 +60,7 @@ export const isYesterday = (date: Date): boolean => {
 
 export const isThisWeek = (date: Date): boolean => {
   const today = new Date();
-  return isSameWeek(date, today, { weekStartsOn: 0 }); // 0 = Sunday
+  return isSameWeek(date, today, { weekStartsOn: 1 }); // 1 = Monday
 };
 
 export const isThisMonth = (date: Date): boolean => {
@@ -133,12 +135,13 @@ export const getEndOfYear = (date: Date): Date => {
   return end;
 };
 
-export const getAge = (birthDate: Date): number => {
+export const getAge = (birthDate: Date | string): number => {
+  const d = typeof birthDate === 'string' ? parseISO(birthDate) : birthDate;
   const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
+  let age = today.getFullYear() - d.getFullYear();
+  const monthDiff = today.getMonth() - d.getMonth();
   
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < d.getDate())) {
     age--;
   }
   
