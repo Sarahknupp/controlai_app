@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { MetricsController } from '../controllers/metrics.controller';
 import { validateRequest } from '../middleware/validation';
 import { metricsValidation } from '../validations/metrics.validation';
@@ -15,7 +15,7 @@ router.post(
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
   validateRequest(metricsValidation.collectMetrics),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     metricsController.collectMetrics(req, res, next);
   }
 );
@@ -25,7 +25,7 @@ router.get(
   '/status',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     metricsController.getMetricsStatus(req, res, next);
   }
 );
@@ -44,7 +44,7 @@ router.get(
   authenticate,
   authorize([UserRole.ADMIN]),
   validateRequest(metricsValidation.getUsageMetrics),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     metricsController.getUsageMetrics(req, res, next);
   }
 );

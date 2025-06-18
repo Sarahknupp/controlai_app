@@ -46,4 +46,7 @@ dist-ssr
 *.sln
 *.sw?
 
+# Temporary editor files
+Untitled-*
+
 replitapp
