@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { protect, authorize } from '../middleware/auth.middleware';
 import { UserRole } from '../models/User';
 import { validate } from '../middleware/validation/validate';
@@ -33,29 +33,29 @@ router.use(protect);
 
 
 // Base routes
-router.get('/', validate(getCustomersValidation), async (req, res, next): Promise<void> => {
+router.get('/', validate(getCustomersValidation), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getCustomers(req, res, next);
 });
 
-router.post('/', validate(createCustomerValidation), async (req, res, next): Promise<void> => {
+router.post('/', validate(createCustomerValidation), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await createCustomer(req, res, next);
 });
 
 // Customer-specific routes
-router.get('/:customerId', validate(customerIdSchema), async (req, res, next): Promise<void> => {
+router.get('/:customerId', validate(customerIdSchema), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getCustomer(req, res, next);
 });
 
-router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), async (req, res, next): Promise<void> => {
+router.put('/:customerId', validate({ ...customerIdSchema, body: updateCustomerValidation }), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await updateCustomer(req, res, next);
 });
 
-router.delete('/:customerId', validate(customerIdSchema), async (req, res, next): Promise<void> => {
+router.delete('/:customerId', validate(customerIdSchema), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await deleteCustomer(req, res, next);
 });
 
 // Customer purchases
-router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), async (req, res, next): Promise<void> => {
+router.get('/:customerId/purchases', validate({ ...customerIdSchema, query: getCustomerPurchasesValidation }), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   await getCustomerPurchases(req, res, next);
 });
 

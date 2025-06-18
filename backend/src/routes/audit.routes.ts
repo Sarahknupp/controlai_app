@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { AuditController } from '../controllers/audit.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/authorize.middleware';
@@ -15,7 +15,7 @@ router.get(
   authenticate,
   authorize([UserRole.ADMIN]),
   validate(auditValidation.getAuditLogs),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     auditController.getAuditLogs(req, res, next);
   }
 );
@@ -34,7 +34,7 @@ router.get(
   authenticate,
   authorize([UserRole.ADMIN]),
   validate(auditValidation.getAuditLog),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     auditController.getAuditLog(req, res, next);
   }
 );
@@ -45,7 +45,7 @@ router.delete(
   authenticate,
   authorize([UserRole.ADMIN]),
   validate(auditValidation.deleteAuditLog),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     auditController.deleteAuditLog(req, res, next);
   }
 );
@@ -56,7 +56,7 @@ router.post(
   authenticate,
   authorize([UserRole.ADMIN]),
   validate(auditValidation.clearAuditLogs),
-  (req, res, next): void => {
+  (req: Request, res: Response, next: NextFunction): void => {
     auditController.clearAuditLogs(req, res, next);
   }
 );
