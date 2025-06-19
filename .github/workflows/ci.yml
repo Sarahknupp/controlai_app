@@ -33,13 +33,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    
-    - name: Install dependencies
+
+    # Backend steps
+    - name: Install backend dependencies
       run: npm ci --legacy-peer-deps
       working-directory: ./backend
     
     - name: Run linting
-      run: npm run lint
+      run: eslint .
       working-directory: ./backend
     
     - name: Run tests
@@ -52,6 +53,22 @@ jobs:
         JWT_SECRET: test-secret
         REDIS_URL: redis://localhost:6379
 
+    # Frontend steps
+    - name: Install frontend dependencies
+      run: npm ci --legacy-peer-deps
+      working-directory: ./frontend
+
+    - name: Lint frontend
+      run: npx eslint .
+      working-directory: ./frontend
+
+    - name: Test frontend
+      run: npm test
+      working-directory: ./frontend
+      env:
+        CI: true
+        NODE_ENV: test
+
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -61,13 +78,9 @@ jobs:
       - uses: docker/setup-buildx-action@v2
       - uses: docker/login-action@v2
         with:
+          registry: docker.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-          # Ensure DOCKERHUB_USERNAME and DOCKERHUB_TOKEN are set in repository secrets:
-          # Go to your GitHub repository > Settings > Secrets and variables > Actions > New repository secret
-          # Add DOCKERHUB_USERNAME and DOCKERHUB_TOKEN with appropriate values
-          # If DOCKERHUB_USERNAME is missing, add it as a new secret with your Docker Hub username.
-          # If DOCKERHUB_TOKEN is missing, add it as a new secret with your Docker Hub access token.
       - uses: docker/build-push-action@v4
         with:
           context: ./backend
