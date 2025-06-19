@@ -7,8 +7,22 @@ export const validateRequest = (schema: Schema) => {
   return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const { error } = schema.validate(req.body, {
       abortEarly: false,
-      stripUnknown: true
+      stripUnknown: true,
     });
+
+    if (error) {
+      return next(new BadRequestError(error.details.map(d => d.message).join(', ')));
+    }
+
+    next();
+  });
+};
+
+interface ValidationSchema {
+  body?: Schema;
+  query?: Schema;
+  params?: Schema;
+}
 
 export const validate = (schema: ValidationSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -38,7 +52,6 @@ export const validate = (schema: ValidationSchema) => {
     } catch (error) {
       return next(error);
     }
+  };
+};
 
-    next();
-  });
-}; 
