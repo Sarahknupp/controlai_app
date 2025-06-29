@@ -24,7 +24,7 @@ export default {
 
   ],
   verbose: true,
-  moduleDirectories: ['node_modules', 'backend/src'],
+  moduleDirectories: ['node_modules', 'backend/src', 'frontend/node_modules'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   globals: {
     'ts-jest': {
