@@ -103,6 +103,24 @@ const userSchema = new Schema({
     state: String,
     zipCode: String
   },
+  oauthProviders: [{
+    provider: {
+      type: String,
+      enum: ['google', 'github', 'microsoft', 'azure']
+    },
+    providerId: String,
+    email: String,
+    connectedAt: {
+      type: Date,
+      default: Date.now
+    },
+    metadata: Schema.Types.Mixed
+  }],
+  authMethod: {
+    type: String,
+    enum: ['local', 'oauth'],
+    default: 'local'
+  },
   preferences: {
     language: {
       type: String,

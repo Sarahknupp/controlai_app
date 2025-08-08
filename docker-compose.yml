@@ -1,3 +1,15 @@
+
+services:
+  notificationsystemfrontend:
+    image: notificationsystemfrontend
+    build:
+      context: frontend
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000
+
 version: "3.8"
 services:
   mongodb:
@@ -34,3 +46,4 @@ services:
 
 volumes:
   mongodb_data:
+
