@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { IPayment } from '../models/Payment';
+import { IPayment } from '../../backend/src/models/Payment';
 import { ISale } from '../types/sale';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

@@ -1,4 +1,4 @@
-import { IUser, UserSettings } from './user';
+// User-related types are defined in this file, so no need to import
 
 export interface IUser {
   id: string;
@@ -37,5 +37,3 @@ export interface AuthContextType {
   updateProfile: (profile: Partial<IUser>) => Promise<void>;
   updateSettings: (settings: Partial<UserSettings>) => Promise<void>;
 }
-
-export type { IUser, UserSettings }; 

@@ -1,11 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
+import { Schema } from 'joi';
+import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
 
-type ValidationSchema = {
-  body?: any;
-  query?: any;
-  params?: any;
+export const validateRequest = (schema: Schema) => {
+  return asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { error } = schema.validate(req.body, {
+      abortEarly: false,
+      stripUnknown: true,
+    });
+
+    if (error) {
+      return next(new BadRequestError(error.details.map(d => d.message).join(', ')));
+    }
+
+    next();
+  });
 };
+
+interface ValidationSchema {
+  body?: Schema;
+  query?: Schema;
+  params?: Schema;
+}
 
 export const validate = (schema: ValidationSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -31,9 +48,10 @@ export const validate = (schema: ValidationSchema) => {
         }
       }
 
-      next();
+      return next();
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
-}; 
+};
+

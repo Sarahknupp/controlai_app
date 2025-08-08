@@ -1,22 +1,70 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import mongoose, { Types } from 'mongoose';
+// @ts-ignore
+import { MongoMemoryServer } from 'mongodb-memory-server'; // Importação correta
 import { User, UserRole, IUser } from '../models/User';
 import jwt, { SignOptions } from 'jsonwebtoken';
+import { mockLogger } from '../__mocks__/logger';
+import { MockRedis } from '../__mocks__/redis';
+import swaggerUi from '../__mocks__/swagger-ui-express';
 
-let mongoServer: MongoMemoryServer;
-
+let mongod: MongoMemoryServer;
 // Extend global for test tokens
 declare global {
+  // eslint-disable-next-line no-var
   var adminToken: string;
   var userToken: string;
   var adminUser: IUser;
   var regularUser: IUser;
 }
 
-// Set test environment
+// Mock logger
+jest.mock('../utils/logger', () => ({
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
+  add: jest.fn(),
+  remove: jest.fn(),
+  clear: jest.fn(),
+  close: jest.fn(),
+  format: jest.fn(),
+  level: 'info',
+  levels: {
+    error: 0,
+    warn: 1,
+    info: 2,
+    debug: 3
+  }
+}));
+
+// Mock Redis
+jest.mock('ioredis', () => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    exists: jest.fn(),
+    expire: jest.fn(),
+    ttl: jest.fn(),
+    flushall: jest.fn(),
+    quit: jest.fn()
+  }));
+});
+
+// Mock Swagger UI
+jest.mock('swagger-ui-express', () => ({
+  serve: jest.fn(),
+  setup: jest.fn()
+}));
+
+// Mock environment variables
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-secret';
 process.env.JWT_EXPIRE = '1h';
+process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+process.env.REDIS_HOST = 'localhost';
+process.env.REDIS_PORT = '6379';
+process.env.REDIS_PASSWORD = '';
 
 // Helper function to create a test token
 export const createTestToken = (userId: string, role: UserRole = UserRole.USER) => {
@@ -35,10 +83,10 @@ beforeAll(async () => {
     await mongoose.disconnect();
     await mongoose.connection.close();
     
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = await mongoServer.getUri();
+    mongod = await MongoMemoryServer.create();
+    const uri = mongod.getUri();
     
-    await mongoose.connect(mongoUri);
+    await mongoose.connect(uri);
 
     // Create test users
     const adminUser = await User.create({
@@ -46,24 +94,24 @@ beforeAll(async () => {
       email: 'admin@test.com',
       password: 'Admin123!',
       role: UserRole.ADMIN
-    });
+    }) as IUser;
 
     const regularUser = await User.create({
       name: 'Regular User',
       email: 'user@test.com',
       password: 'User123!',
       role: UserRole.USER
-    });
+    }) as IUser;
 
     // Create tokens
-    const adminToken = createTestToken(adminUser._id.toString(), UserRole.ADMIN);
-    const userToken = createTestToken(regularUser._id.toString(), UserRole.USER);
+    const adminToken = createTestToken((adminUser._id as Types.ObjectId).toString(), UserRole.ADMIN);
+    const userToken = createTestToken((regularUser._id as Types.ObjectId).toString(), UserRole.USER);
 
     // Make tokens available globally
-    global.adminToken = adminToken;
-    global.userToken = userToken;
-    global.adminUser = adminUser;
-    global.regularUser = regularUser;
+    globalThis.adminToken = adminToken;
+    globalThis.userToken = userToken;
+    globalThis.adminUser = adminUser;
+    globalThis.regularUser = regularUser;
   } catch (error) {
     console.error('Error in test setup:', error);
     throw error;
@@ -71,21 +119,12 @@ beforeAll(async () => {
 });
 
 // Clear database between tests
-beforeEach(async () => {
-  try {
-    if (mongoose.connection.readyState === 1) {
-      const collections = await mongoose.connection.db.collections();
-      const excludedCollections = ['users']; // Don't clear test users
-      await Promise.all(
-        collections
-          .filter(collection => !excludedCollections.includes(collection.collectionName))
-          .map(collection => collection.deleteMany({}))
-      );
-    }
-  } catch (error) {
-    console.error('Error in test cleanup:', error);
-    throw error;
+afterEach(async () => {
+  const collections = mongoose.connection.collections;
+  for (const key in collections) {
+    await collections[key].deleteMany({});
   }
+  jest.clearAllMocks();
 });
 
 // Disconnect and close database after tests
@@ -94,8 +133,8 @@ afterAll(async () => {
     if (mongoose.connection.readyState === 1) {
       await mongoose.disconnect();
     }
-    if (mongoServer) {
-      await mongoServer.stop();
+    if (mongod) {
+      await mongod.stop();
     }
   } catch (error) {
     console.error('Error in test teardown:', error);

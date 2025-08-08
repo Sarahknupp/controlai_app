@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { BackupController } from '../controllers/backup.controller';
 import { validateRequest } from '../middleware/validation';
 import { backupValidation } from '../validations/backup.validation';
@@ -10,46 +10,28 @@ const router = Router();
 const backupController = new BackupController();
 
 // Create backup
-router.post(
-  '/',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(backupValidation.createBackup),
-  backupController.createBackup.bind(backupController)
-);
+router.post('/create', authenticate, authorize([UserRole.ADMIN]), (req: Request, res: Response, next: NextFunction): void => {
+  backupController.createBackup(req, res, next);
+});
 
 // Restore backup
-router.post(
-  '/:backupId/restore',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(backupValidation.restoreBackup),
-  backupController.restoreBackup.bind(backupController)
-);
+router.post('/restore', authenticate, authorize([UserRole.ADMIN]), (req: Request, res: Response, next: NextFunction): void => {
+  backupController.restoreBackup(req, res, next);
+});
 
 // List backups
-router.get(
-  '/',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  backupController.listBackups.bind(backupController)
-);
+router.get('/', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
+  backupController.listBackups(req, res, next);
+});
 
 // Delete backup
-router.delete(
-  '/:backupId',
-  authenticate,
-  authorize([UserRole.ADMIN]),
-  validateRequest(backupValidation.deleteBackup),
-  backupController.deleteBackup.bind(backupController)
-);
+router.delete('/:id', authenticate, authorize([UserRole.ADMIN]), (req: Request, res: Response, next: NextFunction): void => {
+  backupController.deleteBackup(req, res, next);
+});
 
 // Get backup status
-router.get(
-  '/status',
-  authenticate,
-  authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  backupController.getBackupStatus.bind(backupController)
-);
+router.get('/status', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
+  backupController.getBackupStatus(req, res, next);
+});
 
 export default router; 

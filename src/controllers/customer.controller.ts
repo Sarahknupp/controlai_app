@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Customer } from '../models/Customer';
-import { Sale } from '../models/Sale';
+import { Customer } from '../../backend/src/models/Customer';
+import { Sale } from '../../backend/src/models/Sale';
 
 // @desc    Criar novo cliente
 // @route   POST /api/customers

@@ -84,7 +84,7 @@ const productSchema = new Schema({
 });
 
 // Index for improved search performance
-productSchema.index({ name: 'text', description: 'text', sku: 1, barcode: 1 });
+productSchema.index({ name: 'text', description: 'text', barcode: 1 });
 
 // Pre-save middleware to update lastStockUpdate
 productSchema.pre('save', function(next) {

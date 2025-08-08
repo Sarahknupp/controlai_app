@@ -1,9 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { createLogger, format, transports } from 'winston';
 import { IUser } from '../types/user';
+import { logger } from '../utils/logger';
 
 // Create logger instance
-const logger = createLogger({
+const loggerInstance = createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   format: format.combine(
     format.timestamp(),
@@ -34,37 +35,28 @@ declare global {
 }
 
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
-  // Capture request start time
   const start = Date.now();
 
   // Log request
   logger.info('Incoming request', {
     method: req.method,
-    url: req.originalUrl,
+    url: req.url,
     ip: req.ip,
     userAgent: req.get('user-agent'),
-    userId: req.user?.id,
+    userId: req.user?.id
   });
 
-  // Capture response
-  const originalSend = res.send;
-  res.send = function (body: any): Response {
-    // Calculate response time
-    const responseTime = Date.now() - start;
-
-    // Log response
+  // Log response
+  res.on('finish', () => {
+    const duration = Date.now() - start;
     logger.info('Outgoing response', {
       method: req.method,
-      url: req.originalUrl,
+      url: req.url,
       statusCode: res.statusCode,
-      responseTime: `${responseTime}ms`,
-      userId: req.user?.id,
+      responseTime: `${duration}ms`,
+      userId: req.user?.id
     });
-
-    // Restore original send function
-    res.send = originalSend;
-    return res.send(body);
-  };
+  });
 
   next();
 };
@@ -74,15 +66,15 @@ export const errorLogger = (error: Error, req: Request, res: Response, next: Nex
     error: {
       name: error.name,
       message: error.message,
-      stack: error.stack,
+      stack: error.stack
     },
     request: {
       method: req.method,
-      url: req.originalUrl,
+      url: req.url,
       ip: req.ip,
       userAgent: req.get('user-agent'),
-      userId: req.user?.id,
-    },
+      userId: req.user?.id
+    }
   });
 
   next(error);

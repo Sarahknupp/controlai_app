@@ -3,9 +3,9 @@
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
+    "module": "CommonJS",
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -28,7 +28,6 @@
       "@utils/*": ["src/utils/*"],
       "@hooks/*": ["src/hooks/*"],
       "@context/*": ["src/context/*"],
-      "@types/*": ["src/types/*"],
       "@data/*": ["src/data/*"],
       "@styles/*": ["src/styles/*"],
       "@config/*": ["src/config/*"],
@@ -46,10 +45,15 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true
+    "exactOptionalPropertyTypes": false
   },
-  "include": ["src", "vite.config.mjs", "jest.config.ts"],
+  "include": [
+    "src",
+    "vite.config.mjs",
+    "jest.config.ts",
+    "backend/src/models/ReceiptHistory.ts"
+  ],
+
   "exclude": ["node_modules", "dist", "coverage"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import NotificationDashboard from '../components/NotificationDashboard';
 import UserManagement from '../components/UserManagement';
 import TemplateManagement from '../components/TemplateManagement';
+import SimplifiedDashboard from '../components/SimplifiedDashboard';
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, user } = useAuth();
@@ -11,6 +12,9 @@ const AppRoutes: React.FC = () => {
   return (
     <Router>
       <Routes>
+        {/* Simplified dashboard for basic users */}
+        <Route path="/dashboard" element={<SimplifiedDashboard />} />
+
         {/* ... existing routes ... */}
         
         {/* Admin routes */}

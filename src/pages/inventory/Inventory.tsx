@@ -414,10 +414,11 @@ const Inventory: React.FC = () => {
                             <button
                               onClick={() => navigate(`/inventory/edit/${item.id}`)}
                               className="text-amber-600 hover:text-amber-900"
+                              title="Editar"
                             >
                               <EditIcon className="h-5 w-5" />
                             </button>
-                            <button className="text-red-600 hover:text-red-900">
+                            <button className="text-red-600 hover:text-red-900" title="Excluir">
                               <Trash2 className="h-5 w-5" />
                             </button>
                           </div>

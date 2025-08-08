@@ -15,10 +15,12 @@ export class NotificationQueueService {
   private queue: Bull.Queue<QueueJob>;
   private notificationService: NotificationService;
   private auditService: AuditService;
+  private config: QueueConfig;
 
   constructor(config: QueueConfig, notificationService: NotificationService) {
     this.notificationService = notificationService;
     this.auditService = new AuditService();
+    this.config = config;
     this.queue = new Bull(config.queueName, {
       redis: {
         host: config.redis.host,

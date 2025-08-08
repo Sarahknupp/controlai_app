@@ -88,12 +88,10 @@ class RequestInterceptor {
 
           // Retry the original request with the new token
           const retryRequest = new Request(response.url, {
-            method: response.method,
             headers: {
               ...Object.fromEntries(response.headers),
               'Authorization': `Bearer ${newToken}`
-            },
-            body: response.body
+            }
           });
 
           return fetch(retryRequest);
@@ -106,12 +104,10 @@ class RequestInterceptor {
         return new Promise(resolve => {
           this.addRefreshSubscriber(token => {
             const retryRequest = new Request(response.url, {
-              method: response.method,
               headers: {
                 ...Object.fromEntries(response.headers),
                 'Authorization': `Bearer ${token}`
-              },
-              body: response.body
+              }
             });
             resolve(fetch(retryRequest));
           });

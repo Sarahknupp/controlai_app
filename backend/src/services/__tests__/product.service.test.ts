@@ -1,13 +1,17 @@
 import { ProductService } from '../product.service';
 import { createError } from '../../utils/error';
+import { mockProductRepository, mockProduct } from '../../__mocks__/repositories/product.repository';
 
-jest.mock('../base.service');
+jest.mock('../../repositories/product.repository', () => ({
+  ProductRepository: jest.fn(() => mockProductRepository),
+}));
 
 describe('ProductService', () => {
   let productService: ProductService;
 
   beforeEach(() => {
     productService = new ProductService();
+    jest.clearAllMocks();
   });
 
   describe('createProduct', () => {
@@ -25,13 +29,12 @@ describe('ProductService', () => {
     };
 
     it('should create a product successfully', async () => {
-      const mockResponse = { ...validProduct, id: 1, createdAt: new Date(), updatedAt: new Date() };
-      jest.spyOn(productService as any, 'post').mockResolvedValue(mockResponse);
+      mockProductRepository.create.mockResolvedValue(mockProduct);
 
       const result = await productService.createProduct(validProduct);
 
-      expect(result).toEqual(mockResponse);
-      expect(productService.post).toHaveBeenCalledWith('/products', validProduct);
+      expect(result).toEqual(mockProduct);
+      expect(mockProductRepository.create).toHaveBeenCalledWith(validProduct);
     });
 
     it('should throw error when required fields are missing', async () => {
@@ -75,24 +78,13 @@ describe('ProductService', () => {
     };
 
     it('should update a product successfully', async () => {
-      const mockResponse = {
-        id: 1,
-        name: 'Updated Product',
-        description: 'Original description',
-        price: 149.99,
-        stock: 10,
-        categories: ['test'],
-        images: ['image1.jpg'],
-        specifications: {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      jest.spyOn(productService as any, 'put').mockResolvedValue(mockResponse);
+      const updatedProduct = { ...mockProduct, ...validUpdate };
+      mockProductRepository.update.mockResolvedValue(updatedProduct);
 
       const result = await productService.updateProduct(1, validUpdate);
 
-      expect(result).toEqual(mockResponse);
-      expect(productService.put).toHaveBeenCalledWith('/products/1', validUpdate);
+      expect(result).toEqual(updatedProduct);
+      expect(mockProductRepository.update).toHaveBeenCalledWith(1, validUpdate);
     });
 
     it('should throw error when ID is invalid', async () => {
@@ -114,11 +106,11 @@ describe('ProductService', () => {
 
   describe('deleteProduct', () => {
     it('should delete a product successfully', async () => {
-      jest.spyOn(productService as any, 'delete').mockResolvedValue(undefined);
+      mockProductRepository.delete.mockResolvedValue(undefined);
 
       await productService.deleteProduct(1);
 
-      expect(productService.delete).toHaveBeenCalledWith('/products/1');
+      expect(mockProductRepository.delete).toHaveBeenCalledWith(1);
     });
 
     it('should throw error when ID is invalid', async () => {
@@ -129,26 +121,13 @@ describe('ProductService', () => {
   });
 
   describe('getProduct', () => {
-    const mockProduct = {
-      id: 1,
-      name: 'Test Product',
-      description: 'Test description',
-      price: 99.99,
-      stock: 10,
-      categories: ['test'],
-      images: ['image1.jpg'],
-      specifications: {},
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
     it('should get a product successfully', async () => {
-      jest.spyOn(productService as any, 'get').mockResolvedValue(mockProduct);
+      mockProductRepository.findById.mockResolvedValue(mockProduct);
 
       const result = await productService.getProduct(1);
 
       expect(result).toEqual(mockProduct);
-      expect(productService.get).toHaveBeenCalledWith('/products/1');
+      expect(mockProductRepository.findById).toHaveBeenCalledWith(1);
     });
 
     it('should throw error when ID is invalid', async () => {
@@ -160,30 +139,17 @@ describe('ProductService', () => {
 
   describe('getProducts', () => {
     const mockResponse = {
-      data: [
-        {
-          id: 1,
-          name: 'Test Product',
-          description: 'Test description',
-          price: 99.99,
-          stock: 10,
-          categories: ['test'],
-          images: ['image1.jpg'],
-          specifications: {},
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ],
+      data: [mockProduct],
       total: 1,
     };
 
     it('should get products successfully with default filter', async () => {
-      jest.spyOn(productService as any, 'get').mockResolvedValue(mockResponse);
+      mockProductRepository.findAll.mockResolvedValue(mockResponse);
 
       const result = await productService.getProducts({});
 
       expect(result).toEqual(mockResponse);
-      expect(productService.get).toHaveBeenCalledWith('/products', { params: {} });
+      expect(mockProductRepository.findAll).toHaveBeenCalledWith({});
     });
 
     it('should get products successfully with custom filter', async () => {
@@ -198,12 +164,12 @@ describe('ProductService', () => {
         sortOrder: 'asc' as const,
       };
 
-      jest.spyOn(productService as any, 'get').mockResolvedValue(mockResponse);
+      mockProductRepository.findAll.mockResolvedValue(mockResponse);
 
       const result = await productService.getProducts(filter);
 
       expect(result).toEqual(mockResponse);
-      expect(productService.get).toHaveBeenCalledWith('/products', { params: filter });
+      expect(mockProductRepository.findAll).toHaveBeenCalledWith(filter);
     });
 
     it('should throw error when search term is too short', async () => {

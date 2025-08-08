@@ -1,3 +1,4 @@
+
 services:
   notificationsystemfrontend:
     image: notificationsystemfrontend
@@ -8,3 +9,41 @@ services:
       NODE_ENV: production
     ports:
       - 3000:3000
+
+version: "3.8"
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: ./backend
+    environment:
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongodb:27017/controlai_vendas
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+      - redis
+
+  frontend:
+    build: ./frontend
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3001/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  mongodb_data:
+

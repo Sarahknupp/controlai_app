@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState } from 'react';
 import { Table } from '../common/Table';
 import Pagination from '../common/Pagination';

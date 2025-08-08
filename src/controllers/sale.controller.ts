@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { Sale } from '../models/Sale';
-import { Product } from '../models/Product';
+import { Sale } from '../../backend/src/models/Sale';
+import { Product } from '../../backend/src/models/Product';
 
 // @desc    Criar nova venda
 // @route   POST /api/sales

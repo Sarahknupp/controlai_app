@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { MetricsController } from '../controllers/metrics.controller';
 import { validateRequest } from '../middleware/validation';
 import { metricsValidation } from '../validations/metrics.validation';
@@ -15,7 +15,9 @@ router.post(
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
   validateRequest(metricsValidation.collectMetrics),
-  metricsController.collectMetrics.bind(metricsController)
+  (req: Request, res: Response, next: NextFunction): void => {
+    metricsController.collectMetrics(req, res, next);
+  }
 );
 
 // Get metrics status
@@ -23,14 +25,16 @@ router.get(
   '/status',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  metricsController.getMetricsStatus.bind(metricsController)
+  (req: Request, res: Response, next: NextFunction): void => {
+    metricsController.getMetricsStatus(req, res, next);
+  }
 );
 
 // Get system metrics
 router.get(
   '/system',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   metricsController.getSystemMetrics.bind(metricsController)
 );
 
@@ -38,9 +42,11 @@ router.get(
 router.get(
   '/usage',
   authenticate,
-  authorize(['admin']),
+  authorize([UserRole.ADMIN]),
   validateRequest(metricsValidation.getUsageMetrics),
-  metricsController.getUsageMetrics.bind(metricsController)
+  (req: Request, res: Response, next: NextFunction): void => {
+    metricsController.getUsageMetrics(req, res, next);
+  }
 );
 
 export default router; 

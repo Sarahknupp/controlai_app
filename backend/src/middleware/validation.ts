@@ -1,86 +1,156 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
-import { BadRequestError } from '../utils/errors';
-import logger from '../utils/logger';
+import { Schema } from 'joi';
+import { logger } from './logging';
+
+// Validation options interface
+interface ValidationOptions {
+  abortEarly?: boolean;
+  allowUnknown?: boolean;
+  stripUnknown?: boolean;
+}
+
+// Default validation options
+const defaultOptions: ValidationOptions = {
+  abortEarly: false,
+  allowUnknown: true,
+  stripUnknown: true
+};
 
 // Validation middleware factory
-export const validate = (schema: Joi.ObjectSchema) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true,
-    });
+export const createValidationMiddleware = (schema: Schema, options: ValidationOptions = {}) => {
+  const validationOptions = { ...defaultOptions, ...options };
 
-    if (error) {
-      const errors = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-      }));
-      throw new BadRequestError('Validation error', errors);
+  return (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Validate request body
+      const { error, value } = schema.validate(req.body, validationOptions);
+
+      if (error) {
+        // Format validation errors
+        const errors = error.details.map(detail => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }));
+
+        // Log validation errors
+        logger.warn('Validation error', {
+          errors,
+          body: req.body
+        });
+
+        return res.status(400).json({
+          error: 'Validation Error',
+          details: errors
+        });
+      }
+
+      // Replace request body with validated value
+      req.body = value;
+
+      next();
+    } catch (error) {
+      logger.error('Validation error', { error: (error as Error).message });
+      next(error);
+    }
+  };
+};
+
+// Validation helper functions
+export const validationHelpers = {
+  // Format validation error
+  formatValidationError: (error: any): any => {
+    if (!error) {
+      return null;
     }
 
-    req.body = value;
-    next();
-  };
+    if (error.isJoi) {
+      return {
+        error: 'Validation Error',
+        details: error.details.map((detail: any) => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }))
+      };
+    }
+
+    return {
+      error: 'Validation Error',
+      message: error.message
+    };
+  },
+
+  // Validate object against schema
+  validateObject: (schema: Schema, object: any, options: ValidationOptions = {}): any => {
+    const validationOptions = { ...defaultOptions, ...options };
+    const { error, value } = schema.validate(object, validationOptions);
+
+    if (error) {
+      throw error;
+    }
+
+    return value;
+  },
+
+  // Validate array of objects against schema
+  validateArray: (schema: Schema, array: any[], options: ValidationOptions = {}): any[] => {
+    const validationOptions = { ...defaultOptions, ...options };
+    const { error, value } = schema.validate(array, validationOptions);
+
+    if (error) {
+      throw error;
+    }
+
+    return value;
+  }
 };
 
 // Common validation schemas
 export const validationSchemas = {
   // User schemas
   createUser: Joi.object({
-    name: Joi.string().required().min(3).max(50),
-    email: Joi.string().required().email(),
+    name: Joi.string().required(),
+    email: Joi.string().email().required(),
     password: Joi.string().required().min(6),
-    role: Joi.string().valid('user', 'admin').default('user'),
+    role: Joi.string().valid('user', 'admin').default('user')
   }),
 
   updateUser: Joi.object({
-    name: Joi.string().min(3).max(50),
+    name: Joi.string(),
     email: Joi.string().email(),
     password: Joi.string().min(6),
-    role: Joi.string().valid('user', 'admin'),
-    active: Joi.boolean(),
+    role: Joi.string().valid('user', 'admin')
   }),
 
   // Product schemas
   createProduct: Joi.object({
-    name: Joi.string().required().min(3).max(100),
-    description: Joi.string().required().min(10),
+    name: Joi.string().required(),
+    description: Joi.string().required(),
     price: Joi.number().required().min(0),
     stock: Joi.number().required().min(0),
-    category: Joi.string().required(),
-    image: Joi.string().uri(),
+    category: Joi.string().required()
   }),
 
   updateProduct: Joi.object({
-    name: Joi.string().min(3).max(100),
-    description: Joi.string().min(10),
+    name: Joi.string(),
+    description: Joi.string(),
     price: Joi.number().min(0),
     stock: Joi.number().min(0),
-    category: Joi.string(),
-    image: Joi.string().uri(),
+    category: Joi.string()
   }),
 
   // Order schemas
   createOrder: Joi.object({
-    items: Joi.array().items(
+    customerId: Joi.string().required(),
+    products: Joi.array().items(
       Joi.object({
         productId: Joi.string().required(),
-        quantity: Joi.number().required().min(1),
+        quantity: Joi.number().required().min(1)
       })
-    ).required().min(1),
-    shippingAddress: Joi.object({
-      street: Joi.string().required(),
-      city: Joi.string().required(),
-      state: Joi.string().required(),
-      zipCode: Joi.string().required(),
-      country: Joi.string().required(),
-    }).required(),
+    ).required()
   }),
 
   updateOrder: Joi.object({
-    status: Joi.string().valid('pending', 'processing', 'shipped', 'delivered', 'cancelled'),
-    trackingNumber: Joi.string(),
+    status: Joi.string().valid('pending', 'processing', 'completed', 'cancelled').required()
   }),
 
   // Authentication schemas
@@ -115,19 +185,30 @@ export const validationSchemas = {
 
 export const validateRequest = (schema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const { error } = schema.validate(req, {
+    const { error, value } = schema.validate(req, {
       abortEarly: false,
       stripUnknown: true,
     });
 
     if (error) {
       const errorMessage = error.details
+        .slice(0, 3) // Limita a 3 erros
         .map((detail: any) => detail.message)
         .join(', ');
       logger.warn('Validation error:', { error: errorMessage });
-      throw new BadRequestError(errorMessage);
+      if (typeof BadRequestError === 'function') {
+        throw new BadRequestError(errorMessage);
+      }
+      return res.status(400).json({
+        success: false,
+        message: 'Validation Error',
+        errors: error.details.map((detail: any) => ({
+          field: detail.path.join('.'),
+          message: detail.message
+        }))
+      });
     }
-
+    req.body = value;
     next();
   };
 }; 

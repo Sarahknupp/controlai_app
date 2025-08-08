@@ -1,7 +1,15 @@
-import dotenv from 'dotenv';
+import { config } from 'dotenv';
 
-// Load environment variables from .env file
-dotenv.config();
+// Carrega variáveis de ambiente do arquivo .env.test
+config({ path: '.env.test' });
+
+// Aumenta o timeout para testes que envolvem banco de dados
+jest.setTimeout(30000);
+
+// Limpa todos os mocks após cada teste
+afterEach(() => {
+  jest.clearAllMocks();
+});
 
 // Set default test environment variables
 process.env.NODE_ENV = 'test';

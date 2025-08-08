@@ -2,6 +2,7 @@ import templateService from '../../services/template.service';
 import { NotificationTemplate, TemplateCategory, TemplateVersion } from '../../types/template.types';
 
 // Mock fetch
+const originalFetch = global.fetch;
 global.fetch = jest.fn();
 
 describe('TemplateService', () => {
@@ -397,4 +398,7 @@ describe('TemplateService', () => {
         .rejects.toThrow('Failed to compare template versions');
     });
   });
-}); 
+  afterAll(() => {
+    global.fetch = originalFetch;
+  });
+});

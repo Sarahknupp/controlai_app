@@ -45,9 +45,6 @@ export interface CreateCustomerDto {
 
 export interface UpdateCustomerDto extends Partial<CreateCustomerDto> {}
 
-// For backward compatibility
-export type ICustomer = Customer;
-
 export interface ICustomer {
   id?: string;
   name: string;

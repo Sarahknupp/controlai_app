@@ -1,43 +1,32 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { EmailController } from '../controllers/email.controller';
 import { validateRequest } from '../middleware/validation';
 import { emailValidation } from '../validations/email.validation';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorization';
+import { UserRole } from '../models/user.model';
 
 const router = Router();
 const emailController = new EmailController();
 
 // Send sale receipt
-router.post(
-  '/receipt/:saleId',
-  authenticate,
-  authorize(['admin', 'manager', 'cashier']),
-  emailController.sendSaleReceipt.bind(emailController)
-);
+router.post('/receipt', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER]), (req: Request, res: Response, next: NextFunction): void => {
+  emailController.sendReceiptEmail(req, res, next);
+});
 
 // Send sales report
-router.post(
-  '/report',
-  authenticate,
-  authorize(['admin', 'manager']),
-  validateRequest(emailValidation.sendReport),
-  emailController.sendSalesReport.bind(emailController)
-);
+router.post('/report', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
+  emailController.sendReportEmail(req, res, next);
+});
 
 // Send low stock alert
-router.post(
-  '/alert/stock/:productId',
-  authenticate,
-  authorize(['admin', 'manager']),
-  emailController.sendLowStockAlert.bind(emailController)
-);
+router.post('/low-stock', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
+  emailController.sendLowStockAlert(req, res, next);
+});
 
 // Send password reset
-router.post(
-  '/password-reset',
-  validateRequest(emailValidation.sendPasswordReset),
-  emailController.sendPasswordReset.bind(emailController)
-);
+router.post('/reset-password', (req: Request, res: Response, next: NextFunction): void => {
+  emailController.sendPasswordResetEmail(req, res, next);
+});
 
 export default router; 

@@ -2,6 +2,7 @@ import userService from '../../services/user.service';
 import { User } from '../../types/user.types';
 
 // Mock fetch
+const originalFetch = global.fetch;
 global.fetch = jest.fn();
 
 describe('UserService', () => {
@@ -199,4 +200,7 @@ describe('UserService', () => {
       await expect(userService.resetPassword('1')).rejects.toThrow(errorMessage);
     });
   });
-}); 
+  afterAll(() => {
+    global.fetch = originalFetch;
+  });
+});

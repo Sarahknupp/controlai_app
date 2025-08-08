@@ -130,7 +130,7 @@ export class MetricsService {
     });
   }
 
-  public getMetricsSummary(startDate: Date, endDate: Date): Promise<{
+  public getMetricsSummary(): Promise<{
     totalPDFs: number;
     averagePDFGenerationTime: number;
     pdfSuccessRate: number;

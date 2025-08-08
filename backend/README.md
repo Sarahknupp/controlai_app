@@ -77,7 +77,7 @@ A robust sales management system backend built with Node.js, Express, TypeScript
    ```env
    NODE_ENV=development
    PORT=5000
-   MONGODB_URI=mongodb://localhost:27017/controlai_vendas
+   MONGODB_URI=mongodb://localhost:27017/controlai_vendas  # or your MongoDB URI
    JWT_SECRET=your-secret-key
    JWT_EXPIRE=24h
    ```
@@ -194,4 +194,133 @@ src/
 
 ## License
 
-This project is licensed under the ISC License. 
+This project is licensed under the ISC License.
+
+# Controlai ERP - Backend
+
+Backend do sistema ERP desenvolvido com Node.js, TypeScript e Express.
+
+## 🚀 Desenvolvimento
+
+### Pré-requisitos
+
+- Node.js 18.x ou superior
+- npm 9.x ou superior
+- MongoDB 6.x ou superior
+
+### Instalação
+
+1. Instale as dependências:
+```bash
+npm install
+```
+
+2. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+```
+Edite o arquivo `.env` com suas configurações.
+
+### Executando o Projeto
+
+Para iniciar o ambiente de desenvolvimento:
+
+```bash
+npm run dev
+```
+
+Este comando irá:
+- Iniciar o servidor na porta 5000
+- Habilitar hot-reload para desenvolvimento
+- Compilar TypeScript automaticamente
+
+### Convenções de Rotas
+
+O projeto segue um padrão consistente para definição de rotas:
+
+1. **Nomenclatura de Parâmetros**:
+   - Use nomes descritivos para parâmetros de rota
+   - Exemplo: `:userId` em vez de `:id`
+   - Padrão: `:resourceId` (ex: `:productId`, `:saleId`, `:customerId`)
+
+2. **Validação**:
+   - Todas as rotas devem incluir validação de parâmetros
+   - Use schemas de validação para `params`, `query` e `body`
+   - Exemplo:
+   ```typescript
+   const userIdSchema = {
+     params: {
+       userId: { type: 'number', required: true, min: 1 }
+     }
+   };
+   ```
+
+3. **Estrutura de Rotas**:
+   - Base routes: operações CRUD básicas
+   - Specific routes: operações específicas do recurso
+   - Exemplo:
+   ```typescript
+   // Base routes
+   router.get('/', getUsers);
+   router.post('/', createUser);
+
+   // Specific routes
+   router.get('/:userId', getUser);
+   router.put('/:userId', updateUser);
+   ```
+
+4. **Autenticação e Autorização**:
+   - Use middleware `protect` para rotas autenticadas
+   - Use middleware `authorize` para controle de acesso
+   - Exemplo:
+   ```typescript
+   router.use(protect);
+   router.use(authorize([UserRole.ADMIN]));
+   ```
+
+### Testes
+
+Para executar os testes:
+
+```bash
+npm test              # Executa todos os testes
+npm run test:watch    # Executa testes em modo watch
+npm run test:coverage # Executa testes com relatório de cobertura
+```
+
+### Deploy
+
+Para fazer deploy da aplicação:
+
+```bash
+npm run deploy        # Deploy em produção
+npm run deploy:staging # Deploy em staging
+npm run deploy:preview # Deploy em preview
+```
+
+## 📝 Notas de Atualização
+
+### Rotas Normalizadas
+- Removidos protocolos e domínios das rotas
+- Corrigidos parâmetros inválidos em todas as rotas
+- Implementada validação consistente para parâmetros
+- Padronizada nomenclatura de parâmetros
+- Adicionados testes para verificar comportamento de rotas inválidas
+
+### Melhorias Recentes
+- Adicionados testes para tratamento de rotas inválidas
+- Implementada validação robusta de parâmetros
+- Padronizada estrutura de rotas em todo o projeto
+- Melhorada documentação de rotas e convenções
+
+## 🤝 Contribuindo
+
+1. Faça um fork do projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
+3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
+4. Push para a branch (`git push origin feature/AmazingFeature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença ISC. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.

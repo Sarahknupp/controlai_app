@@ -29,6 +29,7 @@ jest.mock('../../services/export.service', () => ({
 }));
 
 // Mock fetch
+const originalFetch = global.fetch;
 global.fetch = jest.fn();
 
 describe('NotificationDashboard', () => {
@@ -428,4 +429,7 @@ describe('NotificationDashboard', () => {
       expect(screen.getByText('Failed to export data')).toBeInTheDocument();
     });
   });
-}); 
+  afterAll(() => {
+    global.fetch = originalFetch;
+  });
+});

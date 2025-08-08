@@ -1,62 +1,177 @@
 import { Express } from 'express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
-import { version } from '../../package.json';
+import { logger } from '../utils/logger';
+import path from 'path';
 
 // Swagger options
 const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Control AI Vendas API',
-      version,
-      description: 'API documentation for Control AI Vendas application',
-      contact: {
-        name: 'API Support',
-        email: 'support@controlaivendas.com',
-      },
+      title: 'ControlAI API',
+      version: '1.0.0',
+      description: 'API documentation for ControlAI'
     },
     servers: [
       {
         url: process.env.API_URL || 'http://localhost:3000',
-        description: 'Development server',
-      },
+        description: 'API Server'
+      }
     ],
     components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
           scheme: 'bearer',
-          bearerFormat: 'JWT',
+          bearerFormat: 'JWT'
+        }
+      },
+      schemas: {
+        Error: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: false,
+            },
+            message: {
+              type: 'string',
+              example: 'Error message',
+            },
+          },
+        },
+        Pagination: {
+          type: 'object',
+          properties: {
+            page: {
+              type: 'integer',
+              example: 1,
+            },
+            limit: {
+              type: 'integer',
+              example: 10,
+            },
+            total: {
+              type: 'integer',
+              example: 100,
+            },
+            pages: {
+              type: 'integer',
+              example: 10,
+            },
+          },
+        },
+        User: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'string',
+              example: 'John Doe',
+            },
+            email: {
+              type: 'string',
+              example: 'john@example.com',
+            },
+            role: {
+              type: 'string',
+              enum: ['admin', 'user'],
+              example: 'user',
+            },
+            active: {
+              type: 'boolean',
+              example: true,
+            },
+          },
+        },
+        Product: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            name: {
+              type: 'string',
+              example: 'Product Name',
+            },
+            description: {
+              type: 'string',
+              example: 'Product description',
+            },
+            price: {
+              type: 'number',
+              example: 99.99,
+            },
+            stock: {
+              type: 'integer',
+              example: 100,
+            },
+          },
+        },
+        Order: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              example: '507f1f77bcf86cd799439011',
+            },
+            user: {
+              $ref: '#/components/schemas/User',
+            },
+            products: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/Product',
+              },
+            },
+            total: {
+              type: 'number',
+              example: 299.97,
+            },
+            status: {
+              type: 'string',
+              enum: ['pending', 'processing', 'completed', 'cancelled'],
+              example: 'pending',
+            },
+          },
         },
       },
     },
     security: [
       {
-        bearerAuth: [],
-      },
-    ],
+        bearerAuth: []
+      }
+    ]
   },
-  apis: ['./src/routes/*.ts'], // Path to the API routes
+  apis: ['./src/routes/*.ts', './src/models/*.ts']
 };
 
 // Generate Swagger documentation
 const swaggerSpec = swaggerJsdoc(options);
 
 // Apply documentation middleware to Express app
-export const applyDocsMiddleware = (app: Express) => {
-  // Serve Swagger documentation
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Control AI Vendas API Documentation',
-  }));
+export const applyDocsMiddleware = (app: Express): void => {
+  try {
+    // Serve API documentation
+    app.use('/api-docs', (req, res, next) => {
+      res.sendFile(path.join(__dirname, '../docs/index.html'));
+    });
 
-  // Serve Swagger JSON
-  app.get('/api-docs.json', (req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-  });
+    // Serve OpenAPI specification
+    app.use('/api-spec', (req, res, next) => {
+      res.sendFile(path.join(__dirname, '../docs/openapi.json'));
+    });
+
+    logger.info('Documentation middleware applied successfully');
+  } catch (error) {
+    logger.error('Error applying documentation middleware:', error);
+    throw error;
+  }
 };
 
 // Swagger decorators
@@ -68,23 +183,12 @@ export const swaggerDecorators = {
    *     Error:
    *       type: object
    *       properties:
-   *         status:
-   *           type: string
-   *           example: error
+   *         success:
+   *           type: boolean
+   *           example: false
    *         message:
    *           type: string
    *           example: Error message
-   *         errors:
-   *           type: array
-   *           items:
-   *             type: object
-   *             properties:
-   *               field:
-   *                 type: string
-   *                 example: fieldName
-   *               message:
-   *                 type: string
-   *                 example: Error message
    */
 
   /**
@@ -117,7 +221,7 @@ export const swaggerDecorators = {
    *       properties:
    *         id:
    *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
+   *           example: 507f1f77bcf86cd799439011
    *         name:
    *           type: string
    *           example: John Doe
@@ -131,14 +235,6 @@ export const swaggerDecorators = {
    *         active:
    *           type: boolean
    *           example: true
-   *         createdAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
-   *         updatedAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
    */
 
   /**
@@ -150,7 +246,7 @@ export const swaggerDecorators = {
    *       properties:
    *         id:
    *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
+   *           example: 507f1f77bcf86cd799439011
    *         name:
    *           type: string
    *           example: Product Name
@@ -163,20 +259,6 @@ export const swaggerDecorators = {
    *         stock:
    *           type: integer
    *           example: 100
-   *         category:
-   *           type: string
-   *           example: Electronics
-   *         active:
-   *           type: boolean
-   *           example: true
-   *         createdAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
-   *         updatedAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
    */
 
   /**
@@ -188,38 +270,19 @@ export const swaggerDecorators = {
    *       properties:
    *         id:
    *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
-   *         userId:
-   *           type: string
-   *           example: 123e4567-e89b-12d3-a456-426614174000
-   *         items:
+   *           example: 507f1f77bcf86cd799439011
+   *         user:
+   *           $ref: '#/components/schemas/User'
+   *         products:
    *           type: array
    *           items:
-   *             type: object
-   *             properties:
-   *               productId:
-   *                 type: string
-   *                 example: 123e4567-e89b-12d3-a456-426614174000
-   *               quantity:
-   *                 type: integer
-   *                 example: 2
-   *               price:
-   *                 type: number
-   *                 example: 99.99
+   *             $ref: '#/components/schemas/Product'
    *         total:
    *           type: number
-   *           example: 199.98
+   *           example: 299.97
    *         status:
    *           type: string
    *           enum: [pending, processing, completed, cancelled]
    *           example: pending
-   *         createdAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
-   *         updatedAt:
-   *           type: string
-   *           format: date-time
-   *           example: 2024-01-01T00:00:00.000Z
    */
 }; 

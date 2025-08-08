@@ -1,4 +1,4 @@
-run = "npm run dev"
+run = "cd backend && npm run dev"
 hidden = [".build", ".config"]
 
 [packager]

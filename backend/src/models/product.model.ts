@@ -78,8 +78,8 @@ const productSchema = new Schema<IProduct>(
 );
 
 // Indexes
-productSchema.index({ sku: 1 });
-productSchema.index({ barcode: 1 });
+// productSchema.index({ sku: 1 });
+// productSchema.index({ barcode: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ brand: 1 });
 productSchema.index({ name: 'text', description: 'text' });

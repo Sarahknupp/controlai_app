@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ReceiptController } from '../controllers/receipt.controller';
 import { authenticate } from '../middleware/auth';
 import { authorize } from '../middleware/authorization';
@@ -12,7 +12,9 @@ router.get(
   '/:saleId/generate',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER]),
-  receiptController.generateReceipt.bind(receiptController)
+  (req: Request, res: Response, next: NextFunction): void => {
+    receiptController.generateReceipt.bind(receiptController)(req, res, next);
+  }
 );
 
 // Send receipt
@@ -20,7 +22,9 @@ router.post(
   '/:saleId/send',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER, UserRole.CASHIER]),
-  receiptController.sendReceipt.bind(receiptController)
+  (req: Request, res: Response, next: NextFunction): void => {
+    receiptController.sendReceipt.bind(receiptController)(req, res, next);
+  }
 );
 
 // Get receipt history
@@ -28,7 +32,9 @@ router.get(
   '/:saleId/history',
   authenticate,
   authorize([UserRole.ADMIN, UserRole.MANAGER]),
-  receiptController.getReceiptHistory.bind(receiptController)
+  (req: Request, res: Response, next: NextFunction): void => {
+    receiptController.getReceiptHistory.bind(receiptController)(req, res, next);
+  }
 );
 
 export default router; 

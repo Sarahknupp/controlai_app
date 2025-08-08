@@ -14,9 +14,11 @@ const router = Router();
 router.get('/verify/:receiptNumber', verifyReceipt);
 
 // Protected routes
-router.get('/', authenticate, getReceiptHistory);
-router.get('/stats', authenticate, getReceiptStats);
-router.get('/:number', authenticate, getReceiptByNumber);
-router.get('/:number/download', authenticate, downloadReceipt);
+router.use(authenticate);
+
+router.get('/stats', getReceiptStats);
+router.get('/history', getReceiptHistory);
+router.get('/:receiptNumber', getReceiptByNumber);
+router.get('/:receiptNumber/download', downloadReceipt);
 
 export default router; 

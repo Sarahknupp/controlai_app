@@ -1,51 +1,12 @@
 import { body, query, param } from 'express-validator';
+import Joi from 'joi';
 
-export const createCustomerValidation = [
-  body('name')
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Name is required'),
-
-  body('email')
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Valid email is required'),
-
-  body('phone')
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Phone number is required'),
-
-  body('address')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Address must be a non-empty string'),
-
-  body('city')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('City must be a non-empty string'),
-
-  body('state')
-    .optional()
-    .isString()
-    .trim()
-    .isLength({ min: 2, max: 2 })
-    .withMessage('State must be a 2-letter code'),
-
-  body('zipCode')
-    .optional()
-    .isString()
-    .trim()
-    .matches(/^\d{5}(-\d{4})?$/)
-    .withMessage('Invalid ZIP code format')
-];
+export const createCustomerValidation = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required(),
+  phone: Joi.string().required(),
+  address: Joi.string()
+});
 
 export const getCustomersValidation = [
   query('search')
@@ -75,59 +36,12 @@ export const getCustomersValidation = [
     .withMessage('Limit must be between 1 and 100')
 ];
 
-export const updateCustomerValidation = [
-  param('id')
-    .isMongoId()
-    .withMessage('Customer ID must be valid'),
-
-  body('name')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Name must be a non-empty string'),
-
-  body('email')
-    .optional()
-    .isEmail()
-    .normalizeEmail()
-    .withMessage('Valid email is required'),
-
-  body('phone')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Phone must be a non-empty string'),
-
-  body('address')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('Address must be a non-empty string'),
-
-  body('city')
-    .optional()
-    .isString()
-    .trim()
-    .notEmpty()
-    .withMessage('City must be a non-empty string'),
-
-  body('state')
-    .optional()
-    .isString()
-    .trim()
-    .isLength({ min: 2, max: 2 })
-    .withMessage('State must be a 2-letter code'),
-
-  body('zipCode')
-    .optional()
-    .isString()
-    .trim()
-    .matches(/^\d{5}(-\d{4})?$/)
-    .withMessage('Invalid ZIP code format')
-];
+export const updateCustomerValidation = Joi.object({
+  name: Joi.string(),
+  email: Joi.string().email(),
+  phone: Joi.string(),
+  address: Joi.string()
+});
 
 export const getCustomerPurchasesValidation = [
   param('id')

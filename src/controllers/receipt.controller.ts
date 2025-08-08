@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { ReceiptHistory } from '../models/ReceiptHistory';
-import { Payment } from '../models/Payment';
-import { Sale } from '../models/Sale';
+import { ReceiptHistory } from '../../backend/src/models/ReceiptHistory';
+import { Payment } from '../../backend/src/models/Payment';
+import { Sale } from '../../backend/src/models/Sale';
 import { ReceiptService } from '../services/ReceiptService';
 
 // @desc    Listar histórico de recibos

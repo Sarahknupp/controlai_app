@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ImportController } from '../controllers/import.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { authorize } from '../middleware/authorize.middleware';
@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate.middleware';
 import { importValidation } from '../validations/import.validation';
 import multer from 'multer';
 import path from 'path';
+import { UserRole } from '../models/user.model';
 
 const router = Router();
 const importController = new ImportController();
@@ -38,29 +39,16 @@ const upload = multer({
 });
 
 // Import routes
-router.post(
-  '/',
-  authenticate,
-  authorize(['ADMIN', 'MANAGER']),
-  upload.single('file'),
-  validate(importValidation.importData),
-  importController.importData.bind(importController)
-);
+router.post('/', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), upload.single('file'), (req: Request, res: Response, next: NextFunction): void => {
+  importController.importData(req, res, next);
+});
 
-router.get(
-  '/:importId/status',
-  authenticate,
-  authorize(['ADMIN', 'MANAGER']),
-  validate(importValidation.getImportStatus),
-  importController.getImportStatus.bind(importController)
-);
+router.get('/:importId/status', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
+  importController.getImportStatus(req, res, next);
+});
 
-router.delete(
-  '/:importId',
-  authenticate,
-  authorize(['ADMIN']),
-  validate(importValidation.deleteImport),
-  importController.deleteImport.bind(importController)
-);
+router.delete('/:importId', authenticate, authorize([UserRole.ADMIN, UserRole.MANAGER]), (req: Request, res: Response, next: NextFunction): void => {
+  importController.deleteImport(req, res, next);
+});
 
 export default router; 
